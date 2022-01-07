@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="workspace-switcher-manager">
+  <schema id="org.gnome.shell.extensions.workspace-switcher-manager" path="/org/gnome/shell/extensions/workspace-switcher-manager/">
+    <key type="i" name="horizontal">
+      <default>50</default>
+    </key>
+    <key type="i" name="vertical">
+      <default>50</default>
+    </key>
+    <key type="b" name="hide">
+      <default>false</default>
+      <summary></summary>
+      <description></description>
+    </key>
+    <key type="i" name="mode">
+      <default>1</default>
+    </key>
+    <key type="i" name="monitor">
+      <default>0</default>
+    </key>
+    <key type="i" name="timeout">
+      <default>600</default>
+    </key>
+    <key type="b" name="wraparound">
+      <default>false</default>
+    </key>
+    <key type="b" name="ignore-last">
+      <default>false</default>
+    </key>
+    <key type="i" name="font-size">
+      <default>10</default>
+    </key>
+    <key type="i" name="index-size">
+      <default>15</default>
+    </key>
+    <key type="s" name="color">
+      <default>'rgba(0,0,0,0.5)'</default>
+    </key>
+    <key type="b" name="text-shadow">
+      <default>true</default>
+    </key>
+    <key type="i" name="fade-out-time">
+      <default>300</default>
+    </key>
+    <key type="i" name="default-popup-size">
+      <default>50</default>
+    </key>
+    <key type="i" name="default-popup-opacity">
+      <default>90</default>
+    </key>
+  </schema>
+</schemalist>
