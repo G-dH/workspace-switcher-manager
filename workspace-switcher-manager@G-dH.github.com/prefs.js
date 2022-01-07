@@ -195,18 +195,18 @@ function _getDefaultOptionsList() {
 	);
 
     let dpSizeAdjustment = new Gtk.Adjustment({
-        upper: 70,
+        upper: 200,
         lower: 10,
         step_increment: 5,
         page_increment: 10,
     });
 
     const dpSize = _newScale(dpSizeAdjustment);
-    dpSize.add_mark(50, Gtk.PositionType.TOP, null);
+    dpSize.add_mark(100, Gtk.PositionType.TOP, null);
 
     optionsList.push(
         _optionsItem(
-            _('Popup Size'),
+            _('Popup Size (% relative to original'),
             _("Sets a height of popup's single workspace box."),
             dpSize,
             'defaultPopupSize'
@@ -441,7 +441,6 @@ function _getWorkspacesOptionsList() {
 			10
 		)
 	);
-
 
     return optionsList;
 }
