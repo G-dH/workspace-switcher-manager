@@ -257,10 +257,45 @@ class WorkspaceSwitcherPopupCustom extends WorkspaceSwitcherPopup.WorkspaceSwitc
             GLib.source_remove(this._timeoutId);
         this._timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, DISPLAY_TIMEOUT, this._onTimeout.bind(this));
         GLib.Source.set_name_by_id(this._timeoutId, '[gnome-shell] this._onTimeout');
-		this.opacity = mscOptions.defaultPopupOpacity / 100 * 255;
+
+		this.opacity = Math.floor(mscOptions.defaultPopupOpacity / 100 * 255);
+
+		const popSize = mscOptions.defaultPopupSize / 100;
+
+		if (this._contRadius === undefined) {
+			const listThemeNode = this._list.get_theme_node();
+			const listSpacing = listThemeNode.get_length('spacing');
+			// roundness adjust only for scaled down popups
+			this._listSpacing = Math.min(Math.max(Math.floor(listSpacing * popSize), 6), listSpacing);
+
+			const contRadius = this._container.get_theme_node().get_length('border-radius');
+			this._contRadius = Math.max(Math.floor(contRadius * popSize), 4);
+			// I wasn't successful to get original padding for the _container, so I use _list spacing as it's usually the similar value
+			this._contPadding = Math.max(this._listSpacing, 4);
+		}
+
+		/*
+		  possible tweaks:
+		  this._container: 	background-color
+		  					border-radius
+
+		*/
+		this._list.set_style(`spacing: ${this._listSpacing}px;`);
+		this._container.set_style(`padding: ${this._contPadding}px; border-radius: ${this._contRadius}px;`);
 		const children = this._list.get_children();
-		children.forEach(c => c.set_style(`height: ${mscOptions.defaultPopupSize}px`));
+		children.forEach(c => {
+			if (this._boxRadius === undefined) {
+				const theme = c.get_theme_node();
+				this._boxRadius = Math.max(Math.floor(theme.get_length('border-radius') * popSize), 3);
+				this._boxHeight = Math.floor(theme.get_height() * popSize);
+				this._boxBgSize = Math.floor(theme.get_length('background-size') * popSize);
+
+			}
+			
+			c.set_style(`height: ${this._boxHeight}px; background-size: ${this._boxBgSize}px; border-radius: ${this._boxRadius}px;`);
+		});
         this._show();
+		this._setPopupPosition();
     }
 
 	_redisplay() {
@@ -284,13 +319,15 @@ class WorkspaceSwitcherPopupCustom extends WorkspaceSwitcherPopup.WorkspaceSwitc
 
             this._list.add_actor(indicator);
         }
+    }
 
-        let workArea = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
+	_setPopupPosition() {
+		let workArea = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
 		let [, containerNatHeight] = this._container.get_preferred_height(global.screen_width);
 		let [, containerNatWidth] = this._container.get_preferred_width(containerNatHeight);
 		let h_percent = mscOptions.popupHorizontal;
 		let v_percent = mscOptions.popupVertical;
-		this._container.x = workArea.x + Math.floor((workArea.width - containerNatWidth) * (h_percent/100));
-		this._container.y = workArea.y + Math.floor((workArea.height - containerNatHeight) * (v_percent/100));
-    }
+		this._container.x = workArea.x + Math.floor((workArea.width - containerNatWidth - this._contPadding) * (h_percent/100));
+		this._container.y = workArea.y + Math.floor((workArea.height - containerNatHeight - this._contPadding) * (v_percent/100));
+	}
 });
