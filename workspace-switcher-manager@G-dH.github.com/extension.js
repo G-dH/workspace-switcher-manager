@@ -10,8 +10,10 @@ const AltTab = imports.ui.altTab;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Settings = Me.imports.settings;
+const shellVersion = Settings.shellVersion;
 
 let originalWsPopup;
+let originalWsPopupList;
 let origNeighbor;
 
 let mscOptions;
@@ -42,6 +44,7 @@ const default_popup_mode = {
 function init() {
 	ExtensionUtils.initTranslations();
 	originalWsPopup = WorkspaceSwitcherPopup.WorkspaceSwitcherPopup;
+	originalWsPopupList = WorkspaceSwitcherPopup.WorkspaceSwitcherPopupList;
 	origNeighbor = Meta.Workspace.prototype.get_neighbor;
 	STORE_DEFAULT_COLORS = true;
 }
@@ -64,6 +67,7 @@ function disable() {
 	mscOptions.destroy();
 	mscOptions = null;
 	WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = originalWsPopup;
+	WorkspaceSwitcherPopup.WorkspaceSwitcherPopupList = originalWsPopupList;
 	Meta.Workspace.prototype.get_neighbor = origNeighbor;
 }
 
@@ -89,6 +93,7 @@ function _updateMode() {
 		WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = WorkspaceSwitcherPopupCustom;
 	} else if (mode === ws_popup_mode.DEFAULT) {
 		WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = WorkspaceSwitcherPopupCustom;
+		WorkspaceSwitcherPopup.WorkspaceSwitcherPopupList = WorkspaceSwitcherPopupList;
 	} else if (mode === ws_popup_mode.CUSTOM) {
 		WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = WorkspaceIndicator;
 	}
@@ -345,6 +350,7 @@ var WorkspaceSwitcherPopupCustom = GObject.registerClass(
 class WorkspaceSwitcherPopupCustom extends WorkspaceSwitcherPopup.WorkspaceSwitcherPopup {
 	_init(){
 		super._init();
+		this.connect('destroy', () => this._wsNamesSettings = null);
 	}
 
 	display(direction, activeWorkspaceIndex) {
@@ -395,7 +401,7 @@ class WorkspaceSwitcherPopupCustom extends WorkspaceSwitcherPopup.WorkspaceSwitc
 				this._boxBgSize = Math.floor(theme.get_length('background-size') * this.popSize);
 			}
 
-			if (i == this._activeWorkspaceIndex){
+			if (i == this._activeWorkspaceIndex || mscOptions.defaultPopupMode){ // 0 all ws 1 single ws
 				children[i].set_style(`	height: ${this._boxHeight}px;
 										background-size: ${this._boxBgSize}px;
 										border-radius: ${this._boxRadius}px;
@@ -432,7 +438,7 @@ class WorkspaceSwitcherPopupCustom extends WorkspaceSwitcherPopup.WorkspaceSwitc
             else if (i == this._activeWorkspaceIndex && this._direction == Meta.MotionDirection.RIGHT)
                 indicator = new St.Bin({ style_class: 'ws-switcher-active-right' });
 			// TODO single ws indicator needs to be handled in the container class, disabled for now
-            else if (mscOptions.defaultPopupMode === default_popup_mode.ALL || i === 0)
+            else if (mscOptions.defaultPopupMode === default_popup_mode.ALL)
                 indicator = new St.Bin({ style_class: 'ws-switcher-box' });
 
 			if (i == this._activeWorkspaceIndex) {
@@ -502,5 +508,119 @@ class WorkspaceSwitcherPopupCustom extends WorkspaceSwitcherPopup.WorkspaceSwitc
 		label.set_text(text);
 
 		return label;
+	}
+});
+
+var WorkspaceSwitcherPopupList = GObject.registerClass(
+class WorkspaceSwitcherPopupList extends St.Widget {
+	_init() {
+		super._init({
+			style_class: 'workspace-switcher',
+			offscreen_redirect: Clutter.OffscreenRedirect.ALWAYS,
+		});
+
+		this._itemSpacing = 0;
+		this._childHeight = 0;
+		this._childWidth = 0;
+		this._orientation = global.workspace_manager.layout_rows == -1
+			? Clutter.Orientation.VERTICAL
+			: Clutter.Orientation.HORIZONTAL;
+
+		this.connect('style-changed', () => {
+			this._itemSpacing = this.get_theme_node().get_length('spacing');
+		});
+	}
+
+	_getPreferredSizeForOrientation(_forSize) {
+		let workArea = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
+		let themeNode = this.get_theme_node();
+
+		let availSize;
+		if (this._orientation == Clutter.Orientation.HORIZONTAL)
+			availSize = workArea.width - themeNode.get_horizontal_padding();
+		else
+			availSize = workArea.height - themeNode.get_vertical_padding();
+
+		let size = 0;
+		for (let child of this.get_children()) {
+			let [, childNaturalHeight] = child.get_preferred_height(-1);
+			let height = childNaturalHeight * workArea.width / workArea.height;
+
+			if (this._orientation == Clutter.Orientation.HORIZONTAL)
+				size += height * workArea.width / workArea.height;
+			else
+				size += height;
+		}
+
+		let workspaceManager = global.workspace_manager;
+		let spacing = this._itemSpacing * (mscOptions.defaultPopupMode ? 0 : workspaceManager.n_workspaces - 1);
+		size += spacing;
+		size = Math.min(size, availSize);
+
+		if (this._orientation == Clutter.Orientation.HORIZONTAL) {
+			this._childWidth = (size - spacing) / (mscOptions.defaultPopupMode ? 1 : workspaceManager.n_workspaces);
+			return themeNode.adjust_preferred_width(size, size);
+		} else {
+			this._childHeight = (size - spacing) / (mscOptions.defaultPopupMode ? 1 : workspaceManager.n_workspaces);
+			return themeNode.adjust_preferred_height(size, size);
+		}
+	}
+
+	_getSizeForOppositeOrientation() {
+		let workArea = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
+
+		if (this._orientation == Clutter.Orientation.HORIZONTAL) {
+			this._childHeight = Math.round(this._childWidth * workArea.height / workArea.width);
+			return [this._childHeight, this._childHeight];
+		} else {
+			this._childWidth = Math.round(this._childHeight * workArea.width / workArea.height);
+			return [this._childWidth, this._childWidth];
+		}
+	}
+
+	vfunc_get_preferred_height(forWidth) {
+		if (this._orientation == Clutter.Orientation.HORIZONTAL)
+			return this._getSizeForOppositeOrientation();
+		else
+			return this._getPreferredSizeForOrientation(forWidth);
+	}
+
+	vfunc_get_preferred_width(forHeight) {
+		if (this._orientation == Clutter.Orientation.HORIZONTAL)
+			return this._getPreferredSizeForOrientation(forHeight);
+		else
+			return this._getSizeForOppositeOrientation();
+	}
+
+	vfunc_allocate(box, flags) {
+		shellVersion >= 40  ?   this.set_allocation(box)
+                            :   this.set_allocation(box, flags);
+
+		let themeNode = this.get_theme_node();
+		box = themeNode.get_content_box(box);
+
+		let childBox = new Clutter.ActorBox();
+
+		let rtl = this.text_direction == Clutter.TextDirection.RTL;
+		let x = rtl ? box.x2 - this._childWidth : box.x1;
+		let y = box.y1;
+		for (let child of this.get_children()) {
+			childBox.x1 = Math.round(x);
+			childBox.x2 = Math.round(x + this._childWidth);
+			childBox.y1 = Math.round(y);
+			childBox.y2 = Math.round(y + this._childHeight);
+
+			if (this._orientation == Clutter.Orientation.HORIZONTAL) {
+				if (rtl)
+					x -= this._childWidth + this._itemSpacing;
+				else
+					x += this._childWidth + this._itemSpacing;
+			} else {
+				y += this._childHeight + this._itemSpacing;
+			}
+			shellVersion >= 40 ? child.allocate(childBox)
+                               : child.allocate(childBox, flags);
+			
+		}
 	}
 });

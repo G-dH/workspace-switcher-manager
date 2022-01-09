@@ -60,7 +60,7 @@ function buildPrefsWidget() {
     // currently customizing popup should appear on the screen
     mscOptions.activePrefsPage = 'common';
     optionsPage.connect('destroy', () => mscOptions.activePrefsPage = '');
-    optionsPage.connect('switch-page', (ntb, page, index) => {
+    /*optionsPage.connect('switch-page', (ntb, page, index) => {
         switch (page) {
         case commonOptionsPage:
             mscOptions.activePrefsPage = 'common'
@@ -74,7 +74,7 @@ function buildPrefsWidget() {
         default:
             mscOptions.activePrefsPage = '';
         }
-    });
+    });*/
 
     return optionsPage;
 }
@@ -221,8 +221,7 @@ function _getDefaultOptionsList() {
             _newComboBox(),
             'defaultPopupMode',
 			[[_('Show All Workspaces'), 0],
-			// [_('Show Active Workspace Only'), 1]
-        ]
+			 [_('Show Active Workspace Only'), 1]]
 		)
 	);
     //-----------------------------------------------------
