@@ -15,6 +15,12 @@
     <key type="i" name="mode">
       <default>1</default>
     </key>
+    <key type="i" name="custom-mode">
+      <default>4</default>
+    </key>
+    <key type="i" name="default-popup-mode">
+      <default>0</default>
+    </key>
     <key type="i" name="monitor">
       <default>0</default>
     </key>
@@ -46,7 +52,31 @@
       <default>50</default>
     </key>
     <key type="i" name="default-popup-opacity">
-      <default>90</default>
+      <default>100</default>
+    </key>
+    <key type="s" name="default-popup-bg-color">
+      <default>''</default>
+    </key>
+    <key type="s" name="default-popup-border-color">
+      <default>''</default>
+    </key>
+    <key type="s" name="default-popup-active-fg-color">
+      <default>''</default>
+    </key>
+    <key type="s" name="default-popup-active-bg-color">
+      <default>''</default>
+    </key>
+    <key type="s" name="active-prefs-page">
+      <default>''</default>
+    </key>
+    <key type="as" name="default-colors">
+      <default>[]</default>
+    </key>
+    <key type="b" name="default-popup-show-ws-name">
+      <default>false</default>
+    </key>
+    <key type="b" name="default-popup-show-app-name">
+      <default>true</default>
     </key>
   </schema>
 </schemalist>

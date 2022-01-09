@@ -27,11 +27,12 @@ function buildPrefsWidget() {
     });
 
 
+    
     const commonOptionsPage = new OptionsPageWSPM(_getCommonOptionsList());
     const defaultPopupOptionsPage = new OptionsPageWSPM(_getDefaultOptionsList());
-	const customPopupOptionsPage = new OptionsPageWSPM(_getCustomPopupOptionsList());
+    const customPopupOptionsPage = new OptionsPageWSPM(_getCustomPopupOptionsList());
     const workspacesOptionsPage = new OptionsPageWSPM(_getWorkspacesOptionsList());
-
+    
     optionsPage.append_page(commonOptionsPage, new Gtk.Label({
         label: _('Common'),
         halign: Gtk.Align.START,
@@ -56,6 +57,25 @@ function buildPrefsWidget() {
         visible: true,
     }));
 
+    // currently customizing popup should appear on the screen
+    mscOptions.activePrefsPage = 'common';
+    optionsPage.connect('destroy', () => mscOptions.activePrefsPage = '');
+    optionsPage.connect('switch-page', (ntb, page, index) => {
+        switch (page) {
+        case commonOptionsPage:
+            mscOptions.activePrefsPage = 'common'
+            break;
+        case defaultPopupOptionsPage:
+            mscOptions.activePrefsPage = 'defaultPopup';
+            break;
+        case customPopupOptionsPage:
+            mscOptions.activePrefsPage = 'customPopup';
+            break;
+        default:
+            mscOptions.activePrefsPage = '';
+        }
+    });
+
     return optionsPage;
 }
 
@@ -69,7 +89,7 @@ function _getCommonOptionsList() {
             _makeTitle(_('Behavior')),
         )
     );
-	
+//-----------------------------------------------------	
     optionsList.push(
 		_optionsItem(
 			_('Workspace Switcher Popup Mode'),
@@ -77,16 +97,17 @@ function _getCommonOptionsList() {
             _newComboBox(),
             'popupMode',
 		   [[_('Disable'),            0],
-			[_('Default'),            1],
-			[_('Index'),              2],
+			[_('Default (modified)'), 1],
+            [_('Custom'),             2]]
+/*			[_('Index'),              2],
 			[_('WS Name'),            3],
 			[_('App Name'),           4],
             [_('WS Name + App Name'), 5],
             [_('Index + App Name'),   6],
-            [_('Index + WS Name'),    7],]
+            [_('Index + WS Name'),    7],]*/
 		)
 	);
-
+//-----------------------------------------------------
     optionsList.push(
 		_optionsItem(
 			_('Monitor'),
@@ -97,7 +118,7 @@ function _getCommonOptionsList() {
 			[_('Current'),          1]]
 		)
 	);
-
+//-----------------------------------------------------
 	optionsList.push(
         _optionsItem(
             _('Wraparound'),
@@ -106,7 +127,7 @@ function _getCommonOptionsList() {
             'wsSwitchWrap'
         )
     );
-
+//-----------------------------------------------------
     optionsList.push(
         _optionsItem(
             _('Ignore last (empty) workspace'),
@@ -115,10 +136,10 @@ function _getCommonOptionsList() {
             'wsSwitchIgnoreLast'
         )
     );
-
+//-----------------------------------------------------
 	let popupTimeoutAdjustment = new Gtk.Adjustment({
         upper: 2000,
-        lower: 10,
+        lower: 0,
         step_increment: 10,
         page_increment: 100,
     });
@@ -128,21 +149,21 @@ function _getCommonOptionsList() {
 
     optionsList.push(
         _optionsItem(
-            _('Popup Duration (ms)'),
+            _('Popup Duration (ms) (0 for always visible)'),
             _("Time after which the popup fade out"),
             tScale,
             'popupTimeout'
         )
     );
 
-    //--------------------------------------------------------
+//-----------------------------------------------------
 
 	optionsList.push(
 		_optionsItem(
 			_makeTitle(_('Position')),
 		)
 	);
-
+//-----------------------------------------------------
 	const hAdjustment = new Gtk.Adjustment({
 		lower: 0,
 		upper: 100,
@@ -161,7 +182,7 @@ function _getCommonOptionsList() {
             'popupHorizontal',
         )
     );
-
+//-----------------------------------------------------
 	const vAdjustment = new Gtk.Adjustment({
 		lower: 0,
 		upper: 100,
@@ -187,13 +208,49 @@ function _getCommonOptionsList() {
 function _getDefaultOptionsList() {
 	const optionsList = [];
 
+    optionsList.push(
+		_optionsItem(
+			_makeTitle(_('Behavior')),
+		)
+	);
+    //-----------------------------------------------------
+    optionsList.push(
+		_optionsItem(
+			_('Mode'),
+            null,
+            _newComboBox(),
+            'defaultPopupMode',
+			[[_('Show All Workspaces'), 0],
+			// [_('Show Active Workspace Only'), 1]
+        ]
+		)
+	);
+    //-----------------------------------------------------
+    optionsList.push(
+       _optionsItem(
+            _('Show Workspace Name'),
+            _('Highlighted active workspace indicator will show workspace name if the name is set.'),
+            _newGtkSwitch(),
+            'defaultPopupShowWsName'
+        )
+    );
+    //-----------------------------------------------------
+    optionsList.push(
+        _optionsItem(
+            _('Show Active App Name'),
+            _('Highlighted active workspace indicator will show name of the last used application on active workspace.'),
+            _newGtkSwitch(),
+            'defaultPopupShowAppName'
+         )
+     );
+    //-----------------------------------------------------
 	optionsList.push(
 		_optionsItem(
 			_makeTitle(_('Appearance')),
 			null
 		)
 	);
-
+    //-----------------------------------------------------
     let dpSizeAdjustment = new Gtk.Adjustment({
         upper: 200,
         lower: 10,
@@ -206,29 +263,101 @@ function _getDefaultOptionsList() {
 
     optionsList.push(
         _optionsItem(
-            _('Popup Size (% relative to original'),
-            _("Sets a height of popup's single workspace box."),
+            _('Scale (%)'),
+            _("Sets the size of the popup relative to the original."),
             dpSize,
             'defaultPopupSize'
         )
     );
-
+    //-----------------------------------------------------
     const opacityAdjustment = new Gtk.Adjustment({
 		lower: 10,
 		upper: 100,
-		step_increment: 10,
-		page_increment: 40,
+		step_increment: 1,
+		page_increment: 10,
 	});
 
     const opacityScale = _newScale(opacityAdjustment);
-    opacityScale.add_mark(90, Gtk.PositionType.TOP, null);
+    opacityScale.add_mark(100, Gtk.PositionType.TOP, null);
 
     optionsList.push(
         _optionsItem(
-            _('Opacity'),
+            _('Global Opacity'),
             null,
             opacityScale,
             'defaultPopupOpacity',
+        )
+    );
+    //-----------------------------------------------------
+    const bgColorBox = _newColorButtonBox();
+    const bgColorBtn = _newColorButton();
+    const bgColorReset = _newColorResetBtn(0, bgColorBtn);
+    bgColorBox.colorBtn = bgColorBtn;
+    bgColorBtn._gsettingsVar = 'defaultPopupBgColor';
+
+    bgColorBox[bgColorBox.add ? 'add' : 'append'](bgColorBtn);
+    bgColorBox[bgColorBox.add ? 'add' : 'append'](bgColorReset);
+
+	optionsList.push(
+        _optionsItem(
+            _('Background Color'),
+            null,
+            bgColorBox,
+            'defaultPopupBgColor',
+        )
+    );
+    //-----------------------------------------------------
+    const borderColorBox = _newColorButtonBox();
+    const borderColorBtn = _newColorButton();
+    const borderColorReset = _newColorResetBtn(1, borderColorBtn);
+    borderColorBox.colorBtn = borderColorBtn;
+    borderColorBtn._gsettingsVar = 'defaultPopupBorderColor';
+
+    borderColorBox[borderColorBox.add ? 'add' : 'append'](borderColorBtn);
+    borderColorBox[borderColorBox.add ? 'add' : 'append'](borderColorReset);
+
+	optionsList.push(
+        _optionsItem(
+            _('Border color'),
+            null,
+            borderColorBox,
+            'defaultPopupBorderColor',
+        )
+    );
+    //-----------------------------------------------------
+    const activeFgColorBox = _newColorButtonBox();
+    const activeFgColorBtn = _newColorButton();
+    const activeFgColorReset = _newColorResetBtn(2, activeFgColorBtn);
+    activeFgColorBox.colorBtn = activeFgColorBtn;
+    activeFgColorBtn._gsettingsVar = 'defaultPopupActiveFgColor';
+
+    activeFgColorBox[activeFgColorBox.add ? 'add' : 'append'](activeFgColorBtn);
+    activeFgColorBox[activeFgColorBox.add ? 'add' : 'append'](activeFgColorReset);
+
+	optionsList.push(
+        _optionsItem(
+            _('Active WS Foreground color'),
+            _('If current Shell theme draws something on the active box, like an arrow'),
+            activeFgColorBox,
+            'defaultPopupActiveFgColor',
+        )
+    );
+    //-----------------------------------------------------
+    const activeBgColorBox = _newColorButtonBox();
+    const activeBgColorBtn = _newColorButton();
+    const activeBgColorReset = _newColorResetBtn(3, activeBgColorBtn);
+    activeBgColorBox.colorBtn = activeBgColorBtn;
+    activeBgColorBtn._gsettingsVar = 'defaultPopupActiveBgColor';
+
+    activeBgColorBox[activeBgColorBox.add ? 'add' : 'append'](activeBgColorBtn);
+    activeBgColorBox[activeBgColorBox.add ? 'add' : 'append'](activeBgColorReset);
+
+	optionsList.push(
+        _optionsItem(
+            _('Active WS Background color'),
+            null,
+            activeBgColorBox,
+            'defaultPopupActiveBgColor',
         )
     );
 
@@ -240,12 +369,33 @@ function _getDefaultOptionsList() {
 function _getCustomPopupOptionsList() {
 	const optionsList = [];
 
+    optionsList.push(
+		_optionsItem(
+			_makeTitle(_('Behavior')),
+		)
+	);
+    //-------------------------------------------------
+    optionsList.push(
+		_optionsItem(
+			_('Mode'),
+            null,
+            _newComboBox(),
+            'customPopupMode',
+			[[_('Index'),             0],
+			[_('WS Name'),            1],
+			[_('App Name'),           2],
+            [_('WS Name + App Name'), 3],
+            [_('Index + App Name'),   4],
+            [_('Index + WS Name'),    5]]
+		)
+	);
+    //------------------------------------------------
 	optionsList.push(
 		_optionsItem(
 			_makeTitle(_('Appearance')),
 		)
 	);
-
+//-----------------------------------------------------
 	const fontSizeAdjustment = new Gtk.Adjustment({
 		lower: 1,
 		upper: 30,
@@ -264,7 +414,7 @@ function _getCustomPopupOptionsList() {
             'fontSize',
         )
     );
-
+//-----------------------------------------------------
     const idxSizeAdjustment = new Gtk.Adjustment({
 		lower: 1,
 		upper: 30,
@@ -283,7 +433,7 @@ function _getCustomPopupOptionsList() {
             'indexSize',
         )
     );
-
+//-----------------------------------------------------
 	const colorBtn = new Gtk.ColorButton();
 	colorBtn.set_use_alpha(true);
 	colorBtn.is_color_btn = true;
@@ -297,7 +447,7 @@ function _getCustomPopupOptionsList() {
             'fontColor',
         )
     );
-
+//-----------------------------------------------------
     optionsList.push(
         _optionsItem(
             _('Text Shadow'),
@@ -306,7 +456,7 @@ function _getCustomPopupOptionsList() {
             'textShadow'
         )
     );
-
+//-----------------------------------------------------
     let fadeOutAdjustment = new Gtk.Adjustment({
         upper: 1500,
         lower: 10,
@@ -325,7 +475,7 @@ function _getCustomPopupOptionsList() {
             'fadeOutTime'
         )
     );
-
+//-----------------------------------------------------
     return optionsList;
 }
 
@@ -350,7 +500,6 @@ function _getWorkspacesOptionsList() {
 			1
 		)
 	);
-
 
 	optionsList.push(
 		_optionsItem(
@@ -481,6 +630,7 @@ class OptionsPageWSPM extends Gtk.ScrolledWindow {
         let frame;
         let frameBox;
         for (let item of this.optionList) {
+            // new section
             if (!item[0][1]) {
                 let lbl = new Gtk.Label({
                     xalign: 0,
@@ -600,6 +750,48 @@ function _newScale(adjustment) {
 	return scale;
 }
 
+function _newColorButton() {
+    const colorBtn = new Gtk.ColorButton({
+        hexpand: true,
+    });
+	colorBtn.set_use_alpha(true);
+    colorBtn.is_color_btn = true;
+
+    return colorBtn;
+}
+
+function _newColorResetBtn(colIndex, colorBtn) {
+    const colorReset = new Gtk.Button({
+        hexpand: false,
+        halign: Gtk.Align.END,
+    });
+    colorReset.set_tooltip_text(_('Reset color to default value'));
+    if (colorReset.set_icon_name) {
+        colorReset.set_icon_name('edit-clear-symbolic');
+    } else {
+        colorReset.add(Gtk.Image.new_from_icon_name('edit-clear-symbolic', Gtk.IconSize.BUTTON));
+    }
+    colorReset.connect('clicked', () =>{
+        let color = mscOptions.defaultColors[colIndex];
+        const rgba = colorBtn.get_rgba();
+		rgba.parse(color);
+        colorBtn.set_rgba(rgba);
+        mscOptions[colorBtn._gsettingsVar] = rgba.to_string();
+    });
+
+    return colorReset;
+}
+
+function _newColorButtonBox() {
+    const box = new Gtk.Box({
+        hexpand: true,
+        spacing: 4,
+    });
+    
+    box.is_color_box = true;
+    return box;
+}
+
 function _optionsItem(text, tooltip, widget, variable, options = []) {
     let item = [[]];
     let label;
@@ -662,7 +854,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
 			if (names[options-1])
 				widget.set_text(names[options - 1]);
 
-			widget.set_placeholder_text(_('index'));
+			widget.set_placeholder_text(_('Enter workspace name'));
 
  			widget.connect('changed', (entry) => {
                 if (entry._timeout_id)
@@ -699,12 +891,18 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
                 }
             )
 		});
-	} else if (widget && widget.is_color_btn) {
-		const rgba = widget.get_rgba();
+	} else if (widget && (widget.is_color_btn || widget.is_color_box)) {
+        let colorBtn;
+        if (widget.is_color_box) {
+            colorBtn = widget.colorBtn;
+        } else {
+            colorBtn = widget;
+        }
+		const rgba = colorBtn.get_rgba();
 		rgba.parse(mscOptions[variable]);
-		widget.set_rgba(rgba);
-		widget.connect('color_set', () => {
-			mscOptions[variable] = `${widget.get_rgba().to_string()}`;
+		colorBtn.set_rgba(rgba);
+		colorBtn.connect('color_set', () => {
+			mscOptions[variable] = `${colorBtn.get_rgba().to_string()}`;
 		});
 	}
 

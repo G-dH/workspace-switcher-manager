@@ -13,34 +13,54 @@ const Settings = Me.imports.settings;
 
 let originalWsPopup;
 let origNeighbor;
-var DISPLAY_TIMEOUT;
+
 let mscOptions;
+let STORE_DEFAULT_COLORS;
+
+var DISPLAY_TIMEOUT;
+
 const ws_popup_mode = {
     'DISABLE'   : 0,
     'DEFAULT'   : 1,
-    'INDEX'     : 2,
-    'NAME'      : 3,
-    'APP'       : 4,
-	'NAME_APP'  : 5,
-	'INDEX_APP' : 6,
-	'INDEX_NAME': 7,
+    'CUSTOM'    : 2,
+};
+
+const custom_popup_mode = {
+    'INDEX'     : 0,
+    'NAME'      : 1,
+    'APP'       : 2,
+	'NAME_APP'  : 3,
+	'INDEX_APP' : 4,
+	'INDEX_NAME': 5,
+};
+
+const default_popup_mode = {
+    'ALL'    : 0,
+    'ACTIVE' : 1,
 };
 
 function init() {
 	ExtensionUtils.initTranslations();
 	originalWsPopup = WorkspaceSwitcherPopup.WorkspaceSwitcherPopup;
 	origNeighbor = Meta.Workspace.prototype.get_neighbor;
+	STORE_DEFAULT_COLORS = true;
 }
 
 function enable() {
 	mscOptions = new Settings.MscOptions();
-	mscOptions.connect('changed', updateSettings);
+	mscOptions.connect('changed', _updateSettings);
 	DISPLAY_TIMEOUT = mscOptions.popupTimeout;
 	Meta.Workspace.prototype.get_neighbor = getNeighbour;
-	updateMode();
+	_storeDefaultColors();
+	_updateMode();
 }
 
 function disable() {
+	if  (Main.wm._workspaceSwitcherPopup) {
+		Main.wm._workspaceSwitcherPopup.destroy();
+		Main.wm._workspaceSwitcherPopup = null;
+	}
+
 	mscOptions.destroy();
 	mscOptions = null;
 	WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = originalWsPopup;
@@ -49,22 +69,85 @@ function disable() {
 
 //------------------------------------------------------------------------------
 
-function updateSettings(settings, key) {
-	if (key == 'mode')
-		updateMode();
-	else if (key == 'timeout')
+function _updateSettings(settings, key) {
+	switch (key) {
+	case 'mode':
+		_updateMode();
+		break;
+	case 'timeout':
 		DISPLAY_TIMEOUT = mscOptions.popupTimeout;
+		break;
+	case 'default-colors':
+		return;
+	}
+	_showPopupForPrefs();
 }
 
-function updateMode() {
+function _updateMode() {
 	const mode = mscOptions.popupMode;
 	if (mode === ws_popup_mode.DISABLE) {
 		WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = WorkspaceSwitcherPopupCustom;
 	} else if (mode === ws_popup_mode.DEFAULT) {
 		WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = WorkspaceSwitcherPopupCustom;
-	} else if (mode > ws_popup_mode.DEFAULT) {
+	} else if (mode === ws_popup_mode.CUSTOM) {
 		WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = WorkspaceIndicator;
 	}
+}
+
+function _showPopupForPrefs() {
+	// if user is currently customizing teir popup, show the popup on the screen
+	const wsIndex = global.workspaceManager.get_active_workspace_index();
+	const direction = Meta.MotionDirection.DOWN;
+	const vertical = global.workspaceManager.layout_rows === -1;
+    if (Main.wm._workspaceSwitcherPopup !== null) {
+		Main.wm._workspaceSwitcherPopup.destroy();
+		Main.wm._workspaceSwitcherPopup = null;
+	}
+
+    Main.wm._workspaceSwitcherPopup = new WorkspaceSwitcherPopup.WorkspaceSwitcherPopup();
+    Main.wm._workspaceSwitcherPopup.reactive = false;
+    Main.wm._workspaceSwitcherPopup.connect('destroy', () => {
+        Main.wm._workspaceSwitcherPopup = null;
+    });
+
+	let motion = direction === Meta.MotionDirection.DOWN ? (vertical ? Meta.MotionDirection.DOWN : Meta.MotionDirection.RIGHT)
+    : (vertical ? Meta.MotionDirection.UP   : Meta.MotionDirection.LEFT);
+    Main.wm._workspaceSwitcherPopup.display(motion, wsIndex);
+
+}
+
+function _storeDefaultColors() {
+	const popup = new WorkspaceSwitcherPopup.WorkspaceSwitcherPopup();
+	popup.opacity = 0;
+	const activeIndex = global.workspaceManager.get_active_workspace_index();
+	popup.display(Meta.MotionDirection.UP, activeIndex);
+
+	const containerNode = popup._container.get_theme_node();
+	const activeNode = popup._list.get_children()[activeIndex].get_theme_node();
+
+	const popupBgColor = containerNode.lookup_color('background-color', true)[1];
+	// border color in default theme is set in 'border' element and can not be read directly
+	//const borderColor = inactiveNode.lookup_color('border-color', true)[1].to_string();
+	const borderColor = 'rgb(53,53,53)'; // average of default inactive box and container bordes 31/40
+	const activeFgColor = activeNode.get_foreground_color();
+	const activeBGColor = activeNode.get_background_color();
+
+ 	mscOptions.defaultColors = [
+		 `rgba(${popupBgColor.red},${popupBgColor.green},${popupBgColor.blue},${popupBgColor.alpha})`,
+		 borderColor,
+		 `rgba(${activeFgColor.red},${activeFgColor.green},${activeFgColor.blue},${activeFgColor.alpha})`,
+		 `rgba(${activeBGColor.red},${activeBGColor.green},${activeBGColor.blue},${activeBGColor.alpha})`
+	];
+	if (!mscOptions.defaultPopupBgColor)
+		mscOptions.defaultPopupBgColor = mscOptions.defaultColors[0];
+	if (!mscOptions.defaultPopupBorderColor)
+		mscOptions.defaultPopupBorderColor = mscOptions.defaultColors[1];
+	if (!mscOptions.defaultPopupActiveFgColor)
+		mscOptions.defaultPopupActiveFgColor = mscOptions.defaultColors[2];
+	if (!mscOptions.defaultPopupActiveBgColor)
+		mscOptions.defaultPopupActiveBgColor = mscOptions.defaultColors[3];
+
+	popup.destroy();
 }
 
 function getNeighbour(direction) {
@@ -83,10 +166,11 @@ function indexDown(activeIndex) {
 	if ( activeIndex < global.workspace_manager.n_workspaces - (ignoreLast ? 2 : 1)) {
 		return activeIndex + 1;
 	}
-	if (wraparound)
+	if (wraparound) {
 		return 0;
-	else
+	} else {
 		return activeIndex;
+	}
 }
 
 function indexUp(activeIndex) {
@@ -95,10 +179,16 @@ function indexUp(activeIndex) {
 	if (activeIndex > 0) {
 		return activeIndex - 1;
 	}
-	if (wraparound)
+	if (wraparound) {
 		return global.workspace_manager.n_workspaces - (ignoreLast ? 2 : 1);
-	else
+	} else {
 		return activeIndex;
+	}
+}
+
+function _getWindowApp(metaWindow) {
+	let tracker = Shell.WindowTracker.get_default();
+	return tracker.get_window_app(metaWindow);
 }
 
 var WorkspaceIndicator = GObject.registerClass(
@@ -111,13 +201,14 @@ class WorkspaceIndicator extends St.Label {
 		});
 		Main.uiGroup.add_actor(this);
 		this._timeoutId = 0;
-		this.WS_POPUP_MODE = mscOptions.popupMode;
+		this.WS_POPUP_MODE = mscOptions.customPopupMode;
 		this.connect('destroy', this._onDestroy.bind(this));
 	}
 
 	display(direction, activeWorkspaceIndex) {
-		if (mscOptions.popupMode === ws_popup_mode.DISABLE)
+		if (mscOptions.popupMode === ws_popup_mode.DISABLE) {
 			return false;
+		}
 		this.wsIndex = activeWorkspaceIndex;
 		this._showIndicator();
 	}
@@ -128,41 +219,52 @@ class WorkspaceIndicator extends St.Label {
 		let appName = '';
 
 		this.opacity = 255;
-		if (this._timeoutId)
+		if (this._timeoutId) {
             GLib.source_remove(this._timeoutId);
+		}
 
-		if (this.WS_POPUP_MODE === ws_popup_mode.NAME ||
-			this.WS_POPUP_MODE === ws_popup_mode.NAME_APP ||
-			this.WS_POPUP_MODE === ws_popup_mode.INDEX_NAME) {
+		if (this.WS_POPUP_MODE === custom_popup_mode.NAME ||
+			this.WS_POPUP_MODE === custom_popup_mode.NAME_APP ||
+			this.WS_POPUP_MODE === custom_popup_mode.INDEX_NAME
+		) {
 				const settings = this._getWsNamesSettings();
 				const names = settings.get_strv('workspace-names');
 				if (!text && names.length > this.wsIndex)
 					wsName = names[this.wsIndex];
     	}
-		if (this.WS_POPUP_MODE === ws_popup_mode.APP ||
-			this.WS_POPUP_MODE === ws_popup_mode.NAME_APP ||
-			this.WS_POPUP_MODE === ws_popup_mode.INDEX_APP) {
+		if (this.WS_POPUP_MODE === custom_popup_mode.APP ||
+			this.WS_POPUP_MODE === custom_popup_mode.NAME_APP ||
+			this.WS_POPUP_MODE === custom_popup_mode.INDEX_APP
+		) {
 				const ws = global.workspaceManager.get_workspace_by_index(this.wsIndex);
 					const win = AltTab.getWindows(ws)[0];
 					if (win)
-						appName = this._getWindowApp(win).get_name();
+						appName = _getWindowApp(win).get_name();
 		}
 
-		if (this.WS_POPUP_MODE === ws_popup_mode.NAME)
+		if (this.WS_POPUP_MODE === custom_popup_mode.NAME) {
 			text = wsName;
-		else if (this.WS_POPUP_MODE === ws_popup_mode.APP)
+		}
+		else if (this.WS_POPUP_MODE === custom_popup_mode.APP) {
 			text = appName;
-		else if (this.WS_POPUP_MODE === ws_popup_mode.NAME_APP)
-			if (wsName)
+		}
+		else if (this.WS_POPUP_MODE === custom_popup_mode.NAME_APP) {
+			if (wsName) {
 				text = wsName;
-			else if (appName)
+			}
+			else if (appName) {
 				text = appName;
-			if (appName && wsName)
+			}
+			if (appName && wsName) {
 				text = `${wsName}\n${appName}`;
-		else if (this.WS_POPUP_MODE === ws_popup_mode.INDEX_APP)
-			text = `${this.wsIndex + 1}\n${appName}`;
-		else if (this.WS_POPUP_MODE === ws_popup_mode.INDEX_NAME)
-			text = `${this.wsIndex + 1}\n${wsName}`;
+			}
+		} else if (this.WS_POPUP_MODE === custom_popup_mode.INDEX_APP) {
+			text = `${this.wsIndex + 1}\n${appName ? `${appName}`: _('Empty')}`;
+		} else if (this.WS_POPUP_MODE === custom_popup_mode.INDEX_NAME) {
+			if (wsName) {
+				text = `${this.wsIndex + 1}\n${wsName}`;
+			}
+		}
 
 		let fontSize = mscOptions.fontSize;
 		if (!text) {
@@ -171,46 +273,51 @@ class WorkspaceIndicator extends St.Label {
 		}
 
 		const color = mscOptions.fontColor;
-		const textShadow = 'text-shadow: -2px -2px rgba(255,255,255,0.5)'
+		const textShadow = 'text-shadow: +1px -1px rgb(200, 200, 200)'
 		const shadow = mscOptions.textShadow;
 		
 		this.text = text;
 		this.set_style(`font-size: ${fontSize}em; color: ${color}; ${shadow ? textShadow: ''}`);
 		
 		let geometry
-		if (mscOptions.monitor === 0)
+		if (mscOptions.monitor === 0) {
 			geometry = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
-		else
+		} else {
 			geometry = Main.layoutManager.getWorkAreaForMonitor(global.display.get_current_monitor());
-
+		}
 		let x = Math.floor(geometry.x + (geometry.width * mscOptions.popupHorizontal / 100) - (this.width / 2));
-		if (x < geometry.x)
+		if (x < geometry.x) {
 			x = geometry.x;
-		else if (x + this.width > geometry.x + geometry.width)
+		}
+		else if (x + this.width > geometry.x + geometry.width) {
 			x = geometry.x + geometry.width - this.width;
+		}
 		let y = Math.floor(geometry.y + (geometry.height * mscOptions.popupVertical / 100) - (this.height / 2));
-		if (y < geometry.y)
+		if (y < geometry.y) {
 			y = geometry.y;
-		else if (y + this.height > geometry.y + geometry.height)
+		}
+		else if (y + this.height > geometry.y + geometry.height) {
 			y = geometry.y + geometry.height - this.height;
+		}
 		this.x = x;
 		this.y = y;
-		if (this.width > geometry.width)
+		if (this.width > geometry.width) {
 			this.width = geometry.width;
-		let timeout = mscOptions.popupTimeout;
+		}
 
-		if (!timeout)
-			timeout = 600;
-		this._timeoutId = GLib.timeout_add(
+		if (DISPLAY_TIMEOUT !== 0) {
+			this._timeoutId = GLib.timeout_add(
 				GLib.PRIORITY_DEFAULT,
-				timeout,
+				DISPLAY_TIMEOUT,
 				this._onTimeout.bind(this));
+		}
 	}
 
 	_onDestroy() {
         if (this._timeoutId)
             GLib.source_remove(this._timeoutId);
         this._timeoutId = 0;
+		this._wsNamesSettings = null;
     }
 
 	_onTimeout() {
@@ -232,18 +339,12 @@ class WorkspaceIndicator extends St.Label {
 		}
 		return this._wsNamesSettings;
 	}
-
-	_getWindowApp(metaWindow) {
-		let tracker = Shell.WindowTracker.get_default();
-		return tracker.get_window_app(metaWindow);
-	}
 });
 
 var WorkspaceSwitcherPopupCustom = GObject.registerClass(
 class WorkspaceSwitcherPopupCustom extends WorkspaceSwitcherPopup.WorkspaceSwitcherPopup {
 	_init(){
 		super._init();
-
 	}
 
 	display(direction, activeWorkspaceIndex) {
@@ -252,48 +353,64 @@ class WorkspaceSwitcherPopupCustom extends WorkspaceSwitcherPopup.WorkspaceSwitc
         this._direction = direction;
         this._activeWorkspaceIndex = activeWorkspaceIndex;
 
+		this.popSize = mscOptions.defaultPopupSize / 100;
+		
         this._redisplay();
-        if (this._timeoutId != 0)
+        if (this._timeoutId != 0) {
             GLib.source_remove(this._timeoutId);
-        this._timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, DISPLAY_TIMEOUT, this._onTimeout.bind(this));
+			this._timeoutId = 0;
+		}
+		if (DISPLAY_TIMEOUT !== 0) {
+			this._timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, DISPLAY_TIMEOUT, this._onTimeout.bind(this));
+		}
         GLib.Source.set_name_by_id(this._timeoutId, '[gnome-shell] this._onTimeout');
 
 		this.opacity = Math.floor(mscOptions.defaultPopupOpacity / 100 * 255);
 
-		const popSize = mscOptions.defaultPopupSize / 100;
 
 		if (this._contRadius === undefined) {
 			const listThemeNode = this._list.get_theme_node();
 			const listSpacing = listThemeNode.get_length('spacing');
 			// roundness adjust only for scaled down popups
-			this._listSpacing = Math.min(Math.max(Math.floor(listSpacing * popSize), 6), listSpacing);
+			this._listSpacing = Math.min(Math.max(Math.floor(listSpacing * this.popSize), 4), listSpacing);
 
 			const contRadius = this._container.get_theme_node().get_length('border-radius');
-			this._contRadius = Math.max(Math.floor(contRadius * popSize), 4);
+			this._contRadius = Math.max(Math.floor(contRadius * this.popSize), 3);
 			// I wasn't successful to get original padding for the _container, so I use _list spacing as it's usually the similar value
 			this._contPadding = Math.max(this._listSpacing, 4);
 		}
 
-		/*
-		  possible tweaks:
-		  this._container: 	background-color
-		  					border-radius
-
-		*/
 		this._list.set_style(`spacing: ${this._listSpacing}px;`);
-		this._container.set_style(`padding: ${this._contPadding}px; border-radius: ${this._contRadius}px;`);
+		this._container.set_style(`	padding: ${this._contPadding}px;
+									border-radius: ${this._contRadius}px;
+									background-color: ${mscOptions.defaultPopupBgColor};
+									border-color: ${mscOptions.defaultPopupBorderColor};
+		`);
 		const children = this._list.get_children();
-		children.forEach(c => {
+		for (let i=0; i < children.length; i++) {
 			if (this._boxRadius === undefined) {
-				const theme = c.get_theme_node();
-				this._boxRadius = Math.max(Math.floor(theme.get_length('border-radius') * popSize), 3);
-				this._boxHeight = Math.floor(theme.get_height() * popSize);
-				this._boxBgSize = Math.floor(theme.get_length('background-size') * popSize);
-
+				const theme = children[i].get_theme_node();
+				this._boxRadius = Math.max(Math.floor(theme.get_length('border-radius') * this.popSize), 3);
+				this._boxHeight = Math.floor(theme.get_height() * this.popSize);
+				this._boxBgSize = Math.floor(theme.get_length('background-size') * this.popSize);
 			}
-			
-			c.set_style(`height: ${this._boxHeight}px; background-size: ${this._boxBgSize}px; border-radius: ${this._boxRadius}px;`);
-		});
+
+			if (i == this._activeWorkspaceIndex){
+				children[i].set_style(`	height: ${this._boxHeight}px;
+										background-size: ${this._boxBgSize}px;
+										border-radius: ${this._boxRadius}px;
+										color: ${mscOptions.defaultPopupActiveFgColor};
+										background-color: ${mscOptions.defaultPopupActiveBgColor};
+										border-color: ${mscOptions.defaultPopupBorderColor};
+				`);
+			} else {
+				children[i].set_style(`	height: ${this._boxHeight}px;
+										background-size: ${this._boxBgSize}px;
+										border-radius: ${this._boxRadius}px;
+										border-color: ${mscOptions.defaultPopupBorderColor};
+				`);
+			}
+		}
         this._show();
 		this._setPopupPosition();
     }
@@ -314,20 +431,76 @@ class WorkspaceSwitcherPopupCustom extends WorkspaceSwitcherPopup.WorkspaceSwitc
                 indicator = new St.Bin({ style_class: 'ws-switcher-active-left' });
             else if (i == this._activeWorkspaceIndex && this._direction == Meta.MotionDirection.RIGHT)
                 indicator = new St.Bin({ style_class: 'ws-switcher-active-right' });
-            else
+			// TODO single ws indicator needs to be handled in the container class, disabled for now
+            else if (mscOptions.defaultPopupMode === default_popup_mode.ALL || i === 0)
                 indicator = new St.Bin({ style_class: 'ws-switcher-box' });
 
-            this._list.add_actor(indicator);
+			if (i == this._activeWorkspaceIndex) {
+				const label = this._getCustomLabel();
+				if (label)
+					indicator.set_child(label);
+			}
+			if (indicator)
+            	this._list.add_actor(indicator);
         }
     }
 
 	_setPopupPosition() {
-		let workArea = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
+		let workArea;
+		if (mscOptions.monitor === 0) {
+			workArea = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
+		} else {
+			workArea = Main.layoutManager.getWorkAreaForMonitor(global.display.get_current_monitor());
+		}
 		let [, containerNatHeight] = this._container.get_preferred_height(global.screen_width);
 		let [, containerNatWidth] = this._container.get_preferred_width(containerNatHeight);
 		let h_percent = mscOptions.popupHorizontal;
 		let v_percent = mscOptions.popupVertical;
-		this._container.x = workArea.x + Math.floor((workArea.width - containerNatWidth - this._contPadding) * (h_percent/100));
-		this._container.y = workArea.y + Math.floor((workArea.height - containerNatHeight - this._contPadding) * (v_percent/100));
+		this._container.x = workArea.x + Math.floor((workArea.width - containerNatWidth) * (h_percent/100));
+		this._container.y = workArea.y + Math.floor((workArea.height - containerNatHeight) * (v_percent/100));
+	}
+
+	_getWsNamesSettings() {
+		if (!this._wsNamesSettings) {
+			this._wsNamesSettings = ExtensionUtils.getSettings(
+						'org.gnome.desktop.wm.preferences');
+		}
+		return this._wsNamesSettings;
+	}
+
+	_getCustomLabel(){
+		let label = null;
+		let text = '';//, wsName, appName = '';
+		if (mscOptions.defaultPopupShowWsName) {
+			const settings = this._getWsNamesSettings();
+			const names = settings.get_strv('workspace-names');
+			if (names.length > this._activeWorkspaceIndex) {
+				//wsName = names[this._activeWorkspaceIndex];
+				text += names[this._activeWorkspaceIndex]
+			}
+		}
+		if (mscOptions.defaultPopupShowAppName) {
+			const ws = global.workspaceManager.get_workspace_by_index(this._activeWorkspaceIndex);
+			const win = AltTab.getWindows(ws)[0];
+			
+			if (win) {
+				//appName = this._getWindowApp(win).get_name();
+				if (text) {
+					text += '\n'
+				}
+				text += _getWindowApp(win).get_name();
+			}
+		}
+
+		if (!text) return;
+
+		label = new St.Label({
+			x_align: Clutter.ActorAlign.CENTER,
+			y_align: Clutter.ActorAlign.CENTER,
+			style: `text-align: center; font-size: ${1.2 * this.popSize}em`,
+		});
+		label.set_text(text);
+
+		return label;
 	}
 });

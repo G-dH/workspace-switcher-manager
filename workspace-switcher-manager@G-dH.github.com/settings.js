@@ -45,6 +45,20 @@ var MscOptions = class MscOptions {
         this._gsettings.set_int('mode', int_val);
     }
 
+    get defaultPopupMode() {
+        return this._gsettings.get_int('default-popup-mode');
+    }
+    set defaultPopupMode(int_val) {
+        this._gsettings.set_int('default-popup-mode', int_val);
+    }
+
+    get customPopupMode() {
+        return this._gsettings.get_int('custom-mode');
+    }
+    set customPopupMode(int_val) {
+        this._gsettings.set_int('custom-mode', int_val);
+    }
+
     get monitor() {
         return this._gsettings.get_int('monitor');
     }
@@ -141,5 +155,61 @@ var MscOptions = class MscOptions {
     }
     set defaultPopupOpacity(int_val) {
         this._gsettings.set_int('default-popup-opacity', int_val);
+    }
+
+    get defaultPopupBgColor() {
+        return this._gsettings.get_string('default-popup-bg-color');
+    }
+    set defaultPopupBgColor(string) {
+        this._gsettings.set_string('default-popup-bg-color', string);
+    }
+
+    get defaultPopupBorderColor() {
+        return this._gsettings.get_string('default-popup-border-color');
+    }
+    set defaultPopupBorderColor(string) {
+        this._gsettings.set_string('default-popup-border-color', string);
+    }
+
+    get defaultPopupActiveFgColor() {
+        return this._gsettings.get_string('default-popup-active-fg-color');
+    }
+    set defaultPopupActiveFgColor(string) {
+        this._gsettings.set_string('default-popup-active-fg-color', string);
+    }
+
+    get defaultPopupActiveBgColor() {
+        return this._gsettings.get_string('default-popup-active-bg-color');
+    }
+    set defaultPopupActiveBgColor(string) {
+        this._gsettings.set_string('default-popup-active-bg-color', string);
+    }
+
+    get activePrefsPage() {
+        return this._gsettings.get_string('active-prefs-page');
+    }
+    set activePrefsPage(string) {
+        this._gsettings.set_string('active-prefs-page', string);
+    }
+
+    get defaultColors() {
+        return this._gsettings.get_strv('default-colors');
+    }
+    set defaultColors(array) {
+        this._gsettings.set_strv('default-colors', array);
+    }
+
+    get defaultPopupShowWsName() {
+        return this._gsettings.get_boolean('default-popup-show-ws-name');
+    }
+    set defaultPopupShowWsName(bool_val) {
+        this._gsettings.set_boolean('default-popup-show-ws-name', bool_val);
+    }
+
+    get defaultPopupShowAppName() {
+        return this._gsettings.get_boolean('default-popup-show-app-name');
+    }
+    set defaultPopupShowAppName(bool_val) {
+        this._gsettings.set_boolean('default-popup-show-app-name', bool_val);
     }
 };
