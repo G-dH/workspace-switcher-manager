@@ -29,8 +29,8 @@ function buildPrefsWidget() {
 
     
     const commonOptionsPage = new OptionsPageWSPM(_getCommonOptionsList());
-    const defaultPopupOptionsPage = new OptionsPageWSPM(_getDefaultOptionsList());
-    const customPopupOptionsPage = new OptionsPageWSPM(_getCustomPopupOptionsList());
+    const contentOptionsPage = new OptionsPageWSPM(_getContentOptionsList());
+    const appearanceOptionsPage = new OptionsPageWSPM(_getAppearanceOptionsList());
     const workspacesOptionsPage = new OptionsPageWSPM(_getWorkspacesOptionsList());
     
     optionsPage.append_page(commonOptionsPage, new Gtk.Label({
@@ -39,14 +39,14 @@ function buildPrefsWidget() {
         visible: true,
     }));
 
-    optionsPage.append_page(defaultPopupOptionsPage, new Gtk.Label({
-        label: _('Default Popup'),
+    optionsPage.append_page(contentOptionsPage, new Gtk.Label({
+        label: _('Content'),
         halign: Gtk.Align.START,
         visible: true,
     }));
 
-	optionsPage.append_page(customPopupOptionsPage, new Gtk.Label({
-        label: _('Custom Popup'),
+	optionsPage.append_page(appearanceOptionsPage, new Gtk.Label({
+        label: _('Appearance'),
         halign: Gtk.Align.START,
         visible: true,
     }));
@@ -65,10 +65,10 @@ function buildPrefsWidget() {
         case commonOptionsPage:
             mscOptions.activePrefsPage = 'common'
             break;
-        case defaultPopupOptionsPage:
+        case contentOptionsPage:
             mscOptions.activePrefsPage = 'defaultPopup';
             break;
-        case customPopupOptionsPage:
+        case appearanceOptionsPage:
             mscOptions.activePrefsPage = 'customPopup';
             break;
         default:
@@ -89,33 +89,27 @@ function _getCommonOptionsList() {
             _makeTitle(_('Behavior')),
         )
     );
-//-----------------------------------------------------	
+    //-----------------------------------------------------	
     optionsList.push(
 		_optionsItem(
 			_('Workspace Switcher Popup Mode'),
             null,
             _newComboBox(),
             'popupMode',
-		   [[_('Disable'),            0],
-			[_('Default (modified)'), 1],
-            [_('Custom'),             2]]
-/*			[_('Index'),              2],
-			[_('WS Name'),            3],
-			[_('App Name'),           4],
-            [_('WS Name + App Name'), 5],
-            [_('Index + App Name'),   6],
-            [_('Index + WS Name'),    7],]*/
+            [[_('Show All Workspaces'), 0],
+             [_('Show Active Workspace Only'), 1],
+             [_('Disable'), 2]]
 		)
 	);
-//-----------------------------------------------------
+    //-----------------------------------------------------
     optionsList.push(
 		_optionsItem(
 			_('Monitor'),
-            _('The monitor on which the workspace popup should appear. The Current monitor is determined by mouse pointer'),
+            _('The monitor on which the workspace popup should appear. The Current monitor is determined by the mouse pointer.'),
             _newComboBox(),
             'monitor',
-		   [[_('Primary'),          0],
-			[_('Current'),          1]]
+		   [[_('Primary'), 0],
+			[_('Current'), 1]]
 		)
 	);
 //-----------------------------------------------------
@@ -153,6 +147,25 @@ function _getCommonOptionsList() {
             _("Time after which the popup fade out"),
             tScale,
             'popupTimeout'
+        )
+    );
+//-----------------------------------------------------
+    let fadeOutAdjustment = new Gtk.Adjustment({
+        upper: 1500,
+        lower: 10,
+        step_increment: 10,
+        page_increment: 100,
+    });
+
+    const fadeScale = _newScale(fadeOutAdjustment);
+    fadeScale.add_mark(500, Gtk.PositionType.TOP, null);
+
+    optionsList.push(
+        _optionsItem(
+            _('Fade Out Time (ms)'),
+            _('Durarion of fade out animation.'),
+            fadeScale,
+            'fadeOutTime'
         )
     );
 
@@ -205,25 +218,23 @@ function _getCommonOptionsList() {
 }
 // ////////////////////////////////////////////////
 
-function _getDefaultOptionsList() {
+function _getContentOptionsList() {
 	const optionsList = [];
 
     optionsList.push(
 		_optionsItem(
-			_makeTitle(_('Behavior')),
+			_makeTitle(_('Workspace Identifiers')),
 		)
 	);
     //-----------------------------------------------------
     optionsList.push(
-		_optionsItem(
-			_('Mode'),
-            null,
-            _newComboBox(),
-            'defaultPopupMode',
-			[[_('Show All Workspaces'), 0],
-			 [_('Show Active Workspace Only'), 1]]
-		)
-	);
+        _optionsItem(
+             _('Show Workspace Index'),
+             _('Highlighted active workspace indicator will show its index.'),
+             _newGtkSwitch(),
+             'defaultPopupShowWsIndex'
+         )
+     );
     //-----------------------------------------------------
     optionsList.push(
        _optionsItem(
@@ -237,21 +248,29 @@ function _getDefaultOptionsList() {
     optionsList.push(
         _optionsItem(
             _('Show Active App Name'),
-            _('Highlighted active workspace indicator will show name of the last used application on active workspace.'),
+            _('Highlighted active workspace indicator will show a name of the last used application on active workspace.'),
             _newGtkSwitch(),
             'defaultPopupShowAppName'
          )
      );
-    //-----------------------------------------------------
-	optionsList.push(
+   
+    return optionsList;
+}
+
+// ////////////////////////////////////////////////
+
+function _getAppearanceOptionsList() {
+	const optionsList = [];
+
+ 	optionsList.push(
 		_optionsItem(
-			_makeTitle(_('Appearance')),
+			_makeTitle(_('Size and text')),
 			null
 		)
 	);
     //-----------------------------------------------------
     let dpSizeAdjustment = new Gtk.Adjustment({
-        upper: 200,
+        upper: 1000,
         lower: 10,
         step_increment: 5,
         page_increment: 10,
@@ -262,12 +281,75 @@ function _getDefaultOptionsList() {
 
     optionsList.push(
         _optionsItem(
-            _('Scale (%)'),
+            _('Popup Scale (%)'),
             _("Sets the size of the popup relative to the original."),
             dpSize,
             'defaultPopupSize'
         )
     );
+    //-----------------------------------------------------
+	const fontSizeAdjustment = new Gtk.Adjustment({
+		lower: 50,
+		upper: 300,
+		step_increment: 1,
+		page_increment: 10,
+	});
+
+    const fsScale = _newScale(fontSizeAdjustment);
+    fsScale.add_mark(100, Gtk.PositionType.TOP, null);
+
+    optionsList.push(
+        _optionsItem(
+            _('Font Scale Finetune (%)'),
+            _('Size resizes acording to the popup sclae, use this scale to precisely adjust the text size.'),
+            fsScale,
+            'fontSize',
+        )
+    );
+    //-----------------------------------------------------
+    const idxSizeAdjustment = new Gtk.Adjustment({
+		lower: 50,
+		upper: 500,
+		step_increment: 1,
+		page_increment: 10,
+	});
+
+    const idxScale = _newScale(idxSizeAdjustment);
+    idxScale.add_mark(100, Gtk.PositionType.TOP, null);
+
+    optionsList.push(
+        _optionsItem(
+            _('Index Scale Finetune (%)'),
+            _('If only "Show Workspace Index" text content option is active, this scale takes effect. Single digit always looks smaller then longer text with the same character size.'),
+            idxScale,
+            'indexSize',
+        )
+    );
+    //-----------------------------------------------------
+    optionsList.push(
+        _optionsItem(
+            _('Text Shadow'),
+            _('Shadow helps text visibility on the background with the similar color.'),
+            _newGtkSwitch(),
+            'textShadow'
+        )
+    );
+    //-----------------------------------------------------
+    optionsList.push(
+        _optionsItem(
+            _('Text Weight Bold'),
+            null,
+            _newGtkSwitch(),
+            'textBold'
+        )
+    );
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++
+    optionsList.push(
+		_optionsItem(
+			_makeTitle(_('Colors')),
+			null
+		)
+	);
     //-----------------------------------------------------
     const opacityAdjustment = new Gtk.Adjustment({
 		lower: 10,
@@ -299,7 +381,7 @@ function _getDefaultOptionsList() {
 
 	optionsList.push(
         _optionsItem(
-            _('Background Color'),
+            _('Background color / opacity'),
             null,
             bgColorBox,
             'defaultPopupBgColor',
@@ -317,7 +399,7 @@ function _getDefaultOptionsList() {
 
 	optionsList.push(
         _optionsItem(
-            _('Border color'),
+            _('Border color / opacity'),
             null,
             borderColorBox,
             'defaultPopupBorderColor',
@@ -335,8 +417,8 @@ function _getDefaultOptionsList() {
 
 	optionsList.push(
         _optionsItem(
-            _('Active WS Foreground color'),
-            _('If current Shell theme draws something on the active box, like an arrow'),
+            _('Active WS Foreground color / opacity'),
+            _('Text and other active workspace box overlays'),
             activeFgColorBox,
             'defaultPopupActiveFgColor',
         )
@@ -353,127 +435,13 @@ function _getDefaultOptionsList() {
 
 	optionsList.push(
         _optionsItem(
-            _('Active WS Background color'),
+            _('Active WS Background color  / opacity'),
             null,
             activeBgColorBox,
             'defaultPopupActiveBgColor',
         )
     );
 
-    return optionsList;
-}
-
-// ////////////////////////////////////////////////
-
-function _getCustomPopupOptionsList() {
-	const optionsList = [];
-
-    optionsList.push(
-		_optionsItem(
-			_makeTitle(_('Behavior')),
-		)
-	);
-    //-------------------------------------------------
-    optionsList.push(
-		_optionsItem(
-			_('Mode'),
-            null,
-            _newComboBox(),
-            'customPopupMode',
-			[[_('Index'),             0],
-			[_('WS Name'),            1],
-			[_('App Name'),           2],
-            [_('WS Name + App Name'), 3],
-            [_('Index + App Name'),   4],
-            [_('Index + WS Name'),    5]]
-		)
-	);
-    //------------------------------------------------
-	optionsList.push(
-		_optionsItem(
-			_makeTitle(_('Appearance')),
-		)
-	);
-//-----------------------------------------------------
-	const fontSizeAdjustment = new Gtk.Adjustment({
-		lower: 1,
-		upper: 30,
-		step_increment: 1,
-		page_increment: 5,
-	});
-
-    const fsScale = _newScale(fontSizeAdjustment);
-    fsScale.add_mark(10, Gtk.PositionType.TOP, null);
-
-    optionsList.push(
-        _optionsItem(
-            _('Font Size (em)'),
-            _('Size for all modes except "Index".'),
-            fsScale,
-            'fontSize',
-        )
-    );
-//-----------------------------------------------------
-    const idxSizeAdjustment = new Gtk.Adjustment({
-		lower: 1,
-		upper: 30,
-		step_increment: 1,
-		page_increment: 5,
-	});
-
-    const idxScale = _newScale(idxSizeAdjustment);
-    idxScale.add_mark(15, Gtk.PositionType.TOP, null);
-
-    optionsList.push(
-        _optionsItem(
-            _('Index Size (em)'),
-            _('Size for "Index mode".'),
-            idxScale,
-            'indexSize',
-        )
-    );
-//-----------------------------------------------------
-	const colorBtn = new Gtk.ColorButton();
-	colorBtn.set_use_alpha(true);
-	colorBtn.is_color_btn = true;
-
-
-	optionsList.push(
-        _optionsItem(
-            _('Color / Opacity'),
-            null,
-            colorBtn,
-            'fontColor',
-        )
-    );
-//-----------------------------------------------------
-    optionsList.push(
-        _optionsItem(
-            _('Text Shadow'),
-            _('Shadow helps text visibility on the background with the similar color.'),
-            _newGtkSwitch(),
-            'textShadow'
-        )
-    );
-//-----------------------------------------------------
-    let fadeOutAdjustment = new Gtk.Adjustment({
-        upper: 1500,
-        lower: 10,
-        step_increment: 10,
-        page_increment: 100,
-    });
-
-    const fadeScale = _newScale(fadeOutAdjustment);
-    fadeScale.add_mark(500, Gtk.PositionType.TOP, null);
-
-    optionsList.push(
-        _optionsItem(
-            _('Fade Out Time (ms)'),
-            _('Durarion of fade out animation.'),
-            fadeScale,
-            'fadeOutTime'
-        )
-    );
 //-----------------------------------------------------
     return optionsList;
 }

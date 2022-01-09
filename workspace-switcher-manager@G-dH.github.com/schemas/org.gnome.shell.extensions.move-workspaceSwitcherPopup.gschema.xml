@@ -13,12 +13,6 @@
       <description></description>
     </key>
     <key type="i" name="mode">
-      <default>1</default>
-    </key>
-    <key type="i" name="custom-mode">
-      <default>4</default>
-    </key>
-    <key type="i" name="default-popup-mode">
       <default>0</default>
     </key>
     <key type="i" name="monitor">
@@ -34,16 +28,19 @@
       <default>false</default>
     </key>
     <key type="i" name="font-size">
-      <default>10</default>
+      <default>100</default>
     </key>
     <key type="i" name="index-size">
-      <default>15</default>
+      <default>100</default>
     </key>
     <key type="s" name="color">
       <default>'rgba(0,0,0,0.5)'</default>
     </key>
     <key type="b" name="text-shadow">
       <default>true</default>
+    </key>
+    <key type="b" name="text-bold">
+      <default>false</default>
     </key>
     <key type="i" name="fade-out-time">
       <default>300</default>
@@ -71,6 +68,9 @@
     </key>
     <key type="as" name="default-colors">
       <default>[]</default>
+    </key>
+    <key type="b" name="default-popup-show-ws-index">
+      <default>true</default>
     </key>
     <key type="b" name="default-popup-show-ws-name">
       <default>false</default>

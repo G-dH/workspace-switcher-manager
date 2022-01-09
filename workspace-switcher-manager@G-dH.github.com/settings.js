@@ -45,20 +45,6 @@ var MscOptions = class MscOptions {
         this._gsettings.set_int('mode', int_val);
     }
 
-    get defaultPopupMode() {
-        return this._gsettings.get_int('default-popup-mode');
-    }
-    set defaultPopupMode(int_val) {
-        this._gsettings.set_int('default-popup-mode', int_val);
-    }
-
-    get customPopupMode() {
-        return this._gsettings.get_int('custom-mode');
-    }
-    set customPopupMode(int_val) {
-        this._gsettings.set_int('custom-mode', int_val);
-    }
-
     get monitor() {
         return this._gsettings.get_int('monitor');
     }
@@ -129,6 +115,13 @@ var MscOptions = class MscOptions {
         this._gsettings.set_boolean('text-shadow', bool_val);
     }
 
+    get textBold() {
+        return this._gsettings.get_boolean('text-bold');
+    }
+    set textBold(bool_val) {
+        this._gsettings.set_boolean('text-bold', bool_val);
+    }
+
     get fadeOutTime() {
         return this._gsettings.get_int('fade-out-time');
     }
@@ -197,6 +190,13 @@ var MscOptions = class MscOptions {
     }
     set defaultColors(array) {
         this._gsettings.set_strv('default-colors', array);
+    }
+
+    get defaultPopupShowWsIndex() {
+        return this._gsettings.get_boolean('default-popup-show-ws-index');
+    }
+    set defaultPopupShowWsIndex(bool_val) {
+        this._gsettings.set_boolean('default-popup-show-ws-index', bool_val);
     }
 
     get defaultPopupShowWsName() {
