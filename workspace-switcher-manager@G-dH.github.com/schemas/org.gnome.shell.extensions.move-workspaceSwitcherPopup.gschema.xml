@@ -33,34 +33,31 @@
     <key type="i" name="index-size">
       <default>100</default>
     </key>
-    <key type="s" name="color">
-      <default>'rgba(0,0,0,0.5)'</default>
-    </key>
     <key type="b" name="text-shadow">
-      <default>true</default>
+      <default>false</default>
     </key>
     <key type="b" name="text-bold">
-      <default>false</default>
+      <default>true</default>
     </key>
     <key type="i" name="fade-out-time">
       <default>300</default>
     </key>
-    <key type="i" name="default-popup-size">
+    <key type="i" name="popup-size">
       <default>50</default>
     </key>
-    <key type="i" name="default-popup-opacity">
-      <default>100</default>
+    <key type="i" name="popup-opacity">
+      <default>90</default>
     </key>
-    <key type="s" name="default-popup-bg-color">
+    <key type="s" name="popup-bg-color">
       <default>''</default>
     </key>
-    <key type="s" name="default-popup-border-color">
+    <key type="s" name="popup-border-color">
       <default>''</default>
     </key>
-    <key type="s" name="default-popup-active-fg-color">
+    <key type="s" name="popup-active-fg-color">
       <default>''</default>
     </key>
-    <key type="s" name="default-popup-active-bg-color">
+    <key type="s" name="popup-active-bg-color">
       <default>''</default>
     </key>
     <key type="s" name="active-prefs-page">
@@ -69,14 +66,26 @@
     <key type="as" name="default-colors">
       <default>[]</default>
     </key>
-    <key type="b" name="default-popup-show-ws-index">
+    <key type="b" name="active-show-ws-index">
       <default>true</default>
     </key>
-    <key type="b" name="default-popup-show-ws-name">
+    <key type="b" name="active-show-ws-name">
       <default>false</default>
     </key>
-    <key type="b" name="default-popup-show-app-name">
+    <key type="b" name="active-show-app-name">
       <default>true</default>
+    </key>
+    <key type="b" name="inactive-show-ws-index">
+      <default>true</default>
+    </key>
+    <key type="b" name="inactive-show-ws-name">
+      <default>false</default>
+    </key>
+    <key type="b" name="inactive-show-app-name">
+      <default>true</default>
+    </key>
+    <key type="b" name="modifiers-hide-popup">
+      <default>false</default>
     </key>
   </schema>
 </schemalist>

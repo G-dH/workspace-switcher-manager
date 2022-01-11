@@ -27,43 +27,40 @@ function buildPrefsWidget() {
     });
 
 
-    
-    const commonOptionsPage = new OptionsPageWSPM(_getCommonOptionsList());
-    const contentOptionsPage = new OptionsPageWSPM(_getContentOptionsList());
+
+    const generalOptionsPage    = new OptionsPageWSPM(_getGeneralOptionsList());
     const appearanceOptionsPage = new OptionsPageWSPM(_getAppearanceOptionsList());
+    const contentOptionsPage    = new OptionsPageWSPM(_getContentOptionsList());
     const workspacesOptionsPage = new OptionsPageWSPM(_getWorkspacesOptionsList());
-    
-    optionsPage.append_page(commonOptionsPage, new Gtk.Label({
-        label: _('Common'),
+
+    optionsPage.append_page(generalOptionsPage, new Gtk.Label({
+        label: _('General'),
         halign: Gtk.Align.START,
         visible: true,
     }));
+
+        optionsPage.append_page(appearanceOptionsPage, new Gtk.Label({
+            label: _('Popup Appearance'),
+            halign: Gtk.Align.START,
+            visible: true,
+        }));
 
     optionsPage.append_page(contentOptionsPage, new Gtk.Label({
-        label: _('Content'),
-        halign: Gtk.Align.START,
-        visible: true,
-    }));
-
-	optionsPage.append_page(appearanceOptionsPage, new Gtk.Label({
-        label: _('Appearance'),
+        label: _('Popup Content'),
         halign: Gtk.Align.START,
         visible: true,
     }));
 
     optionsPage.append_page(workspacesOptionsPage, new Gtk.Label({
-        label: _('Workspaces'),
+        label: _('Workspace Names'),
         halign: Gtk.Align.START,
         visible: true,
     }));
 
-    // currently customizing popup should appear on the screen
-    mscOptions.activePrefsPage = 'common';
-    optionsPage.connect('destroy', () => mscOptions.activePrefsPage = '');
     /*optionsPage.connect('switch-page', (ntb, page, index) => {
         switch (page) {
-        case commonOptionsPage:
-            mscOptions.activePrefsPage = 'common'
+        case generalOptionsPage:
+            mscOptions.activePrefsPage = 'general'
             break;
         case contentOptionsPage:
             mscOptions.activePrefsPage = 'defaultPopup';
@@ -79,14 +76,14 @@ function buildPrefsWidget() {
     return optionsPage;
 }
 
-function _getCommonOptionsList() {
+function _getGeneralOptionsList() {
     const optionsList = [];
     // options item format:
     // [text, tooltip, widget, settings-variable, options for combo]
 
     optionsList.push(
         _optionsItem(
-            _makeTitle(_('Behavior')),
+            _makeTitle(_('Popup Behavior')),
         )
     );
     //-----------------------------------------------------	
@@ -105,31 +102,13 @@ function _getCommonOptionsList() {
     optionsList.push(
 		_optionsItem(
 			_('Monitor'),
-            _('The monitor on which the workspace popup should appear. The Current monitor is determined by the mouse pointer.'),
+            _('The monitor on which the workspace popup should appear. The Current monitor is determined by the mouse pointer position.'),
             _newComboBox(),
             'monitor',
 		   [[_('Primary'), 0],
 			[_('Current'), 1]]
 		)
 	);
-//-----------------------------------------------------
-	optionsList.push(
-        _optionsItem(
-            _('Wraparound'),
-            _('Whether the switcher should continue from the last workspace to the first one and vice versa.'),
-            _newGtkSwitch(),
-            'wsSwitchWrap'
-        )
-    );
-//-----------------------------------------------------
-    optionsList.push(
-        _optionsItem(
-            _('Ignore last (empty) workspace'),
-            null,
-            _newGtkSwitch(),
-            'wsSwitchIgnoreLast'
-        )
-    );
 //-----------------------------------------------------
 	let popupTimeoutAdjustment = new Gtk.Adjustment({
         upper: 2000,
@@ -143,13 +122,13 @@ function _getCommonOptionsList() {
 
     optionsList.push(
         _optionsItem(
-            _('Popup Duration (ms) (0 for always visible)'),
+            _('Popup Duration (ms)'),
             _("Time after which the popup fade out"),
             tScale,
             'popupTimeout'
         )
     );
-//-----------------------------------------------------
+    //-----------------------------------------------------
     let fadeOutAdjustment = new Gtk.Adjustment({
         upper: 1500,
         lower: 10,
@@ -168,12 +147,20 @@ function _getCommonOptionsList() {
             'fadeOutTime'
         )
     );
-
+    //-----------------------------------------------------
+	optionsList.push(
+        _optionsItem(
+            _(`Display until modifier keys released`),
+            _('Keeps the popup on the screen until modifier keys (Shift, Ctrl, Super, Alt) are released. Similar as Alt-Tab switcher works.'),
+            _newGtkSwitch(),
+            'modifiersHidePopup'
+        )
+    );
 //-----------------------------------------------------
 
 	optionsList.push(
 		_optionsItem(
-			_makeTitle(_('Position')),
+			_makeTitle(_('Popup Position')),
 		)
 	);
 //-----------------------------------------------------
@@ -213,6 +200,62 @@ function _getCommonOptionsList() {
             'popupVertical',
         )
     );
+    //-----------------------------------------------------
+    optionsList.push(
+        _optionsItem(
+            _makeTitle(_('Switcher')),
+        )
+    );
+    //-----------------------------------------------------
+    optionsList.push(
+		_optionsItem(
+			_('Switcher Mode'),
+            _(`Dynamic - workspaces can be created on demand, and are automaticaly removed when empty\n
+Static - number of workspaces is fixed, and you can set the number below\n
+This option is backed by internal GNOME gsettings key and can be modified by other applications.`),
+            _newComboBox(),
+            'switcherMode',
+		   [[_('Dynamic'), 0],
+			[_('Static'),  1]]
+		)
+	);
+    //-----------------------------------------------------
+    const numAdjustment = new Gtk.Adjustment({
+		lower: 1,
+		upper: 36,
+		step_increment: 1,
+		page_increment: 5,
+	});
+
+    const numScale = _newScale(numAdjustment);
+    numScale.add_mark(6, Gtk.PositionType.TOP, null);
+
+    optionsList.push(
+        _optionsItem(
+            _('Number of workspaces for Static mode.'),
+            _('Max number of 36 is given by GNOME. This option is backed by internal GNOME gsettings key and can be modified by other applications.'),
+            numScale,
+            'numWorkspaces'
+        )
+    );
+    //-----------------------------------------------------
+	optionsList.push(
+        _optionsItem(
+            _('Wraparound'),
+            _('Whether the switcher should continue from the last workspace to the first one and vice versa.'),
+            _newGtkSwitch(),
+            'wsSwitchWrap'
+        )
+    );
+    //-----------------------------------------------------
+    optionsList.push(
+        _optionsItem(
+            _('Ignore last (empty) workspace'),
+            null,
+            _newGtkSwitch(),
+            'wsSwitchIgnoreLast'
+        )
+    );
 
     return optionsList;
 }
@@ -223,7 +266,7 @@ function _getContentOptionsList() {
 
     optionsList.push(
 		_optionsItem(
-			_makeTitle(_('Workspace Identifiers')),
+			_makeTitle(_('Active Workspace Identifiers')),
 		)
 	);
     //-----------------------------------------------------
@@ -232,7 +275,7 @@ function _getContentOptionsList() {
              _('Show Workspace Index'),
              _('Highlighted active workspace indicator will show its index.'),
              _newGtkSwitch(),
-             'defaultPopupShowWsIndex'
+             'activeShowWsIndex'
          )
      );
     //-----------------------------------------------------
@@ -241,7 +284,7 @@ function _getContentOptionsList() {
             _('Show Workspace Name'),
             _('Highlighted active workspace indicator will show workspace name if the name is set.'),
             _newGtkSwitch(),
-            'defaultPopupShowWsName'
+            'activeShowWsName'
         )
     );
     //-----------------------------------------------------
@@ -250,10 +293,44 @@ function _getContentOptionsList() {
             _('Show Active App Name'),
             _('Highlighted active workspace indicator will show a name of the last used application on active workspace.'),
             _newGtkSwitch(),
-            'defaultPopupShowAppName'
+            'activeShowAppName'
          )
      );
-   
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++
+    optionsList.push(
+		_optionsItem(
+			_makeTitle(_('Inactive Workspace Identifiers')),
+		)
+	);
+    //-----------------------------------------------------
+    optionsList.push(
+        _optionsItem(
+             _('Show Workspace Index'),
+             _('Highlighted active workspace indicator will show its index.'),
+             _newGtkSwitch(),
+             'inactiveShowWsIndex'
+         )
+     );
+    //-----------------------------------------------------
+    optionsList.push(
+       _optionsItem(
+            _('Show Workspace Name'),
+            _('Highlighted active workspace indicator will show workspace name if the name is set.'),
+            _newGtkSwitch(),
+            'inactiveShowWsName'
+        )
+    );
+    //-----------------------------------------------------
+    optionsList.push(
+        _optionsItem(
+            _('Show Active App Name'),
+            _('Highlighted active workspace indicator will show a name of the last used application on active workspace.'),
+            _newGtkSwitch(),
+            'inactiveShowAppName'
+         )
+     );
+
     return optionsList;
 }
 
@@ -264,7 +341,7 @@ function _getAppearanceOptionsList() {
 
  	optionsList.push(
 		_optionsItem(
-			_makeTitle(_('Size and text')),
+			_makeTitle(_('Size')),
 			null
 		)
 	);
@@ -281,12 +358,19 @@ function _getAppearanceOptionsList() {
 
     optionsList.push(
         _optionsItem(
-            _('Popup Scale (%)'),
+            _('Scale (%)'),
             _("Sets the size of the popup relative to the original."),
             dpSize,
             'defaultPopupSize'
         )
     );
+    //-----------------------------------------------------
+    optionsList.push(
+		_optionsItem(
+			_makeTitle(_('Text')),
+			null
+		)
+	);
     //-----------------------------------------------------
 	const fontSizeAdjustment = new Gtk.Adjustment({
 		lower: 50,
@@ -320,12 +404,12 @@ function _getAppearanceOptionsList() {
     optionsList.push(
         _optionsItem(
             _('Index Scale Finetune (%)'),
-            _('If only "Show Workspace Index" text content option is active, this scale takes effect. Single digit always looks smaller then longer text with the same character size.'),
+            _('If only "Show Workspace Index" text content option is active, this scale takes effect. Single digit always looks smaller then longer text with the same font size.'),
             idxScale,
             'indexSize',
         )
     );
-    //-----------------------------------------------------
+     //-----------------------------------------------------
     optionsList.push(
         _optionsItem(
             _('Text Shadow'),
@@ -359,7 +443,7 @@ function _getAppearanceOptionsList() {
 	});
 
     const opacityScale = _newScale(opacityAdjustment);
-    opacityScale.add_mark(100, Gtk.PositionType.TOP, null);
+    opacityScale.add_mark(90, Gtk.PositionType.TOP, null);
 
     optionsList.push(
         _optionsItem(
@@ -754,7 +838,7 @@ function _newColorButtonBox() {
         hexpand: true,
         spacing: 4,
     });
-    
+
     box.is_color_box = true;
     return box;
 }
@@ -821,7 +905,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
 			if (names[options-1])
 				widget.set_text(names[options - 1]);
 
-			widget.set_placeholder_text(_('Enter workspace name'));
+			widget.set_placeholder_text(_('workspace name'));
 
  			widget.connect('changed', (entry) => {
                 if (entry._timeout_id)

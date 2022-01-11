@@ -28,10 +28,22 @@ var MscOptions = class MscOptions {
     }
 
     _getWsNamesSettings() {
-		const wsNamesSettings = ExtensionUtils.getSettings(
-						'org.gnome.desktop.wm.preferences');
-		return wsNamesSettings;
+		const settings = ExtensionUtils.getSettings(
+						    'org.gnome.desktop.wm.preferences');
+		return settings;
 	}
+
+    _getMutterSettings() {
+        const settings = ExtensionUtils.getSettings(
+                            'org.gnome.mutter');
+        return settings;
+    }
+
+    _getDesktopWmSettings() {
+        const settings = ExtensionUtils.getSettings(
+            'org.gnome.desktop.wm.preferences');
+        return settings;
+    }
 
     destroy() {
         this._connectionIds.forEach(id => this._gsettings.disconnect(id));
@@ -137,45 +149,45 @@ var MscOptions = class MscOptions {
     }
 
     get defaultPopupSize() {
-        return this._gsettings.get_int('default-popup-size');
+        return this._gsettings.get_int('popup-size');
     }
     set defaultPopupSize(int_val) {
-        this._gsettings.set_int('default-popup-size', int_val);
+        this._gsettings.set_int('popup-size', int_val);
     }
 
     get defaultPopupOpacity() {
-        return this._gsettings.get_int('default-popup-opacity');
+        return this._gsettings.get_int('popup-opacity');
     }
     set defaultPopupOpacity(int_val) {
-        this._gsettings.set_int('default-popup-opacity', int_val);
+        this._gsettings.set_int('popup-opacity', int_val);
     }
 
     get defaultPopupBgColor() {
-        return this._gsettings.get_string('default-popup-bg-color');
+        return this._gsettings.get_string('popup-bg-color');
     }
     set defaultPopupBgColor(string) {
-        this._gsettings.set_string('default-popup-bg-color', string);
+        this._gsettings.set_string('popup-bg-color', string);
     }
 
     get defaultPopupBorderColor() {
-        return this._gsettings.get_string('default-popup-border-color');
+        return this._gsettings.get_string('popup-border-color');
     }
     set defaultPopupBorderColor(string) {
-        this._gsettings.set_string('default-popup-border-color', string);
+        this._gsettings.set_string('popup-border-color', string);
     }
 
     get defaultPopupActiveFgColor() {
-        return this._gsettings.get_string('default-popup-active-fg-color');
+        return this._gsettings.get_string('popup-active-fg-color');
     }
     set defaultPopupActiveFgColor(string) {
-        this._gsettings.set_string('default-popup-active-fg-color', string);
+        this._gsettings.set_string('popup-active-fg-color', string);
     }
 
     get defaultPopupActiveBgColor() {
-        return this._gsettings.get_string('default-popup-active-bg-color');
+        return this._gsettings.get_string('popup-active-bg-color');
     }
     set defaultPopupActiveBgColor(string) {
-        this._gsettings.set_string('default-popup-active-bg-color', string);
+        this._gsettings.set_string('popup-active-bg-color', string);
     }
 
     get activePrefsPage() {
@@ -192,24 +204,72 @@ var MscOptions = class MscOptions {
         this._gsettings.set_strv('default-colors', array);
     }
 
-    get defaultPopupShowWsIndex() {
-        return this._gsettings.get_boolean('default-popup-show-ws-index');
+    get activeShowWsIndex() {
+        return this._gsettings.get_boolean('active-show-ws-index');
     }
-    set defaultPopupShowWsIndex(bool_val) {
-        this._gsettings.set_boolean('default-popup-show-ws-index', bool_val);
-    }
-
-    get defaultPopupShowWsName() {
-        return this._gsettings.get_boolean('default-popup-show-ws-name');
-    }
-    set defaultPopupShowWsName(bool_val) {
-        this._gsettings.set_boolean('default-popup-show-ws-name', bool_val);
+    set activeShowWsIndex(bool_val) {
+        this._gsettings.set_boolean('active-show-ws-index', bool_val);
     }
 
-    get defaultPopupShowAppName() {
-        return this._gsettings.get_boolean('default-popup-show-app-name');
+    get activeShowWsName() {
+        return this._gsettings.get_boolean('active-show-ws-name');
     }
-    set defaultPopupShowAppName(bool_val) {
-        this._gsettings.set_boolean('default-popup-show-app-name', bool_val);
+    set activeShowWsName(bool_val) {
+        this._gsettings.set_boolean('active-show-ws-name', bool_val);
+    }
+
+    get activeShowAppName() {
+        return this._gsettings.get_boolean('active-show-app-name');
+    }
+    set activeShowAppName(bool_val) {
+        this._gsettings.set_boolean('active-show-app-name', bool_val);
+    }
+
+    get inactiveShowWsIndex() {
+        return this._gsettings.get_boolean('inactive-show-ws-index');
+    }
+    set inactiveShowWsIndex(bool_val) {
+        this._gsettings.set_boolean('inactive-show-ws-index', bool_val);
+    }
+
+    get inactiveShowWsName() {
+        return this._gsettings.get_boolean('inactive-show-ws-name');
+    }
+    set inactiveShowWsName(bool_val) {
+        this._gsettings.set_boolean('inactive-show-ws-name', bool_val);
+    }
+
+    get inactiveShowAppName() {
+        return this._gsettings.get_boolean('inactive-show-app-name');
+    }
+    set inactiveShowAppName(bool_val) {
+        this._gsettings.set_boolean('inactive-show-app-name', bool_val);
+    }
+
+    get switcherMode() {
+        const settings = this._getMutterSettings();
+        const val = settings.get_boolean('dynamic-workspaces');
+        return val ? 0 : 1;
+    }
+    set switcherMode(int_val) {
+        const settings = this._getMutterSettings();
+        const dynamic = int_val === 0;
+        settings.set_boolean('dynamic-workspaces', dynamic);
+    }
+
+    get numWorkspaces() {
+        const settings = this._getDesktopWmSettings();
+        return settings.get_int('num-workspaces');
+    }
+    set numWorkspaces(int_val) {
+        const settings = this._getDesktopWmSettings();
+        settings.set_int('num-workspaces', int_val);
+    }
+
+    get modifiersHidePopup() {
+        return this._gsettings.get_boolean('modifiers-hide-popup');
+    }
+    set modifiersHidePopup(bool_val) {
+        this._gsettings.set_boolean('modifiers-hide-popup', bool_val);
     }
 };
