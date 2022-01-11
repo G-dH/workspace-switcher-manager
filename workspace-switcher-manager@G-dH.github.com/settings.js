@@ -272,4 +272,11 @@ var MscOptions = class MscOptions {
     set modifiersHidePopup(bool_val) {
         this._gsettings.set_boolean('modifiers-hide-popup', bool_val);
     }
+
+    get reversePopupOrientation() {
+        return this._gsettings.get_boolean('reverse-popup-orientation');
+    }
+    set reversePopupOrientation(bool_val) {
+        this._gsettings.set_boolean('reverse-popup-orientation', bool_val);
+    }
 };

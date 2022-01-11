@@ -203,6 +203,15 @@ function _getGeneralOptionsList() {
     //-----------------------------------------------------
     optionsList.push(
         _optionsItem(
+            _('Reverse Orientation'),
+            _('Draw the switcher popup vertically instead of horizontaly and vice versa.'),
+            _newGtkSwitch(),
+            'reversePopupOrientation'
+        )
+    );
+    //-----------------------------------------------------
+    optionsList.push(
+        _optionsItem(
             _makeTitle(_('Switcher')),
         )
     );

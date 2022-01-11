@@ -488,9 +488,13 @@ class WorkspaceSwitcherPopupList extends St.Widget {
         this._itemSpacing = 0;
         this._childHeight = 0;
         this._childWidth = 0;
-        this._orientation = global.workspace_manager.layout_rows == -1
+		let orientation = global.workspace_manager.layout_rows == -1;
+		if (mscOptions.reversePopupOrientation)
+			orientation = !orientation;
+        this._orientation = orientation
             ? Clutter.Orientation.VERTICAL
             : Clutter.Orientation.HORIZONTAL;
+
 
         this.connect('style-changed', () => {
             this._itemSpacing = this._listSpacing;

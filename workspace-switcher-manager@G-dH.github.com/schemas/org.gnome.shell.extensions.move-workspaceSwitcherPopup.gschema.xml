@@ -87,5 +87,8 @@
     <key type="b" name="modifiers-hide-popup">
       <default>false</default>
     </key>
+    <key type="b" name="reverse-popup-orientation">
+      <default>false</default>
+    </key>
   </schema>
 </schemalist>
