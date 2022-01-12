@@ -45,6 +45,9 @@
     <key type="i" name="popup-size">
       <default>50</default>
     </key>
+    <key type="b" name="allow-custom-colors">
+      <default>false</default>
+    </key>
     <key type="i" name="popup-opacity">
       <default>90</default>
     </key>
@@ -58,6 +61,12 @@
       <default>''</default>
     </key>
     <key type="s" name="popup-active-bg-color">
+      <default>''</default>
+    </key>
+    <key type="s" name="popup-inactive-fg-color">
+      <default>''</default>
+    </key>
+    <key type="s" name="popup-inactive-bg-color">
       <default>''</default>
     </key>
     <key type="s" name="active-prefs-page">

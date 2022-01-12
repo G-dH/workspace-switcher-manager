@@ -16,6 +16,7 @@ const shellVersion = Settings.shellVersion;
 let originalWsPopup;
 let originalWsPopupList;
 let origNeighbor;
+let enableTimeoutId = 0;
 
 let mscOptions;
 let STORE_DEFAULT_COLORS;
@@ -39,16 +40,24 @@ function init() {
 }
 
 function enable() {
-    mscOptions = new Settings.MscOptions();
-    mscOptions.connect('changed', _updateSettings);
-    _storeDefaultColors();
-    DISPLAY_TIMEOUT = mscOptions.popupTimeout;
-    _updateNeighbor();
-    WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = WorkspaceSwitcherPopupCustom;
-    WorkspaceSwitcherPopup.WorkspaceSwitcherPopupList = WorkspaceSwitcherPopupList;
+    enableTimeoutId = GLib.timeout_add(
+        GLib.PRIORITY_DEFAULT,
+        700,
+        () => {
+            mscOptions = new Settings.MscOptions();
+            mscOptions.connect('changed', _updateSettings);
+            _storeDefaultColors();
+            DISPLAY_TIMEOUT = mscOptions.popupTimeout;
+            _updateNeighbor();
+            WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = WorkspaceSwitcherPopupCustom;
+            WorkspaceSwitcherPopup.WorkspaceSwitcherPopupList = WorkspaceSwitcherPopupList;
+        }
+    );
 }
 
 function disable() {
+    if (enableTimeoutId)
+        GLib.source_remove(enableTimeoutId);
     if  (Main.wm._workspaceSwitcherPopup) {
         Main.wm._workspaceSwitcherPopup.destroy();
         Main.wm._workspaceSwitcherPopup = null;
@@ -107,20 +116,31 @@ function _showPopupForPrefs() {
 }
 
 function _storeDefaultColors() {
+    const workspaceMode = mscOptions.workspaceMode;
+    if (workspaceMode == 1)
+        mscOptions.workspaceMode = 0;
     const popup = new WorkspaceSwitcherPopup.WorkspaceSwitcherPopup();
+    mscOptions.workspaceMode = workspaceMode;
     popup.opacity = 0;
     //const activeIndex = global.workspaceManager.get_active_workspace_index();
     popup.display(Meta.MotionDirection.UP, 0);
 
     const containerNode = popup._container.get_theme_node();
-    const activeNode = popup._list.get_children()[0].get_theme_node();
-
+    const listItems = popup._list.get_children();
+    const activeNode = listItems[0].get_theme_node();
+    const inactiveNode = popup._list.get_children()[1].get_theme_node();
     const popupBgColor = containerNode.lookup_color('background-color', true)[1];
     // border color in default theme is set in 'border' element and can not be read directly
-    //const borderColor = inactiveNode.lookup_color('border-color', true)[1].to_string();
-    const borderColor = 'rgb(53,53,53)'; // average of default inactive box and container bordes 31/40
+    let [result, borderColor] = inactiveNode.lookup_color('border-color', true);
+    if (result) {
+        borderColor = borderColor.to_string();
+    } else {
+        borderColor = 'rgb(53,53,53)'; // average of default inactive box and container bordes 31/40
+    }
     const activeFgColor = activeNode.get_foreground_color();
-    const activeBGColor = activeNode.get_background_color();
+    const activeBgColor = activeNode.get_background_color();
+    const inactiveFgColor = inactiveNode.get_foreground_color();
+    const inactiveBgColor = inactiveNode.get_background_color();
 
     popup.destroy();
 
@@ -128,7 +148,9 @@ function _storeDefaultColors() {
          `rgba(${popupBgColor.red},${popupBgColor.green},${popupBgColor.blue},${popupBgColor.alpha})`,
          borderColor,
          `rgba(${activeFgColor.red},${activeFgColor.green},${activeFgColor.blue},${activeFgColor.alpha})`,
-         `rgba(${activeBGColor.red},${activeBGColor.green},${activeBGColor.blue},${activeBGColor.alpha})`
+         `rgba(${activeBgColor.red},${activeBgColor.green},${activeBgColor.blue},${activeBgColor.alpha})`,
+         `rgba(${inactiveFgColor.red},${inactiveFgColor.green},${inactiveFgColor.blue},${inactiveFgColor.alpha})`,
+         `rgba(${inactiveBgColor.red},${inactiveBgColor.green},${inactiveBgColor.blue},${inactiveBgColor.alpha})`
     ];
     if (!mscOptions.defaultPopupBgColor)
         mscOptions.defaultPopupBgColor = mscOptions.defaultColors[0];
@@ -138,6 +160,10 @@ function _storeDefaultColors() {
         mscOptions.defaultPopupActiveFgColor = mscOptions.defaultColors[2];
     if (!mscOptions.defaultPopupActiveBgColor)
         mscOptions.defaultPopupActiveBgColor = mscOptions.defaultColors[3];
+    if (!mscOptions.defaultPopupInactiveFgColor)
+        mscOptions.defaultPopupInactiveFgColor = mscOptions.defaultColors[4];
+    if (!mscOptions.defaultPopupInactiveBgColor)
+        mscOptions.defaultPopupInactiveBgColor = mscOptions.defaultColors[5];
 }
 
 function getNeighbor(direction) {
@@ -327,11 +353,17 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
             this._contRadius = Math.min(Math.max(Math.floor(contRadius * this.popSize), 3), contRadius);
             // I wasn't successful to get original padding for the _container, so I use _list spacing as it's usually similar value
             this._contPadding = Math.min(Math.max(this._list._listSpacing * this.popSize, 2), this._origSpacing);
-            this._container.set_style(`    padding: ${this._contPadding}px;
-                                        border-radius: ${this._contRadius}px;
-                                        background-color: ${mscOptions.defaultPopupBgColor};
-                                        border-color: ${mscOptions.defaultPopupBorderColor};
-            `);
+            if (mscOptions.allowCustomColors) {
+                this._container.set_style( `padding: ${this._contPadding}px;
+                                            border-radius: ${this._contRadius}px;
+                                            background-color: ${mscOptions.defaultPopupBgColor};
+                                            border-color: ${mscOptions.defaultPopupBorderColor};`
+                );
+            } else {
+                this._container.set_style( `padding: ${this._contPadding}px;
+                                            border-radius: ${this._contRadius}px;`
+                );
+            }
         }
 
         const children = this._list.get_children();
@@ -343,21 +375,36 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
                 this._boxHeight = Math.floor(theme.get_height() * this.popSize);
                 this._boxBgSize = Math.floor(theme.get_length('background-size') * this.popSize);
             }
-
             if (i == this._activeWorkspaceIndex || mscOptions.popupMode){ // 0 all ws 1 single ws
-                children[i].set_style(`    height: ${this._boxHeight}px;
-                                        background-size: ${this._boxBgSize}px;
-                                        border-radius: ${this._boxRadius}px;
-                                        color: ${mscOptions.defaultPopupActiveFgColor};
-                                        background-color: ${mscOptions.defaultPopupActiveBgColor};
-                                        border-color: ${mscOptions.defaultPopupBorderColor};
-                `);
+                if (mscOptions.allowCustomColors) {
+                    children[i].set_style( `height: ${this._boxHeight}px;
+                                            background-size: ${this._boxBgSize}px;
+                                            border-radius: ${this._boxRadius}px;
+                                            color: ${mscOptions.defaultPopupActiveFgColor};
+                                            background-color: ${mscOptions.defaultPopupActiveBgColor};
+                                            border-color: ${mscOptions.defaultPopupBorderColor};`
+                    );
+                } else {
+                    children[i].set_style( `height: ${this._boxHeight}px;
+                                            background-size: ${this._boxBgSize}px;
+                                            border-radius: ${this._boxRadius}px;`
+                    );
+                }
             } else {
-                children[i].set_style(`    height: ${this._boxHeight}px;
-                                        background-size: ${this._boxBgSize}px;
-                                        border-radius: ${this._boxRadius}px;
-                                        border-color: ${mscOptions.defaultPopupBorderColor};
-                `);
+                if (mscOptions.allowCustomColors) {
+                    children[i].set_style( `height: ${this._boxHeight}px;
+                                            background-size: ${this._boxBgSize}px;
+                                            border-radius: ${this._boxRadius}px;
+                                            color: ${mscOptions.defaultPopupInactiveFgColor};
+                                            background-color: ${mscOptions.defaultPopupInactiveBgColor};
+                                            border-color: ${mscOptions.defaultPopupBorderColor};`
+                    );
+                } else {
+                    children[i].set_style( `height: ${this._boxHeight}px;
+                                            background-size: ${this._boxBgSize}px;
+                                            border-radius: ${this._boxRadius}px;`
+                    );
+                }
             }
 
             if (withoutContent) continue;
@@ -372,7 +419,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         const listThemeNode = this._list.get_theme_node();
         this._origSpacing = listThemeNode.get_length('spacing');
         this._list._listSpacing = Math.min(Math.max(Math.floor(this._origSpacing * this.popSize), 4), this._origSpacing);
-        this._list.set_style(`spacing: ${this._list._listSpacing}`);
+        this._list.set_style(`spacing: ${this._list._listSpacing};`);
     }
 
     _getWorkspaceThumbnail(index, box) {
@@ -397,8 +444,8 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         let [, containerNatWidth] = this._container.get_preferred_width(containerNatHeight);
         let h_percent = mscOptions.popupHorizontal;
         let v_percent = mscOptions.popupVertical;
-        this._container.x = workArea.x + Math.floor((workArea.width - containerNatWidth) * (h_percent/100));
-        this._container.y = workArea.y + Math.floor((workArea.height - containerNatHeight) * (v_percent/100));
+        this._container.x = workArea.x + Math.floor((workArea.width - containerNatWidth) * (h_percent / 100));
+        this._container.y = workArea.y + Math.floor((workArea.height - containerNatHeight) * (v_percent / 100));
     }
 
     _getWsNamesSettings() {
@@ -441,7 +488,12 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
 
         if (showApp) {
             const ws = global.workspaceManager.get_workspace_by_index(wsIndex);
-            const win = AltTab.getWindows(ws)[0];
+            let wins = AltTab.getWindows(ws);
+            if (mscOptions.workspacesOnPrimaryOnly) {
+                const monitor = Main.layoutManager.primaryIndex;
+                wins = wins.filter(w => w.get_monitor() === monitor);
+            }
+            const win = wins[0];
 
             if (win) {
                 if (text) {
@@ -488,9 +540,9 @@ class WorkspaceSwitcherPopupList extends St.Widget {
         this._itemSpacing = 0;
         this._childHeight = 0;
         this._childWidth = 0;
-		let orientation = global.workspace_manager.layout_rows == -1;
-		if (mscOptions.reversePopupOrientation)
-			orientation = !orientation;
+        let orientation = global.workspace_manager.layout_rows == -1;
+        if (mscOptions.reversePopupOrientation)
+            orientation = !orientation;
         this._orientation = orientation
             ? Clutter.Orientation.VERTICAL
             : Clutter.Orientation.HORIZONTAL;

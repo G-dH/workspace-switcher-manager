@@ -28,10 +28,10 @@ var MscOptions = class MscOptions {
     }
 
     _getWsNamesSettings() {
-		const settings = ExtensionUtils.getSettings(
-						    'org.gnome.desktop.wm.preferences');
-		return settings;
-	}
+        const settings = ExtensionUtils.getSettings(
+                            'org.gnome.desktop.wm.preferences');
+        return settings;
+    }
 
     _getMutterSettings() {
         const settings = ExtensionUtils.getSettings(
@@ -155,6 +155,13 @@ var MscOptions = class MscOptions {
         this._gsettings.set_int('popup-size', int_val);
     }
 
+    get allowCustomColors() {
+        return this._gsettings.get_boolean('allow-custom-colors');
+    }
+    set allowCustomColors(bool_val) {
+        this._gsettings.set_boolean('allow-custom-colors', bool_val);
+    }
+
     get defaultPopupOpacity() {
         return this._gsettings.get_int('popup-opacity');
     }
@@ -188,6 +195,20 @@ var MscOptions = class MscOptions {
     }
     set defaultPopupActiveBgColor(string) {
         this._gsettings.set_string('popup-active-bg-color', string);
+    }
+
+    get defaultPopupInactiveFgColor() {
+        return this._gsettings.get_string('popup-inactive-fg-color');
+    }
+    set defaultPopupInactiveFgColor(string) {
+        this._gsettings.set_string('popup-inactive-fg-color', string);
+    }
+
+    get defaultPopupInactiveBgColor() {
+        return this._gsettings.get_string('popup-inactive-bg-color');
+    }
+    set defaultPopupInactiveBgColor(string) {
+        this._gsettings.set_string('popup-inactive-bg-color', string);
     }
 
     get activePrefsPage() {
@@ -246,12 +267,12 @@ var MscOptions = class MscOptions {
         this._gsettings.set_boolean('inactive-show-app-name', bool_val);
     }
 
-    get switcherMode() {
+    get workspaceMode() {
         const settings = this._getMutterSettings();
         const val = settings.get_boolean('dynamic-workspaces');
         return val ? 0 : 1;
     }
-    set switcherMode(int_val) {
+    set workspaceMode(int_val) {
         const settings = this._getMutterSettings();
         const dynamic = int_val === 0;
         settings.set_boolean('dynamic-workspaces', dynamic);
@@ -278,5 +299,14 @@ var MscOptions = class MscOptions {
     }
     set reversePopupOrientation(bool_val) {
         this._gsettings.set_boolean('reverse-popup-orientation', bool_val);
+    }
+
+    get workspacesOnPrimaryOnly() {
+        const settings = this._getMutterSettings();
+        return settings.get_boolean('workspaces-only-on-primary');
+    }
+    set workspacesOnPrimaryOnly(bool_val) {
+        const settings = this._getMutterSettings();
+        settings.set_boolean('workspaces-only-on-primary', bool_val);
     }
 };
