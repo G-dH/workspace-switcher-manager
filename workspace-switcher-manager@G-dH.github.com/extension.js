@@ -377,31 +377,27 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
             }
             if (i == this._activeWorkspaceIndex || mscOptions.popupMode){ // 0 all ws 1 single ws
                 if (mscOptions.allowCustomColors) {
-                    children[i].set_style( `height: ${this._boxHeight}px;
-                                            background-size: ${this._boxBgSize}px;
+                    children[i].set_style( `background-size: ${this._boxBgSize}px;
                                             border-radius: ${this._boxRadius}px;
                                             color: ${mscOptions.defaultPopupActiveFgColor};
                                             background-color: ${mscOptions.defaultPopupActiveBgColor};
                                             border-color: ${mscOptions.defaultPopupBorderColor};`
                     );
                 } else {
-                    children[i].set_style( `height: ${this._boxHeight}px;
-                                            background-size: ${this._boxBgSize}px;
+                    children[i].set_style( `background-size: ${this._boxBgSize}px;
                                             border-radius: ${this._boxRadius}px;`
                     );
                 }
             } else {
                 if (mscOptions.allowCustomColors) {
-                    children[i].set_style( `height: ${this._boxHeight}px;
-                                            background-size: ${this._boxBgSize}px;
+                    children[i].set_style( `background-size: ${this._boxBgSize}px;
                                             border-radius: ${this._boxRadius}px;
                                             color: ${mscOptions.defaultPopupInactiveFgColor};
                                             background-color: ${mscOptions.defaultPopupInactiveBgColor};
                                             border-color: ${mscOptions.defaultPopupBorderColor};`
                     );
                 } else {
-                    children[i].set_style( `height: ${this._boxHeight}px;
-                                            background-size: ${this._boxBgSize}px;
+                    children[i].set_style( `background-size: ${this._boxBgSize}px;
                                             border-radius: ${this._boxRadius}px;`
                     );
                 }
@@ -501,7 +497,10 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
                     indexOnly = false;
                 }
                 let appName = _getWindowApp(win).get_name();
-                appName = appName.replace(' ', '\n');
+                // wrap app names
+                if (mscOptions.wrapAppNames) {
+                    appName = appName.replace(' ', '\n');
+                }
                 text += appName;
             }
         }
@@ -547,7 +546,6 @@ class WorkspaceSwitcherPopupList extends St.Widget {
             ? Clutter.Orientation.VERTICAL
             : Clutter.Orientation.HORIZONTAL;
 
-
         this.connect('style-changed', () => {
             this._itemSpacing = this._listSpacing;
             if (!this._itemSpacing)
@@ -568,10 +566,10 @@ class WorkspaceSwitcherPopupList extends St.Widget {
         let size = 0;
         for (let child of this.get_children()) {
             let [, childNaturalHeight] = child.get_preferred_height(-1);
-            let height = childNaturalHeight * workArea.width / workArea.height;
+            let height = childNaturalHeight * workArea.width / workArea.height * mscOptions.defaultPopupSize / 100;
 
-            if (this._orientation == Clutter.Orientation.HORIZONTAL)
-                size += height * workArea.width / workArea.height;
+            if (this._orientation == Clutter.Orientation.HORIZONTAL) // width scale option application
+                size += height * workArea.width / workArea.height * mscOptions.wsBoxWidth / 100;
             else
                 size += height;
         }
@@ -580,7 +578,7 @@ class WorkspaceSwitcherPopupList extends St.Widget {
         let spacing = this._itemSpacing * (mscOptions.popupMode ? 0 : workspaceManager.n_workspaces - 1);
         size += spacing;
 
-        // note info about downsizing the popupup to calculate proper content sizes
+        // note info about downsizing the popupup to calculate proper content size
         this._resizeScale = size > availSize ? availSize / size : 1;
 
         size = Math.min(size, availSize);
@@ -595,14 +593,13 @@ class WorkspaceSwitcherPopupList extends St.Widget {
     }
 
     _getSizeForOppositeOrientation() {
-        //debug((new Error()).stack);
         let workArea = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
 
-        if (this._orientation == Clutter.Orientation.HORIZONTAL) {
-            this._childHeight = Math.round(this._childWidth * workArea.height / workArea.width);
+        if (this._orientation == Clutter.Orientation.HORIZONTAL) {  // width scale option application
+            this._childHeight = Math.round(this._childWidth * workArea.height / workArea.width / mscOptions.wsBoxWidth * 100);
             return [this._childHeight, this._childHeight];
         } else {
-            this._childWidth = Math.round(this._childHeight * workArea.width / workArea.height);
+            this._childWidth = Math.round(this._childHeight * workArea.width / workArea.height * mscOptions.wsBoxWidth / 100);
             return [this._childWidth, this._childWidth];
         }
     }

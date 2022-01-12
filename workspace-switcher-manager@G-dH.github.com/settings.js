@@ -120,6 +120,13 @@ var MscOptions = class MscOptions {
         this._gsettings.set_string('color', string);
     }
 
+    get wrapAppNames() {
+        return this._gsettings.get_boolean('wrap-app-names');
+    }
+    set wrapAppNames(bool_val) {
+        this._gsettings.set_boolean('wrap-app-names', bool_val);
+    }
+
     get textShadow() {
         return this._gsettings.get_boolean('text-shadow');
     }
@@ -153,6 +160,13 @@ var MscOptions = class MscOptions {
     }
     set defaultPopupSize(int_val) {
         this._gsettings.set_int('popup-size', int_val);
+    }
+
+    get wsBoxWidth() {
+        return this._gsettings.get_int('ws-box-width');
+    }
+    set wsBoxWidth(int_val) {
+        this._gsettings.set_int('ws-box-width', int_val);
     }
 
     get allowCustomColors() {

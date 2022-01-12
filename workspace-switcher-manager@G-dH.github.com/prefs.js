@@ -28,11 +28,12 @@ function buildPrefsWidget() {
 
 
 
-    const generalOptionsPage    = new OptionsPageWSPM(_getGeneralOptionsList());
-    const popupOptionsPage = new OptionsPageWSPM(_getPopupOptionsList());
-    const appearanceOptionsPage = new OptionsPageWSPM(_getAppearanceOptionsList());
-    const contentOptionsPage    = new OptionsPageWSPM(_getContentOptionsList());
-    const workspacesOptionsPage = new OptionsPageWSPM(_getWorkspacesOptionsList());
+    const generalOptionsPage    = new OptionsPageWSPM(_getGeneralOptionList());
+    const popupOptionsPage      = new OptionsPageWSPM(_getPopupOptionList());
+    const colorOptionsPage      = new OptionsPageWSPM(_getColorOptionList())
+    const sizeTextOptionsPage   = new OptionsPageWSPM(_getSizeTextOptionList());
+    const contentOptionsPage    = new OptionsPageWSPM(_getContentOptionList());
+    const workspacesOptionsPage = new OptionsPageWSPM(_getWorkspacesOptionList());
 
     optionsPage.append_page(generalOptionsPage, new Gtk.Label({
         label: _('General'),
@@ -46,14 +47,20 @@ function buildPrefsWidget() {
         visible: true,
     }));
 
-    optionsPage.append_page(appearanceOptionsPage, new Gtk.Label({
-        label: _('Popup Appearance'),
+    optionsPage.append_page(sizeTextOptionsPage, new Gtk.Label({
+        label: _('Size & Text'),
+        halign: Gtk.Align.START,
+        visible: true,
+    }));
+
+    optionsPage.append_page(colorOptionsPage, new Gtk.Label({
+        label: _('Colors'),
         halign: Gtk.Align.START,
         visible: true,
     }));
 
     optionsPage.append_page(contentOptionsPage, new Gtk.Label({
-        label: _('Popup Content'),
+        label: _('Content'),
         halign: Gtk.Align.START,
         visible: true,
     }));
@@ -72,7 +79,7 @@ function buildPrefsWidget() {
         case contentOptionsPage:
             mscOptions.activePrefsPage = 'defaultPopup';
             break;
-        case appearanceOptionsPage:
+        case sizeTextOptionsPage:
             mscOptions.activePrefsPage = 'customPopup';
             break;
         default:
@@ -83,7 +90,7 @@ function buildPrefsWidget() {
     return optionsPage;
 }
 
-function _getGeneralOptionsList() {
+function _getGeneralOptionList() {
     const optionList = [];
     // options item format:
     // [text, tooltip, widget, settings-variable, options for combo]
@@ -111,7 +118,7 @@ This option is backed by internal GNOME gsettings key and can be modified by oth
         lower: 1,
         upper: 36,
         step_increment: 1,
-        page_increment: 5,
+        page_increment: 1,
     });
 
     const numScale = _newScale(numAdjustment);
@@ -163,7 +170,7 @@ This option is backed by internal GNOME gsettings key and can be modified by oth
 }
 
 
-function _getPopupOptionsList() {
+function _getPopupOptionList() {
     const optionList = [];
     // options item format:
     // [text, tooltip, widget, settings-variable, options for combo]
@@ -200,8 +207,8 @@ function _getPopupOptionsList() {
     let popupTimeoutAdjustment = new Gtk.Adjustment({
         upper: 2000,
         lower: 0,
-        step_increment: 10,
-        page_increment: 100,
+        step_increment: 1,
+        page_increment: 1,
     });
 
     const tScale = _newScale(popupTimeoutAdjustment);
@@ -219,8 +226,8 @@ function _getPopupOptionsList() {
     let fadeOutAdjustment = new Gtk.Adjustment({
         upper: 1500,
         lower: 10,
-        step_increment: 10,
-        page_increment: 100,
+        step_increment: 1,
+        page_increment: 1,
     });
 
     const fadeScale = _newScale(fadeOutAdjustment);
@@ -243,19 +250,18 @@ function _getPopupOptionsList() {
             'modifiersHidePopup'
         )
     );
-//-----------------------------------------------------
-
+    //-----------------------------------------------------
     optionList.push(
         _optionsItem(
             _makeTitle(_('Position')),
         )
     );
-//-----------------------------------------------------
+    //-----------------------------------------------------
     const hAdjustment = new Gtk.Adjustment({
         lower: 0,
         upper: 100,
         step_increment: 1,
-        page_increment: 10,
+        page_increment: 1,
     });
 
     const hScale = _newScale(hAdjustment);
@@ -269,12 +275,12 @@ function _getPopupOptionsList() {
             'popupHorizontal',
         )
     );
-//-----------------------------------------------------
+    //-----------------------------------------------------
     const vAdjustment = new Gtk.Adjustment({
         lower: 0,
         upper: 100,
         step_increment: 1,
-        page_increment: 10,
+        page_increment: 1,
     });
 
     const vScale = _newScale(vAdjustment);
@@ -285,6 +291,12 @@ function _getPopupOptionsList() {
             null,
             vScale,
             'popupVertical',
+        )
+    );
+    //-----------------------------------------------------
+    optionList.push(
+        _optionsItem(
+            _makeTitle(_('Orientation')),
         )
     );
     //-----------------------------------------------------
@@ -302,12 +314,12 @@ function _getPopupOptionsList() {
 }
 // ////////////////////////////////////////////////
 
-function _getContentOptionsList() {
+function _getContentOptionList() {
     const optionList = [];
 
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Active Workspace Identifiers')),
+            _makeTitle(_('Active Workspace Box')),
         )
     );
     //-----------------------------------------------------
@@ -341,7 +353,7 @@ function _getContentOptionsList() {
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Inactive Workspace Identifiers')),
+            _makeTitle(_('Inactive Workspace Box')),
         )
     );
     //-----------------------------------------------------
@@ -377,21 +389,21 @@ function _getContentOptionsList() {
 
 // ////////////////////////////////////////////////
 
-function _getAppearanceOptionsList() {
+function _getSizeTextOptionList() {
     const optionList = [];
 
      optionList.push(
         _optionsItem(
-            _makeTitle(_('Size')),
+            _makeTitle(_('Popup Size')),
             null
         )
     );
     //-----------------------------------------------------
-    let dpSizeAdjustment = new Gtk.Adjustment({
-        upper: 1000,
+    const dpSizeAdjustment = new Gtk.Adjustment({
+        upper: 300,
         lower: 10,
-        step_increment: 5,
-        page_increment: 10,
+        step_increment: 1,
+        page_increment: 1,
     });
 
     const dpSize = _newScale(dpSizeAdjustment);
@@ -399,16 +411,35 @@ function _getAppearanceOptionsList() {
 
     optionList.push(
         _optionsItem(
-            _('Scale (%)'),
+            _('Popup Scale (%)'),
             _("Sets the size of the popup relative to the original."),
             dpSize,
             'defaultPopupSize'
         )
     );
     //-----------------------------------------------------
+    const wsBoxWidthAdjustment = new Gtk.Adjustment({
+        upper: 300,
+        lower: 10,
+        step_increment: 1,
+        page_increment: 1,
+    });
+
+    const wsBoxWidth = _newScale(wsBoxWidthAdjustment);
+    wsBoxWidth.add_mark(100, Gtk.PositionType.TOP, null);
+
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Text')),
+            _('Box Width Scale (%)'),
+            _("Allows to make popup box representing single workspace wider or narrower."),
+            wsBoxWidth,
+            'wsBoxWidth'
+        )
+    );
+    //-----------------------------------------------------
+    optionList.push(
+        _optionsItem(
+            _makeTitle(_('Text Size')),
             null
         )
     );
@@ -417,7 +448,7 @@ function _getAppearanceOptionsList() {
         lower: 50,
         upper: 300,
         step_increment: 1,
-        page_increment: 10,
+        page_increment: 1,
     });
 
     const fsScale = _newScale(fontSizeAdjustment);
@@ -425,7 +456,7 @@ function _getAppearanceOptionsList() {
 
     optionList.push(
         _optionsItem(
-            _('Font Scale Finetune (%)'),
+            _('Font Size Finetune (%)'),
             _('Size resizes acording to the popup sclae, use this scale to precisely adjust the text size.'),
             fsScale,
             'fontSize',
@@ -444,14 +475,30 @@ function _getAppearanceOptionsList() {
 
     optionList.push(
         _optionsItem(
-            _('Index Scale Finetune (%)'),
-            _('If only "Show Workspace Index" text content option is active, this scale takes effect. Single digit always looks smaller then longer text with the same font size.'),
+            _('Index Size Finetune (%)'),
+            _('If only "Show Workspace Index" text (or "Show App Name" on workspace without app) content option is active this scale takes effect. Single digit always looks smaller then longer text with the same font size.'),
             idxScale,
             'indexSize',
         )
     );
-     //-----------------------------------------------------
+    //-----------------------------------------------------
     optionList.push(
+        _optionsItem(
+            _makeTitle(_('Text Options')),
+            null
+        )
+    );
+     //-----------------------------------------------------
+     optionList.push(
+        _optionsItem(
+            _('Wrap long App Names'),
+            _('Application names with more than one word will be wrapped after the first word.'),
+            _newGtkSwitch(),
+            'wrapAppNames'
+        )
+    );
+    //-----------------------------------------------------
+     optionList.push(
         _optionsItem(
             _('Text Shadow'),
             _('Shadow helps text visibility on the background with the similar color.'),
@@ -468,10 +515,18 @@ function _getAppearanceOptionsList() {
             'textBold'
         )
     );
-    //++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    return optionList;
+}
+
+function _getColorOptionList() {
+    const optionList = [];
+    // options item format:
+    // [text, tooltip, widget, settings-variable, options for combo]
+
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Colors')),
+            _makeTitle(_('Popup Colors')),
             null
         )
     );
@@ -480,7 +535,7 @@ function _getAppearanceOptionsList() {
         lower: 10,
         upper: 100,
         step_increment: 1,
-        page_increment: 10,
+        page_increment: 1,
     });
 
     const opacityScale = _newScale(opacityAdjustment);
@@ -620,7 +675,7 @@ colors may not be correct and are usually without alpha chanel information`),
 
 ///////////////////////////////////////////////////
 
-function _getWorkspacesOptionsList() {
+function _getWorkspacesOptionList() {
     const optionList = [];
 
     optionList.push(

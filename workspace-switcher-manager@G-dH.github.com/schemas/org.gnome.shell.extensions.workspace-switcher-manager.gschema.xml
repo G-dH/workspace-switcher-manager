@@ -33,6 +33,9 @@
     <key type="i" name="index-size">
       <default>100</default>
     </key>
+    <key type="b" name="wrap-app-names">
+      <default>true</default>
+    </key>
     <key type="b" name="text-shadow">
       <default>false</default>
     </key>
@@ -44,6 +47,9 @@
     </key>
     <key type="i" name="popup-size">
       <default>50</default>
+    </key>
+    <key type="i" name="ws-box-width">
+      <default>100</default>
     </key>
     <key type="b" name="allow-custom-colors">
       <default>false</default>
