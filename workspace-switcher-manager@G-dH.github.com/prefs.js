@@ -400,7 +400,7 @@ function _getSizeTextOptionList() {
     );
     //-----------------------------------------------------
     const dpSizeAdjustment = new Gtk.Adjustment({
-        upper: 300,
+        upper: 600,
         lower: 10,
         step_increment: 1,
         page_increment: 1,
@@ -467,7 +467,7 @@ function _getSizeTextOptionList() {
         lower: 50,
         upper: 500,
         step_increment: 1,
-        page_increment: 10,
+        page_increment: 1,
     });
 
     const idxScale = _newScale(idxSizeAdjustment);
@@ -526,7 +526,7 @@ function _getColorOptionList() {
 
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Popup Colors')),
+            _makeTitle(_('Popup Opacity')),
             null
         )
     );
@@ -543,7 +543,7 @@ function _getColorOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Global Opacity'),
+            _('Global'),
             null,
             opacityScale,
             'defaultPopupOpacity',
@@ -552,7 +552,14 @@ function _getColorOptionList() {
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Allow Custom Colors ↓↓ →')),
+            _makeTitle(_('Popup Colors')),
+            null
+        )
+    );
+    //-----------------------------------------------------
+    optionList.push(
+        _optionsItem(
+            _makeTitle(_('Allow Custom Colors ↓ →')),
             _(`Default colors for Reset button are read from default Shell theme at the time when the extension is being enabled.
 Because reading colors from css style is hacky as hell, if you don't exactly know what objects was used for it,\n
 colors may not be correct and are usually without alpha chanel information`),
@@ -824,15 +831,19 @@ class OptionsPageWSPM extends Gtk.ScrolledWindow {
         let frame;
         let frameBox;
         for (let item of this.optionList) {
-            // new section
-            if (!item[0][1]) {
+            // item structure: [[label, control widget], tooltip]
+            const itemWidgets = item[0];
+            const itemLabel   = item[0][0];
+            const itemControl = item[0][1];
+            const itemTooltip = item[1];
+
+            if (!itemControl) {
+                // new section
                 let lbl = new Gtk.Label({
                     xalign: 0,
                     visible: true
                 });
-                lbl.set_markup(item[0][0]);
-                if (item[1])
-                    lbl.set_tooltip_text(item[1]);
+                lbl.set_markup(itemLabel);
                 mainBox[mainBox.add ? 'add' : 'append'](lbl);
                 frame = new Gtk.Frame({
                     visible: true,
@@ -857,10 +868,10 @@ class OptionsPageWSPM extends Gtk.ScrolledWindow {
                 spacing: 20,
                 visible: true,
             });
-            for (let i of item[0])
+            for (let i of itemWidgets)
                 box[box.add ? 'add' : 'append'](i);
-            if (item.length === 2)
-                box.set_tooltip_text(item[1]);
+            /*if (item.length === 2)
+                box.set_tooltip_text(itemTooltip);*/
             frameBox[frameBox.add ? 'add' : 'append'](box);
         }
         this[this.add ? 'add' : 'set_child'](mainBox);
@@ -992,6 +1003,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
             `Settings variable ${variable} doesn't exist, check your code dude!`
         );
     }
+    // item structure: [[label, widget], tooltip]
     let item = [[]];
     let label;
     if (widget) {
@@ -1000,6 +1012,8 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
             visible: true,
         });
         label.set_markup(text);
+        if (tooltip)
+            label.set_tooltip_text(tooltip);
     } else {
         label = text;
     }
@@ -1053,12 +1067,12 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
     } else if (widget && widget.is_entry) {
         if (options) {
             const names = mscOptions[variable];
-            if (names[options-1])
+            if (names[options - 1])
                 widget.set_text(names[options - 1]);
 
             widget.set_placeholder_text(_('workspace name'));
 
-             widget.connect('changed', (entry) => {
+            widget.connect('changed', (entry) => {
                 if (entry._timeout_id)
                    GLib.source_remove(entry._timeout_id);
                 entry._timeout_id = GLib.timeout_add(
@@ -1067,7 +1081,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
                     () => {
                         const names = [];
                         wsEntries.forEach(entry => {
-                        if (entry.text)
+                        if (entry.get_text())
                             names.push(entry.get_text());
                         })
                         mscOptions.wsNames = names;

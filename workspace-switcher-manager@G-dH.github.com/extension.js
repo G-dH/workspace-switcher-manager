@@ -72,7 +72,7 @@ function disable() {
 
 //------------------------------------------------------------------------------
 function _updateNeighbor() {
-    if (mscOptions.wraparound || mscOptions.ignoreLast) {
+    if (mscOptions.wsSwitchWrap || mscOptions.wsSwitchIgnoreLast) {
         Meta.Workspace.prototype.get_neighbor = getNeighbor;
     } else {
         Meta.Workspace.prototype.get_neighbor = origNeighbor;
@@ -226,7 +226,9 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         this._list = new WorkspaceSwitcherPopupList();
         this._container.add_child(this._list);
 
-        this.popSize = mscOptions.defaultPopupSize / 100;
+        this.popScale = mscOptions.defaultPopupSize / 100;
+        this._list._popScale = this.popScale;
+
         // spacing needs to be calculated first to get proper container size
         this._setSpacing();
         this._redisplay();
@@ -350,9 +352,9 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
     _setCustomStyle(withoutContent) {
         if (this._contRadius === undefined) {
             const contRadius = this._container.get_theme_node().get_length('border-radius');
-            this._contRadius = Math.min(Math.max(Math.floor(contRadius * this.popSize), 3), contRadius);
+            this._contRadius = Math.min(Math.max(Math.floor(contRadius * this.popScale), 3), contRadius);
             // I wasn't successful to get original padding for the _container, so I use _list spacing as it's usually similar value
-            this._contPadding = Math.min(Math.max(this._list._listSpacing * this.popSize, 2), this._origSpacing);
+            this._contPadding = Math.min(Math.max(this._list._listSpacing * this.popScale, 2), this._origSpacing);
             if (mscOptions.allowCustomColors) {
                 this._container.set_style( `padding: ${this._contPadding}px;
                                             border-radius: ${this._contRadius}px;
@@ -371,9 +373,9 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
             if (this._boxRadius === undefined) {
                 const theme = children[i].get_theme_node();
                 const boxRadius = theme.get_length('border-radius');
-                this._boxRadius = Math.min(Math.max(Math.floor(boxRadius * this.popSize), 3), boxRadius);
-                this._boxHeight = Math.floor(theme.get_height() * this.popSize);
-                this._boxBgSize = Math.floor(theme.get_length('background-size') * this.popSize);
+                this._boxRadius = Math.min(Math.max(Math.floor(boxRadius * this.popScale), 3), boxRadius);
+                this._boxHeight = Math.floor(theme.get_height() * this.popScale);
+                this._boxBgSize = Math.floor(theme.get_length('background-size') * this.popScale);
             }
             if (i == this._activeWorkspaceIndex || mscOptions.popupMode){ // 0 all ws 1 single ws
                 if (mscOptions.allowCustomColors) {
@@ -414,7 +416,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
     _setSpacing() {
         const listThemeNode = this._list.get_theme_node();
         this._origSpacing = listThemeNode.get_length('spacing');
-        this._list._listSpacing = Math.min(Math.max(Math.floor(this._origSpacing * this.popSize), 4), this._origSpacing);
+        this._list._listSpacing = Math.min(Math.max(Math.floor(this._origSpacing * this.popScale), 4), this._origSpacing);
         this._list.set_style(`spacing: ${this._list._listSpacing};`);
     }
 
@@ -461,8 +463,8 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         const wsIndexIsActiveWS = i == this._activeWorkspaceIndex;
 
         const showIndex = wsIndexIsActiveWS ? mscOptions.activeShowWsIndex : mscOptions.inactiveShowWsIndex;
-        const showName = wsIndexIsActiveWS ? mscOptions.activeShowWsName : mscOptions.inactiveShowWsName;
-        const showApp = wsIndexIsActiveWS ? mscOptions.activeShowAppName : mscOptions.inactiveShowAppName;
+        const showName  = wsIndexIsActiveWS ? mscOptions.activeShowWsName  : mscOptions.inactiveShowWsName;
+        const showApp   = wsIndexIsActiveWS ? mscOptions.activeShowAppName : mscOptions.inactiveShowAppName;
         let indexOnly = false;
 
         if (showIndex) {
@@ -509,9 +511,9 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
 
         let fontSize;
         if (indexOnly) {
-            fontSize = this.popSize * mscOptions.indexSize / 100 * this._list._resizeScale;
+            fontSize = this.popScale * mscOptions.indexSize / 100 * this._list._resizeScale;
         } else {
-            fontSize = this.popSize * mscOptions.fontSize / 100 * this._list._resizeScale;
+            fontSize = this.popScale * mscOptions.fontSize / 100 * this._list._resizeScale;
         }
         label = new St.Label({
             x_align: Clutter.ActorAlign.CENTER,
@@ -533,9 +535,11 @@ class WorkspaceSwitcherPopupList extends St.Widget {
     _init() {
         super._init({
             style_class: 'workspace-switcher',
-            offscreen_redirect: Clutter.OffscreenRedirect.ALWAYS,
+            // this parameter causes error: g_value_get_enum: assertion 'G_VALUE_HOLDS_ENUM (value)' failed
+            // not in the original popup class, which has exactly the same super._init() call
+            /*offscreen_redirect: Clutter.OffscreenRedirect.ALWAYS,*/
         });
-
+        
         this._itemSpacing = 0;
         this._childHeight = 0;
         this._childWidth = 0;
@@ -556,6 +560,7 @@ class WorkspaceSwitcherPopupList extends St.Widget {
     _getPreferredSizeForOrientation(_forSize) {
         let workArea = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
         let themeNode = this.get_theme_node();
+        const customBoxWidthScale = mscOptions.wsBoxWidth / 100;
 
         let availSize;
         if (this._orientation == Clutter.Orientation.HORIZONTAL)
@@ -566,10 +571,10 @@ class WorkspaceSwitcherPopupList extends St.Widget {
         let size = 0;
         for (let child of this.get_children()) {
             let [, childNaturalHeight] = child.get_preferred_height(-1);
-            let height = childNaturalHeight * workArea.width / workArea.height * mscOptions.defaultPopupSize / 100;
+            let height = childNaturalHeight * workArea.width / workArea.height * this._popScale;
 
             if (this._orientation == Clutter.Orientation.HORIZONTAL) // width scale option application
-                size += height * workArea.width / workArea.height * mscOptions.wsBoxWidth / 100;
+                size += height * workArea.width / workArea.height * customBoxWidthScale;
             else
                 size += height;
         }
@@ -593,13 +598,14 @@ class WorkspaceSwitcherPopupList extends St.Widget {
     }
 
     _getSizeForOppositeOrientation() {
+        const customBoxWidthScale = mscOptions.wsBoxWidth / 100;
         let workArea = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
 
         if (this._orientation == Clutter.Orientation.HORIZONTAL) {  // width scale option application
-            this._childHeight = Math.round(this._childWidth * workArea.height / workArea.width / mscOptions.wsBoxWidth * 100);
+            this._childHeight = Math.round(this._childWidth * workArea.height / workArea.width * customBoxWidthScale);
             return [this._childHeight, this._childHeight];
         } else {
-            this._childWidth = Math.round(this._childHeight * workArea.width / workArea.height * mscOptions.wsBoxWidth / 100);
+            this._childWidth = Math.round(this._childHeight * workArea.width / workArea.height * customBoxWidthScale);
             return [this._childWidth, this._childWidth];
         }
     }

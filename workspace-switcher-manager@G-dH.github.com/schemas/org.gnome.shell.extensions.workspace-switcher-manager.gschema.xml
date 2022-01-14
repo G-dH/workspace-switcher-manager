@@ -46,7 +46,7 @@
       <default>300</default>
     </key>
     <key type="i" name="popup-size">
-      <default>50</default>
+      <default>100</default>
     </key>
     <key type="i" name="ws-box-width">
       <default>100</default>
