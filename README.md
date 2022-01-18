@@ -3,7 +3,7 @@ GNOME Shell extension
 
 The `Workspace Switcher Manager` offers all workspaces related options at one place, adds more options to it and allows you to adjust the workspace switcher popup size, colors, content and even its orientation.
 
-##Features:
+## Features:
 
 - GNOME Shell 3.36, 3.38, 40 and 41 compatibility.
 - All workspace related options available in GNOME Shell.
@@ -17,7 +17,7 @@ The `Workspace Switcher Manager` offers all workspaces related options at one pl
 - Option to keep the popup on screen until you release modifier keys of your workspace switcher shortcut.
 - Any adjustments applyed to the ws switcher popup in the extension Preferences window automatically shows the popup to see the changes.
 
-##Instalation
+## Instalation
 
 You can just:
 - download the code
@@ -25,7 +25,7 @@ You can just:
 - restart Gnome Shell
 - enable and access the Preferences window from the GNOME Extensions app
 
-##Contribution
+## Contribution
 
 Contributions are welcome.
 
