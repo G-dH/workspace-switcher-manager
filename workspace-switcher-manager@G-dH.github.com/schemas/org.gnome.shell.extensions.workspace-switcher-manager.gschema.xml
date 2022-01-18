@@ -51,6 +51,12 @@
     <key type="i" name="ws-box-width">
       <default>100</default>
     </key>
+    <key type="i" name="popup-spacing">
+      <default>100</default>
+    </key>
+    <key type="i" name="popup-padding">
+      <default>100</default>
+    </key>
     <key type="b" name="allow-custom-colors">
       <default>false</default>
     </key>
@@ -103,6 +109,9 @@
       <default>false</default>
     </key>
     <key type="b" name="reverse-popup-orientation">
+      <default>false</default>
+    </key>
+    <key type="b" name="reverse-ws-orientation">
       <default>false</default>
     </key>
   </schema>

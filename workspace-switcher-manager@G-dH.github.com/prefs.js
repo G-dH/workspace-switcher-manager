@@ -126,7 +126,7 @@ This option is backed by internal GNOME gsettings key and can be modified by oth
 
     optionList.push(
         _optionsItem(
-            _('Number of workspaces in Static mode.'),
+            _('Number of Workspaces in Static mode'),
             _('Max number of 36 is given by GNOME. This option is backed by internal GNOME gsettings key and can be modified by other applications.'),
             numScale,
             'numWorkspaces'
@@ -135,10 +135,19 @@ This option is backed by internal GNOME gsettings key and can be modified by oth
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
-            _('Workspaces on primary display only'),
-            null,
+            _('Workspaces on Primary Display Only'),
+            _('Additional displays are treated as independent workspaces or the current workspace includes additional displays.'),
             _newGtkSwitch(),
             'workspacesOnPrimaryOnly'
+            )
+            );
+    //-----------------------------------------------------
+    optionList.push(
+        _optionsItem(
+            _('Reverse Workspace Orientation'),
+            _('This option breaks overview in GS 40+, but usable in 3.36/3.38. Changes the direction in which workspaces are organized, from horizontal to vertical or from vertical to horizontal, depending on the default state that is recorded during the start of GNOME Shell. The switcher popup reflects this option automatically.'),
+            _newGtkSwitch(),
+            'reverseWsOrientation'
         )
     );
     //-----------------------------------------------------
@@ -159,7 +168,7 @@ This option is backed by internal GNOME gsettings key and can be modified by oth
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
-            _('Ignore last (empty) workspace'),
+            _('Ignore Last (empty) workspace'),
             null,
             _newGtkSwitch(),
             'wsSwitchIgnoreLast'
@@ -319,7 +328,7 @@ function _getContentOptionList() {
 
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Active Workspace Box')),
+            _makeTitle(_("Popup Active Workspace Box")),
         )
     );
     //-----------------------------------------------------
@@ -353,7 +362,7 @@ function _getContentOptionList() {
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Inactive Workspace Box')),
+            _makeTitle(_('Popup Inactive Workspace Box')),
         )
     );
     //-----------------------------------------------------
@@ -437,6 +446,44 @@ function _getSizeTextOptionList() {
         )
     );
     //-----------------------------------------------------
+    const paddingAdjustment = new Gtk.Adjustment({
+        upper: 200,
+        lower: 0,
+        step_increment: 1,
+        page_increment: 1,
+    });
+
+    const padding = _newScale(paddingAdjustment);
+    padding.add_mark(100, Gtk.PositionType.TOP, null);
+
+    optionList.push(
+        _optionsItem(
+            _('Popup Padding (%)'),
+            _("Adjusts popup background padding."),
+            padding,
+            'popupPadding'
+        )
+    );
+    //-----------------------------------------------------
+    const spacingAdjustment = new Gtk.Adjustment({
+        upper: 200,
+        lower: 0,
+        step_increment: 1,
+        page_increment: 1,
+    });
+
+    const spacing = _newScale(spacingAdjustment);
+    spacing.add_mark(100, Gtk.PositionType.TOP, null);
+
+    optionList.push(
+        _optionsItem(
+            _('Popup Spacing (%)'),
+            _("Adjusts popup box spacing."),
+            spacing,
+            'popupSpacing'
+        )
+    );
+    //-----------------------------------------------------
     optionList.push(
         _optionsItem(
             _makeTitle(_('Text Size')),
@@ -465,7 +512,7 @@ function _getSizeTextOptionList() {
     //-----------------------------------------------------
     const idxSizeAdjustment = new Gtk.Adjustment({
         lower: 50,
-        upper: 500,
+        upper: 1000,
         step_increment: 1,
         page_increment: 1,
     });
@@ -688,7 +735,7 @@ function _getWorkspacesOptionList() {
     optionList.push(
         _optionsItem(
             _makeTitle(_('Names')),
-            _('Uses official GNOME gsettings key which can be read/modified by other applications.')
+            _('Uses official GNOME gsettings key that can be read/modified by other applications.')
         )
     );
 
@@ -1080,9 +1127,9 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
                     400,
                     () => {
                         const names = [];
-                        wsEntries.forEach(entry => {
-                        if (entry.get_text())
-                            names.push(entry.get_text());
+                        wsEntries.forEach(e => {
+                        if (e.get_text())
+                            names.push(e.get_text());
                         })
                         mscOptions.wsNames = names;
                         entry._timeout_id = 0;

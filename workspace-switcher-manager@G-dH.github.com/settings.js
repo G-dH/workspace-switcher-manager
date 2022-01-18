@@ -113,6 +113,20 @@ var MscOptions = class MscOptions {
         this._gsettings.set_int('index-size', int_val);
     }
 
+    get popupPadding() {
+        return this._gsettings.get_int('popup-padding');
+    }
+    set popupPadding(int_val) {
+        this._gsettings.set_int('popup-padding', int_val);
+    }
+
+    get popupSpacing() {
+        return this._gsettings.get_int('popup-spacing');
+    }
+    set popupSpacing(int_val) {
+        this._gsettings.set_int('popup-spacing', int_val);
+    }
+
     get fontColor() {
         return this._gsettings.get_string('color');
     }
@@ -299,6 +313,13 @@ var MscOptions = class MscOptions {
     set numWorkspaces(int_val) {
         const settings = this._getDesktopWmSettings();
         settings.set_int('num-workspaces', int_val);
+    }
+
+    get reverseWsOrientation() {
+        return this._gsettings.get_boolean('reverse-ws-orientation');
+    }
+    set reverseWsOrientation(bool_val) {
+        this._gsettings.set_boolean('reverse-ws-orientation', bool_val);
     }
 
     get modifiersHidePopup() {
