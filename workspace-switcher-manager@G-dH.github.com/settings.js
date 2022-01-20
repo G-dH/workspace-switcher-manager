@@ -49,12 +49,19 @@ var MscOptions = class MscOptions {
         this._connectionIds.forEach(id => this._gsettings.disconnect(id));
     }
 
+    get activePrefsPage() {
+        return this._gsettings.get_int('active-prefs-page');
+    }
+    set activePrefsPage(int_val) {
+        this._gsettings.set_int('active-prefs-page', int_val);
+    }
+
     // common options
     get popupMode() {
-        return this._gsettings.get_int('mode');
+        return this._gsettings.get_int('popup-mode');
     }
     set popupMode(int_val) {
-        this._gsettings.set_int('mode', int_val);
+        this._gsettings.set_int('popup-mode', int_val);
     }
 
     get monitor() {
@@ -79,59 +86,45 @@ var MscOptions = class MscOptions {
     }
 
     get popupTimeout() {
-        return this._gsettings.get_int('timeout');
+        return this._gsettings.get_int('on-screen-time');
     }
     set popupTimeout(int_val) {
-        this._gsettings.set_int('timeout', int_val);
+        this._gsettings.set_int('on-screen-time', int_val);
+    }
+
+    get fadeOutTime() {
+        return this._gsettings.get_int('fade-out-time');
+    }
+    set fadeOutTime(int_val) {
+        this._gsettings.set_int('fade-out-time', int_val);
     }
 
     get wsSwitchWrap() {
-        return this._gsettings.get_boolean('wraparound');
+        return this._gsettings.get_boolean('ws-wraparound');
     }
     set wsSwitchWrap(bool_val) {
-        this._gsettings.set_boolean('wraparound', bool_val);
+        this._gsettings.set_boolean('ws-wraparound', bool_val);
     }
 
     get wsSwitchIgnoreLast() {
-        return this._gsettings.get_boolean('ignore-last');
+        return this._gsettings.get_boolean('ws-ignore-last');
     }
     set wsSwitchIgnoreLast(bool_val) {
-        this._gsettings.set_boolean('ignore-last', bool_val);
+        this._gsettings.set_boolean('ws-ignore-last', bool_val);
     }
 
-    get fontSize() {
-        return this._gsettings.get_int('font-size');
+    get fontScale() {
+        return this._gsettings.get_int('font-scale');
     }
-    set fontSize(int_val) {
-        this._gsettings.set_int('font-size', int_val);
-    }
-
-    get indexSize() {
-        return this._gsettings.get_int('index-size');
-    }
-    set indexSize(int_val) {
-        this._gsettings.set_int('index-size', int_val);
+    set fontScale(int_val) {
+        this._gsettings.set_int('font-scale', int_val);
     }
 
-    get popupPadding() {
-        return this._gsettings.get_int('popup-padding');
+    get indexScale() {
+        return this._gsettings.get_int('index-scale');
     }
-    set popupPadding(int_val) {
-        this._gsettings.set_int('popup-padding', int_val);
-    }
-
-    get popupSpacing() {
-        return this._gsettings.get_int('popup-spacing');
-    }
-    set popupSpacing(int_val) {
-        this._gsettings.set_int('popup-spacing', int_val);
-    }
-
-    get fontColor() {
-        return this._gsettings.get_string('color');
-    }
-    set fontColor(string) {
-        this._gsettings.set_string('color', string);
+    set indexScale(int_val) {
+        this._gsettings.set_int('index-scale', int_val);
     }
 
     get wrapAppNames() {
@@ -155,13 +148,6 @@ var MscOptions = class MscOptions {
         this._gsettings.set_boolean('text-bold', bool_val);
     }
 
-    get fadeOutTime() {
-        return this._gsettings.get_int('fade-out-time');
-    }
-    set fadeOutTime(int_val) {
-        this._gsettings.set_int('fade-out-time', int_val);
-    }
-
     get wsNames() {
         return this._getWsNamesSettings().get_strv('workspace-names');
     }
@@ -169,18 +155,32 @@ var MscOptions = class MscOptions {
         this._getWsNamesSettings().set_strv('workspace-names', names);
     }
 
-    get defaultPopupSize() {
-        return this._gsettings.get_int('popup-size');
+    get popupScale() {
+        return this._gsettings.get_int('popup-scale');
     }
-    set defaultPopupSize(int_val) {
-        this._gsettings.set_int('popup-size', int_val);
+    set popupScale(int_val) {
+        this._gsettings.set_int('popup-scale', int_val);
     }
 
-    get wsBoxWidth() {
-        return this._gsettings.get_int('ws-box-width');
+    get popupWidthScale() {
+        return this._gsettings.get_int('popup-width-scale');
     }
-    set wsBoxWidth(int_val) {
-        this._gsettings.set_int('ws-box-width', int_val);
+    set popupWidthScale(int_val) {
+        this._gsettings.set_int('popup-width-scale', int_val);
+    }
+
+    get popupPaddingScale() {
+        return this._gsettings.get_int('popup-padding-scale');
+    }
+    set popupPaddingScale(int_val) {
+        this._gsettings.set_int('popup-padding-scale', int_val);
+    }
+
+    get popupSpacingScale() {
+        return this._gsettings.get_int('popup-spacing-scale');
+    }
+    set popupSpacingScale(int_val) {
+        this._gsettings.set_int('popup-spacing-scale', int_val);
     }
 
     get allowCustomColors() {
@@ -190,60 +190,53 @@ var MscOptions = class MscOptions {
         this._gsettings.set_boolean('allow-custom-colors', bool_val);
     }
 
-    get defaultPopupOpacity() {
+    get popupOpacity() {
         return this._gsettings.get_int('popup-opacity');
     }
-    set defaultPopupOpacity(int_val) {
+    set popupOpacity(int_val) {
         this._gsettings.set_int('popup-opacity', int_val);
     }
 
-    get defaultPopupBgColor() {
+    get popupBgColor() {
         return this._gsettings.get_string('popup-bg-color');
     }
-    set defaultPopupBgColor(string) {
+    set popupBgColor(string) {
         this._gsettings.set_string('popup-bg-color', string);
     }
 
-    get defaultPopupBorderColor() {
+    get popupBorderColor() {
         return this._gsettings.get_string('popup-border-color');
     }
-    set defaultPopupBorderColor(string) {
+    set popupBorderColor(string) {
         this._gsettings.set_string('popup-border-color', string);
     }
 
-    get defaultPopupActiveFgColor() {
+    get popupActiveFgColor() {
         return this._gsettings.get_string('popup-active-fg-color');
     }
-    set defaultPopupActiveFgColor(string) {
+    set popupActiveFgColor(string) {
         this._gsettings.set_string('popup-active-fg-color', string);
     }
 
-    get defaultPopupActiveBgColor() {
+    get popupActiveBgColor() {
         return this._gsettings.get_string('popup-active-bg-color');
     }
-    set defaultPopupActiveBgColor(string) {
+    set popupActiveBgColor(string) {
         this._gsettings.set_string('popup-active-bg-color', string);
     }
 
-    get defaultPopupInactiveFgColor() {
+    get popupInactiveFgColor() {
         return this._gsettings.get_string('popup-inactive-fg-color');
     }
-    set defaultPopupInactiveFgColor(string) {
+    set popupInactiveFgColor(string) {
         this._gsettings.set_string('popup-inactive-fg-color', string);
     }
 
-    get defaultPopupInactiveBgColor() {
+    get popupInactiveBgColor() {
         return this._gsettings.get_string('popup-inactive-bg-color');
     }
-    set defaultPopupInactiveBgColor(string) {
+    set popupInactiveBgColor(string) {
         this._gsettings.set_string('popup-inactive-bg-color', string);
-    }
-
-    get activePrefsPage() {
-        return this._gsettings.get_string('active-prefs-page');
-    }
-    set activePrefsPage(string) {
-        this._gsettings.set_string('active-prefs-page', string);
     }
 
     get defaultColors() {

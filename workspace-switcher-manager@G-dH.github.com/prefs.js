@@ -72,18 +72,7 @@ function buildPrefsWidget() {
     }));
 
     /*optionsPage.connect('switch-page', (ntb, page, index) => {
-        switch (page) {
-        case generalOptionsPage:
-            mscOptions.activePrefsPage = 'general'
-            break;
-        case contentOptionsPage:
-            mscOptions.activePrefsPage = 'defaultPopup';
-            break;
-        case sizeTextOptionsPage:
-            mscOptions.activePrefsPage = 'customPopup';
-            break;
-        default:
-            mscOptions.activePrefsPage = '';
+            mscOptions.activePrefsPage = index;
         }
     });*/
 
@@ -233,7 +222,7 @@ function _getPopupOptionList() {
     );
     //-----------------------------------------------------
     let fadeOutAdjustment = new Gtk.Adjustment({
-        upper: 1500,
+        upper: 1000,
         lower: 10,
         step_increment: 1,
         page_increment: 1,
@@ -423,26 +412,26 @@ function _getSizeTextOptionList() {
             _('Popup Scale (%)'),
             _("Sets the size of the popup relative to the original."),
             dpSize,
-            'defaultPopupSize'
+            'popupScale'
         )
     );
     //-----------------------------------------------------
-    const wsBoxWidthAdjustment = new Gtk.Adjustment({
+    const boxWidthAdjustment = new Gtk.Adjustment({
         upper: 300,
         lower: 10,
         step_increment: 1,
         page_increment: 1,
     });
 
-    const wsBoxWidth = _newScale(wsBoxWidthAdjustment);
-    wsBoxWidth.add_mark(100, Gtk.PositionType.TOP, null);
+    const boxWidth = _newScale(boxWidthAdjustment);
+    boxWidth.add_mark(100, Gtk.PositionType.TOP, null);
 
     optionList.push(
         _optionsItem(
-            _('Box Width Scale (%)'),
+            _('Popup Width Scale (%)'),
             _("Allows to make popup box representing single workspace wider or narrower."),
-            wsBoxWidth,
-            'wsBoxWidth'
+            boxWidth,
+            'popupWidthScale'
         )
     );
     //-----------------------------------------------------
@@ -461,7 +450,7 @@ function _getSizeTextOptionList() {
             _('Popup Padding (%)'),
             _("Adjusts popup background padding."),
             padding,
-            'popupPadding'
+            'popupPaddingScale'
         )
     );
     //-----------------------------------------------------
@@ -480,7 +469,7 @@ function _getSizeTextOptionList() {
             _('Popup Spacing (%)'),
             _("Adjusts popup box spacing."),
             spacing,
-            'popupSpacing'
+            'popupSpacingScale'
         )
     );
     //-----------------------------------------------------
@@ -506,7 +495,7 @@ function _getSizeTextOptionList() {
             _('Font Size Finetune (%)'),
             _('Size resizes acording to the popup sclae, use this scale to precisely adjust the text size.'),
             fsScale,
-            'fontSize',
+            'fontScale',
         )
     );
     //-----------------------------------------------------
@@ -525,7 +514,7 @@ function _getSizeTextOptionList() {
             _('Index Size Finetune (%)'),
             _('If only "Show Workspace Index" text (or "Show App Name" on workspace without app) content option is active this scale takes effect. Single digit always looks smaller then longer text with the same font size.'),
             idxScale,
-            'indexSize',
+            'indexScale',
         )
     );
     //-----------------------------------------------------
@@ -593,7 +582,7 @@ function _getColorOptionList() {
             _('Global'),
             null,
             opacityScale,
-            'defaultPopupOpacity',
+            'popupOpacity',
         )
     );
     //-----------------------------------------------------
@@ -607,9 +596,9 @@ function _getColorOptionList() {
     optionList.push(
         _optionsItem(
             _makeTitle(_('Allow Custom Colors ↓ →')),
-            _(`Default colors for Reset button are read from default Shell theme at the time when the extension is being enabled.
-Because reading colors from css style is hacky as hell, if you don't exactly know what objects was used for it,\n
-colors may not be correct and are usually without alpha chanel information`),
+            _(`Default colors are read from default Shell theme at the time the extension is being enabled.
+Because reading colors from css style is hacky as hell if you don't exactly know the applied css style content,
+colors may be incorrect (more incorrect if other than default theme is used). Also alpha chanel information may be missing.`),
             _newGtkSwitch(),
             'allowCustomColors'
         )
@@ -619,7 +608,7 @@ colors may not be correct and are usually without alpha chanel information`),
     const bgColorBtn = _newColorButton();
     const bgColorReset = _newColorResetBtn(0, bgColorBtn);
     bgColorBox.colorBtn = bgColorBtn;
-    bgColorBtn._gsettingsVar = 'defaultPopupBgColor';
+    bgColorBtn._gsettingsVar = 'popupBgColor';
 
     bgColorBox[bgColorBox.add ? 'add' : 'append'](bgColorBtn);
     bgColorBox[bgColorBox.add ? 'add' : 'append'](bgColorReset);
@@ -629,7 +618,7 @@ colors may not be correct and are usually without alpha chanel information`),
             _('Background color / opacity'),
             null,
             bgColorBox,
-            'defaultPopupBgColor',
+            'popupBgColor',
         )
     );
     //-----------------------------------------------------
@@ -637,7 +626,7 @@ colors may not be correct and are usually without alpha chanel information`),
     const borderColorBtn = _newColorButton();
     const borderColorReset = _newColorResetBtn(1, borderColorBtn);
     borderColorBox.colorBtn = borderColorBtn;
-    borderColorBtn._gsettingsVar = 'defaultPopupBorderColor';
+    borderColorBtn._gsettingsVar = 'popupBorderColor';
 
     borderColorBox[borderColorBox.add ? 'add' : 'append'](borderColorBtn);
     borderColorBox[borderColorBox.add ? 'add' : 'append'](borderColorReset);
@@ -647,7 +636,7 @@ colors may not be correct and are usually without alpha chanel information`),
             _('Border color / opacity'),
             null,
             borderColorBox,
-            'defaultPopupBorderColor',
+            'popupBorderColor',
         )
     );
     //-----------------------------------------------------
@@ -655,7 +644,7 @@ colors may not be correct and are usually without alpha chanel information`),
     const activeFgColorBtn = _newColorButton();
     const activeFgColorReset = _newColorResetBtn(2, activeFgColorBtn);
     activeFgColorBox.colorBtn = activeFgColorBtn;
-    activeFgColorBtn._gsettingsVar = 'defaultPopupActiveFgColor';
+    activeFgColorBtn._gsettingsVar = 'popupActiveFgColor';
 
     activeFgColorBox[activeFgColorBox.add ? 'add' : 'append'](activeFgColorBtn);
     activeFgColorBox[activeFgColorBox.add ? 'add' : 'append'](activeFgColorReset);
@@ -665,7 +654,7 @@ colors may not be correct and are usually without alpha chanel information`),
             _('Active WS Foreground color / opacity'),
             _('Text and other active workspace box overlays'),
             activeFgColorBox,
-            'defaultPopupActiveFgColor',
+            'popupActiveFgColor',
         )
     );
     //-----------------------------------------------------
@@ -673,7 +662,7 @@ colors may not be correct and are usually without alpha chanel information`),
     const activeBgColorBtn = _newColorButton();
     const activeBgColorReset = _newColorResetBtn(3, activeBgColorBtn);
     activeBgColorBox.colorBtn = activeBgColorBtn;
-    activeBgColorBtn._gsettingsVar = 'defaultPopupActiveBgColor';
+    activeBgColorBtn._gsettingsVar = 'popupActiveBgColor';
 
     activeBgColorBox[activeBgColorBox.add ? 'add' : 'append'](activeBgColorBtn);
     activeBgColorBox[activeBgColorBox.add ? 'add' : 'append'](activeBgColorReset);
@@ -683,7 +672,7 @@ colors may not be correct and are usually without alpha chanel information`),
             _('Active WS Background color  / opacity'),
             null,
             activeBgColorBox,
-            'defaultPopupActiveBgColor',
+            'popupActiveBgColor',
         )
     );
     //-----------------------------------------------------
@@ -691,7 +680,7 @@ colors may not be correct and are usually without alpha chanel information`),
     const inactiveFgColorBtn = _newColorButton();
     const inactiveFgColorReset = _newColorResetBtn(4, inactiveFgColorBtn);
     inactiveFgColorBox.colorBtn = inactiveFgColorBtn;
-    inactiveFgColorBtn._gsettingsVar = 'defaultPopupInactiveFgColor';
+    inactiveFgColorBtn._gsettingsVar = 'popupInactiveFgColor';
 
     inactiveFgColorBox[inactiveFgColorBox.add ? 'add' : 'append'](inactiveFgColorBtn);
     inactiveFgColorBox[inactiveFgColorBox.add ? 'add' : 'append'](inactiveFgColorReset);
@@ -701,7 +690,7 @@ colors may not be correct and are usually without alpha chanel information`),
             _('Inactive WS Foreground color / opacity'),
             _('Text and other inactive workspace box overlays'),
             inactiveFgColorBox,
-            'defaultPopupInactiveFgColor',
+            'popupInactiveFgColor',
         )
     );
     //-----------------------------------------------------
@@ -709,7 +698,7 @@ colors may not be correct and are usually without alpha chanel information`),
     const inactiveBgColorBtn = _newColorButton();
     const inactiveBgColorReset = _newColorResetBtn(5, inactiveBgColorBtn);
     inactiveBgColorBox.colorBtn = inactiveBgColorBtn;
-    inactiveBgColorBtn._gsettingsVar = 'defaultPopupInactiveBgColor';
+    inactiveBgColorBtn._gsettingsVar = 'popupInactiveBgColor';
 
     inactiveBgColorBox[inactiveBgColorBox.add ? 'add' : 'append'](inactiveBgColorBtn);
     inactiveBgColorBox[inactiveBgColorBox.add ? 'add' : 'append'](inactiveBgColorReset);
@@ -719,7 +708,7 @@ colors may not be correct and are usually without alpha chanel information`),
             _('Inactive WS Background color  / opacity'),
             null,
             inactiveBgColorBox,
-            'defaultPopupInactiveBgColor',
+            'popupInactiveBgColor',
         )
     );
 

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="workspace-switcher-manager">
   <schema id="org.gnome.shell.extensions.workspace-switcher-manager" path="/org/gnome/shell/extensions/workspace-switcher-manager/">
+    <key type="i" name="active-prefs-page">
+      <default>0</default>
+    </key>
     <key type="i" name="horizontal">
       <default>50</default>
     </key>
@@ -12,25 +15,22 @@
       <summary></summary>
       <description></description>
     </key>
-    <key type="i" name="mode">
+    <key type="i" name="popup-mode">
       <default>0</default>
     </key>
     <key type="i" name="monitor">
       <default>0</default>
     </key>
-    <key type="i" name="timeout">
-      <default>600</default>
-    </key>
-    <key type="b" name="wraparound">
+    <key type="b" name="ws-wraparound">
       <default>false</default>
     </key>
-    <key type="b" name="ignore-last">
+    <key type="b" name="ws-ignore-last">
       <default>false</default>
     </key>
-    <key type="i" name="font-size">
+    <key type="i" name="font-scale">
       <default>100</default>
     </key>
-    <key type="i" name="index-size">
+    <key type="i" name="index-scale">
       <default>100</default>
     </key>
     <key type="b" name="wrap-app-names">
@@ -42,19 +42,22 @@
     <key type="b" name="text-bold">
       <default>true</default>
     </key>
+    <key type="i" name="on-screen-time">
+      <default>600</default>
+    </key>
     <key type="i" name="fade-out-time">
-      <default>300</default>
+      <default>500</default>
     </key>
-    <key type="i" name="popup-size">
+    <key type="i" name="popup-scale">
       <default>100</default>
     </key>
-    <key type="i" name="ws-box-width">
+    <key type="i" name="popup-width-scale">
       <default>100</default>
     </key>
-    <key type="i" name="popup-spacing">
+    <key type="i" name="popup-spacing-scale">
       <default>100</default>
     </key>
-    <key type="i" name="popup-padding">
+    <key type="i" name="popup-padding-scale">
       <default>100</default>
     </key>
     <key type="b" name="allow-custom-colors">
@@ -79,9 +82,6 @@
       <default>''</default>
     </key>
     <key type="s" name="popup-inactive-bg-color">
-      <default>''</default>
-    </key>
-    <key type="s" name="active-prefs-page">
       <default>''</default>
     </key>
     <key type="as" name="default-colors">
