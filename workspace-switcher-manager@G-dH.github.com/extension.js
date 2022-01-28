@@ -599,7 +599,10 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
 
     _getWsAppName(wsIndex) {
         const ws = global.workspaceManager.get_workspace_by_index(wsIndex);
-        let wins = AltTab.getWindows(ws);
+        // AltTab.get_windows(ws) gives strange results after GS restart on X11
+        // filtered get_windows(null) gives constant results (GS 3.36 - 41)
+        let wins = AltTab.getWindows(null);
+        wins = wins.filter(w => w.get_workspace() === ws);
 
         if (this._workspacesOnPrimaryOnly) {
             const monitor = Main.layoutManager.primaryIndex;
@@ -692,7 +695,7 @@ class WorkspaceSwitcherPopupList extends St.Widget {
         let workArea = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
 
         if (this._orientation == Clutter.Orientation.HORIZONTAL) {  // width scale option application
-            this._childHeight = Math.round(this._childWidth * workArea.height / workArea.width * this._customWidthScale);
+            this._childHeight = Math.round(this._childWidth * workArea.height / workArea.width / this._customWidthScale);
             return [this._childHeight, this._childHeight];
         } else {
             this._childWidth = Math.round(this._childHeight * workArea.width / workArea.height * this._customWidthScale);
