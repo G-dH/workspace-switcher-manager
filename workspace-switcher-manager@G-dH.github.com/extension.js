@@ -67,6 +67,7 @@ function enable() {
 function disable() {
     if (enableTimeoutId) {
         GLib.source_remove(enableTimeoutId);
+        enableTimeoutId = 0;
     }
 
     if (prefsDemoTimeoutId) {
