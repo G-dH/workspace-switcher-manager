@@ -115,7 +115,7 @@ This option is backed by internal GNOME gsettings key and can be modified by oth
 
     optionList.push(
         _optionsItem(
-            _('Number of Workspaces in Static mode'),
+            _('Number of Workspaces in Static Mode'),
             _('Max number of 36 is given by GNOME. This option is backed by internal GNOME gsettings key and can be modified by other applications.'),
             numScale,
             'numWorkspaces'
@@ -157,7 +157,7 @@ This option is backed by internal GNOME gsettings key and can be modified by oth
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
-            _('Ignore Last (empty) workspace'),
+            _('Ignore Last (empty) Workspace'),
             null,
             _newGtkSwitch(),
             'wsSwitchIgnoreLast'
@@ -242,7 +242,7 @@ function _getPopupOptionList() {
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
-            _(`Display until modifier keys released`),
+            _(`Display Until Modifier Keys Released`),
             _('Keeps the popup on the screen until modifier keys (Shift, Ctrl, Super, Alt) are released. Similar as Alt-Tab switcher works.'),
             _newGtkSwitch(),
             'modifiersHidePopup'
