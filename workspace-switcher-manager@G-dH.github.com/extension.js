@@ -336,7 +336,8 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
 
         // TO DO: this second customizing shoud just rescale padding, spacing and corner radius ...
         this._setCustomStyle();
-        this._addLabels();
+        if (this._list._fitToScreenScale < 1)
+            this._addLabels();
     }
 
     _resetTimeout() {
@@ -370,10 +371,12 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
                 indicator = new St.Bin({ style_class: 'ws-switcher-box' });
 
             if (indicator) {
+                // we need to know wsIndex of active box in single ws mode 
                 indicator._wsIndex = i;
                 this._list.add_actor(indicator);
             }
         }
+        this._addLabels();
     }
 
     _onTimeout() {
@@ -522,13 +525,13 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         return this._wsNamesSettings;
     }
 
-    _getCustomLabel(i){
+    _getCustomLabel(wsIndex){
         //this._list._getPreferredSizeForOrientation(true);
-        const wsIndex = i;
+
         let label = null;
         let text = '';
 
-        const wsIndexIsActiveWS = i == this._activeWorkspaceIndex;
+        const wsIndexIsActiveWS = wsIndex == this._activeWorkspaceIndex;
 
         const showIndex = wsIndexIsActiveWS ? this._activeShowWsIndex : this._inactiveShowWsIndex;
         const showName  = wsIndexIsActiveWS ? this._activeShowWsName  : this._inactiveShowWsName;
@@ -586,7 +589,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         return label;
     }
 
-    _getWsName(wsindex) {
+    _getWsName(wsIndex) {
         if (!this._wsNames) {
             const settings = this._getWsNamesSettings();
             this._wsNames = settings.get_strv('workspace-names');
