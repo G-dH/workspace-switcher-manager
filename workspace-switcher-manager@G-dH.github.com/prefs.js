@@ -93,9 +93,8 @@ function _getGeneralOptionList() {
     optionList.push(
         _optionsItem(
             _('Mode'),
-            _(`Dynamic - workspaces can be created on demand, and are automaticaly removed when empty\n
-Static - number of workspaces is fixed, and you can set the number below\n
-This option is backed by internal GNOME gsettings key and can be modified by other applications.`),
+            _(`Dynamic - workspaces can be created on demand, and are automaticaly removed when empty
+Static - number of workspaces is fixed, and you can set the number below`),
             _newComboBox(),
             'workspaceMode',
            [[_('Dynamic'), 0],
@@ -116,7 +115,7 @@ This option is backed by internal GNOME gsettings key and can be modified by oth
     optionList.push(
         _optionsItem(
             _('Number of Workspaces in Static Mode'),
-            _('Max number of 36 is given by GNOME. This option is backed by internal GNOME gsettings key and can be modified by other applications.'),
+            _('Max number of 36 is given by GNOME.'),
             numScale,
             'numWorkspaces'
         )
@@ -134,7 +133,7 @@ This option is backed by internal GNOME gsettings key and can be modified by oth
     optionList.push(
         _optionsItem(
             _('Reverse Workspace Orientation'),
-            _('This option breaks overview in GS 40+, but usable in 3.36/3.38. Changes the direction in which workspaces are organized, from horizontal to vertical or from vertical to horizontal, depending on the default state that is recorded during the start of GNOME Shell. The switcher popup reflects this option automatically.'),
+            _('Changes the direction in which workspaces are organized, from horizontal to vertical or from vertical to horizontal, depending on the default state that is recorded during the start of GNOME Shell. The switcher popup reflects this option automatically.\nThis option breaks overview in GS 40+, but is usable in 3.36/3.38.'),
             _newGtkSwitch(),
             'reverseWsOrientation'
         )
@@ -194,7 +193,7 @@ function _getPopupOptionList() {
     optionList.push(
         _optionsItem(
             _('Monitor'),
-            _('The monitor on which the workspace popup should appear. The Current monitor is determined by the mouse pointer position.'),
+            _('The monitor on which the workspace popup should appear. The Current monitor is determined by the mouse pointer location.'),
             _newComboBox(),
             'monitor',
            [[_('Primary'), 0],
@@ -251,7 +250,7 @@ function _getPopupOptionList() {
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Position')),
+            _makeTitle(_('Position on Screen')),
         )
     );
     //-----------------------------------------------------
@@ -652,7 +651,7 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     optionList.push(
         _optionsItem(
             _('Active WS Foreground color / opacity'),
-            _('Text and other active workspace box overlays'),
+            _('Text and other forground graphics.'),
             activeFgColorBox,
             'popupActiveFgColor',
         )
@@ -688,7 +687,7 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     optionList.push(
         _optionsItem(
             _('Inactive WS Foreground color / opacity'),
-            _('Text and other inactive workspace box overlays'),
+            _('Text and other forground graphics.'),
             inactiveFgColorBox,
             'popupInactiveFgColor',
         )
@@ -853,33 +852,36 @@ class OptionsPageWSPM extends Gtk.ScrolledWindow {
         if (this._alreadyBuilt)
             return;
 
+        const context = this.get_style_context();
+        context.add_class('background');
+
         const mainBox = new Gtk.Box({
             orientation: Gtk.Orientation.VERTICAL,
             spacing: 5,
             homogeneous: false,
-            margin_start: 15,
-            margin_end: 15,
-            margin_top: 12,
-            margin_bottom: 12,
+            margin_start: 16,
+            margin_end: 16,
+            margin_top: 16,
+            margin_bottom: 16,
             visible: true,
         });
 
         let frame;
         let frameBox;
         for (let item of this.optionList) {
-            // item structure: [[label, control widget], tooltip]
-            const itemWidgets = item[0];
-            const itemLabel   = item[0][0];
-            const itemControl = item[0][1];
-            const itemTooltip = item[1];
+            // item structure: [labelBox, control widget]
+            const option = item[0];
+            const widget = item[1];
 
-            if (!itemControl) {
+            if (!widget) {
                 // new section
                 let lbl = new Gtk.Label({
                     xalign: 0,
-                    visible: true
+                    visible: true,
+                    margin_top: 4,
+                    margin_bottom: 2
                 });
-                lbl.set_markup(itemLabel);
+                lbl.set_markup(option); // option is plain text if item is section title
                 mainBox[mainBox.add ? 'add' : 'append'](lbl);
                 frame = new Gtk.Frame({
                     visible: true,
@@ -893,22 +895,24 @@ class OptionsPageWSPM extends Gtk.ScrolledWindow {
                 frame[frame.add ? 'add' : 'set_child'](frameBox);
                 continue;
             }
-            let box = new Gtk.Box({
-                orientation: Gtk.Orientation.HORIZONTAL,
-                homogeneous: true,
-                margin_start: 4,
-                margin_end: 4,
-                margin_top: 4,
-                margin_bottom: 4,
+
+            const grid = new Gtk.Grid({
+                column_homogeneous: true,
+                margin_start: 8,
+                margin_end: 8,
+                margin_top: 8,
+                margin_bottom: 8,
                 hexpand: true,
-                spacing: 20,
                 visible: true,
-            });
-            for (let i of itemWidgets)
-                box[box.add ? 'add' : 'append'](i);
+            })
+
+            grid.attach(option, 0, 0, 10, 1);
+            if (widget) {
+                grid.attach(widget, 10, 0, 4, 1);
+            }
             /*if (item.length === 2)
                 box.set_tooltip_text(itemTooltip);*/
-            frameBox[frameBox.add ? 'add' : 'append'](box);
+            frameBox[frameBox.add ? 'add' : 'append'](grid);
         }
         this[this.add ? 'add' : 'set_child'](mainBox);
 
@@ -1039,25 +1043,44 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
             `Settings variable ${variable} doesn't exist, check your code dude!`
         );
     }
-    // item structure: [[label, widget], tooltip]
-    let item = [[]];
+    // item structure: [option(label/caption), widget]
+    let item = [];
     let label;
     if (widget) {
-        label = new Gtk.Label({
+        label = new Gtk.Box({
+            orientation: Gtk.Orientation.VERTICAL,
+            spacing: 4,
             halign: Gtk.Align.START,
             visible: true,
         });
-        label.set_markup(text);
-        if (tooltip)
-            label.set_tooltip_text(tooltip);
+
+        const option = new Gtk.Label({
+            halign: Gtk.Align.START,
+            visible: true,
+        });
+        option.set_markup(text);
+
+        label[label.add ? 'add' : 'append'](option);
+
+        if (tooltip) {
+            const caption = new Gtk.Label({
+                halign: Gtk.Align.START,
+                visible: true,
+                wrap: true,
+                xalign: 0
+            })
+            const context = caption.get_style_context();
+            context.add_class('dim-label');
+            context.add_class('caption');
+            caption.set_text(tooltip);
+            label[label.add ? 'add' : 'append'](caption);
+        }
+
     } else {
         label = text;
     }
-    item[0].push(label);
-    if (widget)
-        item[0].push(widget);
-    if (tooltip)
-        item.push(tooltip);
+    item.push(label);
+    item.push(widget);
 
     if (widget && widget.is_switch) {
         widget.active = mscOptions[variable];
