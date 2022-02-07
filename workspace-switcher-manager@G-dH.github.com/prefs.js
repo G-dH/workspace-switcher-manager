@@ -42,7 +42,7 @@ function buildPrefsWidget() {
     }));
 
     optionsPage.append_page(popupOptionsPage, new Gtk.Label({
-        label: _('Popup'),
+        label: _('Pop-up'),
         halign: Gtk.Align.START,
         visible: true,
     }));
@@ -93,8 +93,8 @@ function _getGeneralOptionList() {
     optionList.push(
         _optionsItem(
             _('Mode'),
-            _(`Dynamic - workspaces can be created on demand, and are automaticaly removed when empty
-Static - number of workspaces is fixed, and you can set the number below`),
+            _(`Dynamic - workspaces can be created on demand, and are automaticaly removed when empty.
+Static - number of workspaces is fixed to the number you can set below.`),
             _newComboBox(),
             'workspaceMode',
            [[_('Dynamic'), 0],
@@ -133,7 +133,7 @@ Static - number of workspaces is fixed, and you can set the number below`),
     optionList.push(
         _optionsItem(
             _('Reverse Workspace Orientation'),
-            _('Changes the direction in which workspaces are organized, from horizontal to vertical or from vertical to horizontal, depending on the default state that is recorded during the start of GNOME Shell. The switcher popup reflects this option automatically.\nThis option breaks overview in GS 40+, but is usable in 3.36/3.38.'),
+            _('Changes the axis (horizontal / vertical) in which workspaces are organized, depending on the default state that is recorded during the start of this extension. The switcher pop-up reflects this option automatically.\nThis option breaks overview (visually) in GS 40+, but is usable in 3.36/3.38.'),
             _newGtkSwitch(),
             'reverseWsOrientation'
         )
@@ -141,14 +141,14 @@ Static - number of workspaces is fixed, and you can set the number below`),
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Switcher')),
+            _makeTitle(_('Workspace Switcher')),
         )
     );
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
             _('Wraparound'),
-            _('Whether the switcher should continue from the last workspace to the first one and vice versa.'),
+            _('Continue from the last workspace to the first and vice versa.'),
             _newGtkSwitch(),
             'wsSwitchWrap'
         )
@@ -193,7 +193,7 @@ function _getPopupOptionList() {
     optionList.push(
         _optionsItem(
             _('Monitor'),
-            _('The monitor on which the workspace popup should appear. The Current monitor is determined by the mouse pointer location.'),
+            _('The monitor on which the workspace switcher pop-up should appear. The Current monitor is determined by the mouse pointer location.'),
             _newComboBox(),
             'monitor',
            [[_('Primary'), 0],
@@ -214,7 +214,7 @@ function _getPopupOptionList() {
     optionList.push(
         _optionsItem(
             _('On-Screen Time (ms)'),
-            _("Time after which the popup fade out"),
+            _("Time after which the pop-up fade out"),
             tScale,
             'popupTimeout'
         )
@@ -242,7 +242,7 @@ function _getPopupOptionList() {
     optionList.push(
         _optionsItem(
             _(`Display Until Modifier Keys Released`),
-            _('Keeps the popup on the screen until modifier keys (Shift, Ctrl, Super, Alt) are released. Similar as Alt-Tab switcher works.'),
+            _('Keeps the pop-up on the screen until modifier keys (Shift, Ctrl, Super, Alt) are released. Similar as Alt-Tab switcher works.'),
             _newGtkSwitch(),
             'modifiersHidePopup'
         )
@@ -300,7 +300,7 @@ function _getPopupOptionList() {
     optionList.push(
         _optionsItem(
             _('Reverse Orientation'),
-            _('Draw the switcher popup vertically instead of horizontaly and vice versa.'),
+            _('Draw the switcher pop-up vertically instead of horizontaly and vice versa.'),
             _newGtkSwitch(),
             'reversePopupOrientation'
         )
@@ -316,14 +316,14 @@ function _getContentOptionList() {
 
     optionList.push(
         _optionsItem(
-            _makeTitle(_("Popup Active Workspace Box")),
+            _makeTitle(_("Pop-up Active Workspace Indicator Content")),
         )
     );
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
              _('Show Workspace Index'),
-             _('Highlighted active workspace indicator will show its index.'),
+             _('Highlighted workspace box shows its index.'),
              _newGtkSwitch(),
              'activeShowWsIndex'
          )
@@ -332,7 +332,7 @@ function _getContentOptionList() {
     optionList.push(
        _optionsItem(
             _('Show Workspace Name'),
-            _('Highlighted active workspace indicator will show workspace name if the name is set.'),
+            _('Highlighted workspace box shows workspace name if the name is set.'),
             _newGtkSwitch(),
             'activeShowWsName'
         )
@@ -341,7 +341,7 @@ function _getContentOptionList() {
     optionList.push(
         _optionsItem(
             _('Show Current App Name'),
-            _('Highlighted active workspace indicator will show a name of the last used application on active workspace.'),
+            _('Highlighted workspace box shows the name of the most recently used application on the represented workspace.'),
             _newGtkSwitch(),
             'activeShowAppName'
          )
@@ -350,14 +350,14 @@ function _getContentOptionList() {
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Popup Inactive Workspace Box')),
+            _makeTitle(_('Pop-up Inactive Workspace Indicator Content')),
         )
     );
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
              _('Show Workspace Index'),
-             _('Highlighted active workspace indicator will show its index.'),
+             _('Inactive workspace box shows its index.'),
              _newGtkSwitch(),
              'inactiveShowWsIndex'
          )
@@ -366,7 +366,7 @@ function _getContentOptionList() {
     optionList.push(
        _optionsItem(
             _('Show Workspace Name'),
-            _('Highlighted active workspace indicator will show workspace name if the name is set.'),
+            _('Inactive workspace box shows workspace name if the name is set.'),
             _newGtkSwitch(),
             'inactiveShowWsName'
         )
@@ -375,7 +375,7 @@ function _getContentOptionList() {
     optionList.push(
         _optionsItem(
             _('Show Current App Name'),
-            _('Highlighted active workspace indicator will show a name of the last used application on active workspace.'),
+            _('Inactive workspace box shows the name of the most recently used application on represented workspace.'),
             _newGtkSwitch(),
             'inactiveShowAppName'
          )
@@ -391,7 +391,7 @@ function _getSizeTextOptionList() {
 
      optionList.push(
         _optionsItem(
-            _makeTitle(_('Popup Size')),
+            _makeTitle(_('Pop-up Size')),
             null
         )
     );
@@ -408,8 +408,8 @@ function _getSizeTextOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Popup Scale (%)'),
-            _("Sets the size of the popup relative to the original."),
+            _('Pop-up Scale (%)'),
+            _("Sets the size of the pop-up relative to the original."),
             dpSize,
             'popupScale'
         )
@@ -427,8 +427,8 @@ function _getSizeTextOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Popup Width Scale (%)'),
-            _("Allows to make popup box representing single workspace wider or narrower."),
+            _('Pop-up Width Scale (%)'),
+            _("Allows to make pop-up box representing single workspace wider or narrower."),
             boxWidth,
             'popupWidthScale'
         )
@@ -446,8 +446,8 @@ function _getSizeTextOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Popup Padding (%)'),
-            _("Adjusts popup background padding."),
+            _('Pop-up Padding (%)'),
+            _("Adjusts pop-up background padding."),
             padding,
             'popupPaddingScale'
         )
@@ -465,8 +465,8 @@ function _getSizeTextOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Popup Spacing (%)'),
-            _("Adjusts popup box spacing."),
+            _('Pop-up Spacing (%)'),
+            _("Adjusts pop-up box spacing."),
             spacing,
             'popupSpacingScale'
         )
@@ -492,7 +492,7 @@ function _getSizeTextOptionList() {
     optionList.push(
         _optionsItem(
             _('Font Size Finetune (%)'),
-            _('Size resizes acording to the popup sclae, use this scale to precisely adjust the text size.'),
+            _('Size resizes acording to the pop-up sclae, use this scale to precisely adjust the text size.'),
             fsScale,
             'fontScale',
         )
@@ -561,7 +561,7 @@ function _getColorOptionList() {
 
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Popup Opacity')),
+            _makeTitle(_('Pop-up Opacity')),
             null
         )
     );
@@ -578,8 +578,8 @@ function _getColorOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Global'),
-            null,
+            _('Global Opacity (%)'),
+            _('Sets transparency of the pop-up as a whole.'),
             opacityScale,
             'popupOpacity',
         )
@@ -587,14 +587,14 @@ function _getColorOptionList() {
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Popup Colors')),
+            _makeTitle(_('Pop-up Colors')),
             null
         )
     );
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Allow Custom Colors ↓ →')),
+            _makeTitle(_('Allow Custom Colors ↓')),
             _(`Default colors are read from default Shell theme at the time the extension is being enabled.
 Because reading colors from css style is hacky as hell if you don't exactly know the applied css style content,
 colors may be incorrect (more incorrect if other than default theme is used). Also alpha chanel information may be missing.`),
@@ -1051,6 +1051,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
             orientation: Gtk.Orientation.VERTICAL,
             spacing: 4,
             halign: Gtk.Align.START,
+            valign: Gtk.Align.CENTER,
             visible: true,
         });
 
@@ -1129,7 +1130,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
             if (names[options - 1])
                 widget.set_text(names[options - 1]);
 
-            widget.set_placeholder_text(_('workspace name'));
+            widget.set_placeholder_text(_('Workspace') + ` ${options}`);
 
             widget.connect('changed', (entry) => {
                 if (entry._timeout_id)
@@ -1149,6 +1150,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
                     }
                 )
             });
+
             wsEntries.push(widget);
         }
 

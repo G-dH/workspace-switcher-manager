@@ -21,15 +21,14 @@ let enableTimeoutId = 0;
 let prefsDemoTimeoutId = 0;
 
 let mscOptions;
-let STORE_DEFAULT_COLORS;
 
-var DISPLAY_TIMEOUT;
+var DISPLAY_TIMEOUT = 300;
 var ANIMATION_TIME = 100;
 
 const ws_popup_mode = {
-    'ALL'     : 0,
-    'ACTIVE'  : 1,
-    'DISABLE' : 2,
+    ALL     : 0,
+    ACTIVE  : 1,
+    DISABLE : 2,
 };
 
 
@@ -38,7 +37,6 @@ function init() {
     originalWsPopup = WorkspaceSwitcherPopup.WorkspaceSwitcherPopup;
     originalWsPopupList = WorkspaceSwitcherPopup.WorkspaceSwitcherPopupList;
     origNeighbor = Meta.Workspace.prototype.get_neighbor;
-    STORE_DEFAULT_COLORS = true;
     defaultOrientationVertical = global.workspace_manager.layout_rows == -1;
 }
 
