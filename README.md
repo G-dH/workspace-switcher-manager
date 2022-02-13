@@ -19,11 +19,13 @@ The `Workspace Switcher Manager` offers all workspaces related options at one pl
 
 ## Instalation
 
-You can just:
+Install the latest release [from extensions.gnome.org](https://extensions.gnome.org/extension/4788/workspace-switcher-manager/).
+
+Or install the extensio directly from the source:
 - download the code
 - extract the `workspace-switcher-manager@G-dH.github.com` direcotory to your `~/local/share/gnome-shell/extensions/` directory
 - restart Gnome Shell
-- enable and access the Preferences window from the GNOME Extensions app
+- enable the extension and access the Preferences window from the GNOME Extensions app
 
 ## Contribution
 
