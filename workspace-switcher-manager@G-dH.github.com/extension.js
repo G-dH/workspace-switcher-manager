@@ -48,13 +48,14 @@ function enable() {
             mscOptions = new Settings.MscOptions();
             mscOptions.connect('changed', _updateSettings);
 
+            _storeDefaultColors();
+
             DISPLAY_TIMEOUT = mscOptions.popupTimeout;
             WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = WorkspaceSwitcherPopupCustom;
             WorkspaceSwitcherPopup.WorkspaceSwitcherPopupList = WorkspaceSwitcherPopupList;
             _reverseWsOrientation(mscOptions.reverseWsOrientation);
             _updateNeighbor();
 
-            _storeDefaultColors();
             enableTimeoutId = 0;
 
             return GLib.SOURCE_REMOVE;
@@ -153,10 +154,10 @@ function _storeDefaultColors() {
     const containerNode = popup._container.get_theme_node();
     const listItems = popup._list.get_children();
     const activeNode = listItems[0].get_theme_node();
-    const inactiveNode = popup._list.get_children()[1].get_theme_node();
+//    const inactiveNode = popup._list.get_children()[1].get_theme_node();
     const popupBgColor = containerNode.lookup_color('background-color', true)[1];
     // border color in default theme is set in 'border' element and can not be read directly
-    let [result, borderColor] = inactiveNode.lookup_color('border-color', true);
+    let [result, borderColor] = activeNode.lookup_color('border-color', true);
     if (result) {
         borderColor = borderColor.to_string();
     } else {
@@ -164,8 +165,11 @@ function _storeDefaultColors() {
     }
     const activeFgColor = activeNode.get_foreground_color();
     const activeBgColor = activeNode.get_background_color();
-    const inactiveFgColor = inactiveNode.get_foreground_color();
-    const inactiveBgColor = inactiveNode.get_background_color();
+//    const inactiveFgColor = inactiveNode.get_foreground_color();
+//    const inactiveBgColor = inactiveNode.get_background_color();
+    // workaround - at session start there is only one workspace usually, and following colors are usually the same in default themes
+    const inactiveFgColor = activeNode.get_foreground_color();
+    const inactiveBgColor = popupBgColor;
 
     popup.destroy();
 

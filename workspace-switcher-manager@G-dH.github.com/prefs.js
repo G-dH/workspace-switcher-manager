@@ -110,7 +110,7 @@ Static - number of workspaces is fixed to the number you can set below.`),
     });
 
     const numScale = _newScale(numAdjustment);
-    numScale.add_mark(6, Gtk.PositionType.TOP, null);
+    numScale.add_mark(4, Gtk.PositionType.TOP, null);
 
     optionList.push(
         _optionsItem(
@@ -157,7 +157,7 @@ Static - number of workspaces is fixed to the number you can set below.`),
     optionList.push(
         _optionsItem(
             _('Ignore Last (empty) Workspace'),
-            null,
+            _('In Dynamic workspace mode, there is always one empty workspace at the end. Switcher can ignore this last workspace.'),
             _newGtkSwitch(),
             'wsSwitchIgnoreLast'
         )
@@ -966,7 +966,7 @@ function _newComboBox() {
 function _newGtkEntry() {
     const entry = new Gtk.Entry({
         visible: true,
-        width_chars: 30,
+        width_chars: 25,
         halign: Gtk.Align.END,
         valign: Gtk.Align.CENTER,
         hexpand: true,
