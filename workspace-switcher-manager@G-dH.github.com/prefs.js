@@ -500,7 +500,7 @@ function _getSizeTextOptionList() {
     //-----------------------------------------------------
     const idxSizeAdjustment = new Gtk.Adjustment({
         lower: 50,
-        upper: 1000,
+        upper: 600,
         step_increment: 1,
         page_increment: 1,
     });
@@ -838,6 +838,7 @@ class OptionsPageWSPM extends Gtk.ScrolledWindow {
     _init(optionList, widgetPropetrties = {
         hscrollbar_policy: Gtk.PolicyType.NEVER,
         vscrollbar_policy: Gtk.PolicyType.NEVER,
+        //vscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
         vexpand: true,
         hexpand: true,
     }) {
@@ -898,6 +899,7 @@ class OptionsPageWSPM extends Gtk.ScrolledWindow {
 
             const grid = new Gtk.Grid({
                 column_homogeneous: true,
+                column_spacing: 10,
                 margin_start: 8,
                 margin_end: 8,
                 margin_top: 8,
@@ -906,9 +908,9 @@ class OptionsPageWSPM extends Gtk.ScrolledWindow {
                 visible: true,
             })
 
-            grid.attach(option, 0, 0, 10, 1);
+            grid.attach(option, 0, 0, 6, 1);
             if (widget) {
-                grid.attach(widget, 10, 0, 4, 1);
+                grid.attach(widget, 6, 0, 3, 1);
             }
             /*if (item.length === 2)
                 box.set_tooltip_text(itemTooltip);*/
