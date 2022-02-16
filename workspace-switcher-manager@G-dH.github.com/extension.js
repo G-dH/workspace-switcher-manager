@@ -230,7 +230,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
                       height: global.screen_height,
                       style_class: 'workspace-switcher-group' });
 
-        Main.uiGroup.add_actor(this);
+        Main.uiGroup.add_child(this);
 
         this._timeoutId = 0;
 
@@ -259,7 +259,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         this._paddingScale = mscOptions.popupPaddingScale / 100;
         this._spacingScale = mscOptions.popupSpacingScale / 100;
         this._list._popScale = this._popScale;
-        
+
         this._indexScale = mscOptions.indexScale / 100;
         this._fontScale = mscOptions.fontScale / 100;
         this._textBold = mscOptions.textBold;
@@ -371,7 +371,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
             if (indicator) {
                 // we need to know wsIndex of active box in single ws mode 
                 indicator._wsIndex = i;
-                this._list.add_actor(indicator);
+                this._list.add_child(indicator);
             }
         }
         this._addLabels();
@@ -526,7 +526,9 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
     _getCustomLabel(wsIndex){
         //this._list._getPreferredSizeForOrientation(true);
 
-        let label = null;
+        let labelBox = null;
+        let textLabel = null;
+        let indexLabel = null;
         let text = '';
 
         const wsIndexIsActiveWS = wsIndex == this._activeWorkspaceIndex;
@@ -534,11 +536,23 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         const showIndex = wsIndexIsActiveWS ? this._activeShowWsIndex : this._inactiveShowWsIndex;
         const showName  = wsIndexIsActiveWS ? this._activeShowWsName  : this._inactiveShowWsName;
         const showApp   = wsIndexIsActiveWS ? this._activeShowAppName : this._inactiveShowAppName;
-        let indexOnly = false;
+
+        if (!(showIndex || showName || showApp))
+            return null;
 
         if (showIndex) {
-            text = `${wsIndex + 1}`;
-            indexOnly = true;
+            const text = `${wsIndex + 1}`;
+            const fontSize = this._popScale * this._indexScale * this._list._fitToScreenScale;
+            indexLabel = new St.Label({
+                x_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.CENTER,
+                style: `text-align: center;
+                        font-size: ${fontSize}em;
+                        ${this._textBold ? 'font-weight: bold;' : ''}
+                        ${this._textShadow ? 'text-shadow: +1px -1px rgb(200, 200, 200);' : ''}
+                        padding: 2px`,
+                text: text
+            });
         }
 
         if (showName) {
@@ -546,7 +560,6 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
             if (name) {
                 if (text) {
                     text += '\n';
-                    indexOnly = false;
                 }
                 text += name;
             }
@@ -557,34 +570,52 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
             if (appName) {
                 if (text) {
                     text += '\n';
-                    indexOnly = false;
                 }
                 text += appName;
             }
         }
 
-        if (!text) return;
+        let fontSize = this._popScale * this._fontScale * this._list._fitToScreenScale;
+        // if text is ordered but not delivered (no app name, no ws name) but ws index will be shown,
+        // add an empty line to avoid index jumping during switching (at least when app name wprapping is disabled)
+        if (this._popupMode === ws_popup_mode.ACTIVE && (showName || showApp) && showIndex && !text)
+            text = ' ';
 
-        let fontSize;
-        if (indexOnly) {
-            fontSize = this._popScale * this._indexScale * this._list._fitToScreenScale;
-        } else {
-            fontSize = this._popScale * this._fontScale * this._list._fitToScreenScale;
+        // if text is ordered but not delivered (no app name, no ws name) show ws index
+        if ((showName || showApp) && !showIndex && !text) {
+            text = `${wsIndex + 1}`;
+            // single number always looks about 20% smaller than longer text with the same font size
+            fontSize = fontSize * 1.2;
         }
 
-        label = new St.Label({
-            x_align: Clutter.ActorAlign.CENTER,
-            y_align: Clutter.ActorAlign.CENTER,
-            style: `text-align: center;
-                    font-size: ${fontSize}em;
-                    ${this._textBold ? 'font-weight: bold;' : ''}
-                    ${this._textShadow ? 'text-shadow: +1px -1px rgb(200, 200, 200);' : ''}
-                    padding: 2px`,
-        });
+        if (text) {
+            textLabel = new St.Label({
+                x_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.CENTER,
+                style: `text-align: center;
+                        font-size: ${fontSize}em;
+                        ${this._textBold ? 'font-weight: bold;' : ''}
+                        ${this._textShadow ? 'text-shadow: +1px -1px rgb(200, 200, 200);' : ''}
+                        padding: 2px`,
+                text: text
+            });
+        }
 
-        label.set_text(text);
+        if (indexLabel || textLabel) {
+            labelBox = new St.BoxLayout({
+                x_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.CENTER,
+                vertical: true
+            });
+        }
+        if (indexLabel) {
+            labelBox.add_child(indexLabel);
+        }
+        if (textLabel) {
+            labelBox.add_child(textLabel);
+        }
 
-        return label;
+        return labelBox;
     }
 
     _getWsName(wsIndex) {
