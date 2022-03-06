@@ -5,7 +5,7 @@ The `Workspace Switcher Manager` offers all workspaces related options at one pl
 
 ## Features:
 
-- GNOME Shell 3.36, 3.38, 40 and 41 compatibility.
+- GNOME Shell 3.36 - 42 compatibility.
 - All workspace related options available in GNOME Shell.
 - Adds options `Wraparound` and `Ignore last (empty) workspace` to the workspace switcher.
 - Adds option to change workspace orientation. This option is usable in GS 3.36, 3.38, in 40+ brakes the overview (no crashes just miscalculations of size and behavior of some objects).
@@ -21,7 +21,7 @@ The `Workspace Switcher Manager` offers all workspaces related options at one pl
 
 Install the latest release [from extensions.gnome.org](https://extensions.gnome.org/extension/4788/workspace-switcher-manager/).
 
-Or install the extensio directly from the source:
+Or install the extension directly from the source:
 - download the code
 - extract the `workspace-switcher-manager@G-dH.github.com` direcotory to your `~/local/share/gnome-shell/extensions/` directory
 - restart Gnome Shell
