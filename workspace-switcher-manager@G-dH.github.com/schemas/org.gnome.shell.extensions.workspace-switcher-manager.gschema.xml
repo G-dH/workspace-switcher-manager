@@ -57,6 +57,9 @@
     <key type="i" name="popup-spacing-scale">
       <default>100</default>
     </key>
+    <key type="i" name="popup-radius-scale">
+      <default>100</default>
+    </key>
     <key type="i" name="popup-padding-scale">
       <default>100</default>
     </key>

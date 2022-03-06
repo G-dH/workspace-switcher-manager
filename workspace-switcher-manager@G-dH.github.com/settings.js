@@ -183,6 +183,13 @@ var MscOptions = class MscOptions {
         this._gsettings.set_int('popup-spacing-scale', int_val);
     }
 
+    get popupRadiusScale() {
+        return this._gsettings.get_int('popup-radius-scale');
+    }
+    set popupRadiusScale(int_val) {
+        this._gsettings.set_int('popup-radius-scale', int_val);
+    }
+
     get allowCustomColors() {
         return this._gsettings.get_boolean('allow-custom-colors');
     }

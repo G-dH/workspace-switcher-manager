@@ -3,87 +3,218 @@
 'use strict';
 
 const { Gtk, GLib, GObject } = imports.gi;
+// libadwaita is available starting with GNOME Shell 42.
+let Adw = null;
+try {
+  Adw = imports.gi.Adw;
+} catch (e) {
+}
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me             = ExtensionUtils.getCurrentExtension();
 const Settings       = Me.imports.settings;
 
 let mscOptions;
-let wsEntries = [];
+let customPages;
+let wsEntries;
+let windowWidget;
+let prevPopupMode;
+let widgets;
 
 // gettext
 const _  = Settings._;
+const shellVersion = Settings.shellVersion;
 
 
 function init() {
     ExtensionUtils.initTranslations(Me.metadata['gettext-domain']);
     mscOptions = new Settings.MscOptions();
+    prevPopupMode = -1;
+    wsEntries = [];
+    widgets = [];
 }
 
-function buildPrefsWidget() {
-    const optionsPage = new Gtk.Notebook({
-        tab_pos: Gtk.PositionType.TOP,
-        visible: true,
+// this function is called by GS42 if available and returns libadwaita prefes window
+function fillPreferencesWindow(window) {
+    const generalOptionsPage   = getAdwPage(_getGeneralOptionList(), {
+        title: _('General'),
+        icon_name: 'preferences-system-symbolic',
     });
 
+    window.add(generalOptionsPage);
 
+    customPages = [];
 
-    const generalOptionsPage    = new OptionsPageWSPM(_getGeneralOptionList());
-    const popupOptionsPage      = new OptionsPageWSPM(_getPopupOptionList());
-    const colorOptionsPage      = new OptionsPageWSPM(_getColorOptionList())
-    const sizeTextOptionsPage   = new OptionsPageWSPM(_getSizeTextOptionList());
-    const contentOptionsPage    = new OptionsPageWSPM(_getContentOptionList());
-    const workspacesOptionsPage = new OptionsPageWSPM(_getWorkspacesOptionList());
+    customPages.push(getAdwPage(_getPopupOptionList(), {
+        title: _('Pop-up'),
+        icon_name: 'user-available-symbolic',
+    }));
+    customPages.push(getAdwPage(_getColorOptionList(), {
+        title: _('Colors'),
+        icon_name: 'applications-graphics-symbolic',
+    }));
+    customPages.push(getAdwPage(_getSizeTextOptionList(), {
+        title: _('Size & Text'),
+        icon_name: 'view-fullscreen-symbolic',
+    }));
+    customPages.push(getAdwPage(_getContentOptionList(), {
+        title: _('Content'),
+        icon_name: 'view-reveal-symbolic',
+    }));
+    customPages.push(getAdwPage(_getWorkspacesOptionList(), {
+        title: _('Workspace Names'),
+        icon_name: 'text-editor-symbolic',
+    }));
+    customPages.push(getAdwPage(_getPresetsOptionList(), {
+        title: _('Profiles'),
+        icon_name: 'view-list-bullet-symbolic',
+    }));
 
-    optionsPage.append_page(generalOptionsPage, new Gtk.Label({
+    window.set_search_enabled(true);
+
+    windowWidget = window;
+    _updateAdwActivePages();
+
+    mscOptions.connect('changed::popup-mode', _updateAdwActivePages);
+    window.connect('destroy', _onDestroy);
+
+    return window;
+}
+
+function _onDestroy() {
+    prevPopupMode = -1;
+    mscOptions.destroy();
+    mscOptions = null;
+    customPages = null;
+    wsEntries = null;
+    windowWidget = null;
+}
+
+function _updateAdwActivePages() {
+    const mode = mscOptions.popupMode;
+    if (_shouldUpdatePages(mode)) {
+        for (let page of customPages) {
+            if (mode < 2) {
+                windowWidget.add(page);
+            } else {
+                windowWidget.remove(page);
+            }
+        }
+    }
+    prevPopupMode = mode;
+}
+
+function _shouldUpdatePages(mode) {
+    if ((prevPopupMode > 1 && mode < 2) || ([0, 1].includes(prevPopupMode) && mode > 1) || (prevPopupMode === -1 && mode < 2)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function _updateLegacyActivePages() {
+    const mode = mscOptions.popupMode;
+    if (_shouldUpdatePages(mode)) {
+        for (let page of customPages) {
+            if (mode < 2) {
+                windowWidget.append_page(...page);
+            } else {
+                // remove last page
+                windowWidget.remove_page( -1);
+            }
+        }
+    }
+    prevPopupMode = mode;
+}
+
+// this function is called by GS prior to 42 and also by 42 if fillPreferencesWindow not available
+function buildPrefsWidget() {
+    const optionsNotebook = new Gtk.Notebook({
+        tab_pos: Gtk.PositionType.TOP,
+    });
+
+    const generalOptionsPage    = getLegacyPage(_getGeneralOptionList());
+    const popupOptionsPage      = getLegacyPage(_getPopupOptionList());
+    const colorOptionsPage      = getLegacyPage(_getColorOptionList())
+    const sizeTextOptionsPage   = getLegacyPage(_getSizeTextOptionList());
+    const contentOptionsPage    = getLegacyPage(_getContentOptionList());
+    const workspacesOptionsPage = getLegacyPage(_getWorkspacesOptionList());
+    const presetsOptionsPage    = getLegacyPage(_getPresetsOptionList());
+
+    optionsNotebook.append_page(generalOptionsPage, new Gtk.Label({
         label: _('General'),
         halign: Gtk.Align.START,
-        visible: true,
     }));
 
-    optionsPage.append_page(popupOptionsPage, new Gtk.Label({
+    customPages = [];
+
+    customPages.push([popupOptionsPage, new Gtk.Label({
         label: _('Pop-up'),
         halign: Gtk.Align.START,
-        visible: true,
-    }));
+    })]);
 
-    optionsPage.append_page(sizeTextOptionsPage, new Gtk.Label({
+    customPages.push([sizeTextOptionsPage, new Gtk.Label({
         label: _('Size & Text'),
         halign: Gtk.Align.START,
-        visible: true,
-    }));
+    })]);
 
-    optionsPage.append_page(colorOptionsPage, new Gtk.Label({
+    customPages.push([colorOptionsPage, new Gtk.Label({
         label: _('Colors'),
         halign: Gtk.Align.START,
-        visible: true,
-    }));
+    })]);
 
-    optionsPage.append_page(contentOptionsPage, new Gtk.Label({
+    customPages.push([contentOptionsPage, new Gtk.Label({
         label: _('Content'),
         halign: Gtk.Align.START,
-        visible: true,
-    }));
+    })]);
 
-    optionsPage.append_page(workspacesOptionsPage, new Gtk.Label({
+    customPages.push([workspacesOptionsPage, new Gtk.Label({
         label: _('Workspace Names'),
         halign: Gtk.Align.START,
-        visible: true,
-    }));
+    })]);
 
-    /*optionsPage.connect('switch-page', (ntb, page, index) => {
-            mscOptions.activePrefsPage = index;
-        }
-    });*/
+    customPages.push([presetsOptionsPage, new Gtk.Label({
+        label: _('Presets'),
+        halign: Gtk.Align.START,
+    })]);
 
-    return optionsPage;
+    windowWidget = optionsNotebook;
+    _updateLegacyActivePages();
+    mscOptions.connect('changed::popup-mode', _updateLegacyActivePages);
+
+    optionsNotebook.show_all && optionsNotebook.show_all();
+
+    optionsNotebook.connect('destroy', _onDestroy);
+
+    return optionsNotebook;
 }
+
 
 function _getGeneralOptionList() {
     const optionList = [];
     // options item format:
     // [text, tooltip, widget, settings-variable, options for combo]
 
+    //-----------------------------------------------------
+    optionList.push(
+        _optionsItem(
+            _makeTitle(_('Workspace Switcher Pop-up')),
+        )
+    );
+    //-----------------------------------------------------
+    optionList.push(
+        _optionsItem(
+            _('Mode'),
+            'Switcher can display untouched Default pop-up or customized one showing either boxes for all workspaces or the active one only.',
+            _newComboBox(),
+            'popupMode',
+            [   [_('Custom: All Workspaces'), 0],
+                [_('Custom: Active Workspace Only'), 1],
+                [_('Default: No Customizations'), 3],
+                [_('Disable'), 2],
+            ]
+        )
+    );
     optionList.push(
         _optionsItem(
             _makeTitle(_('Workspaces')),
@@ -162,7 +293,7 @@ Static - number of workspaces is fixed to the number you can set below.`),
             'wsSwitchIgnoreLast'
         )
     );
-    //-----------------------------------------------------
+
     return optionList;
 }
 
@@ -177,18 +308,6 @@ function _getPopupOptionList() {
             _makeTitle(_('Behavior')),
         )
     );
-    //-----------------------------------------------------    
-    optionList.push(
-        _optionsItem(
-            _('Mode'),
-            null,
-            _newComboBox(),
-            'popupMode',
-            [[_('Show All Workspaces'), 0],
-             [_('Show Active Workspace Only'), 1],
-             [_('Disable'), 2]]
-        )
-    );
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
@@ -200,7 +319,7 @@ function _getPopupOptionList() {
             [_('Current'), 1]]
         )
     );
-//-----------------------------------------------------
+    //-----------------------------------------------------
     let popupTimeoutAdjustment = new Gtk.Adjustment({
         upper: 2000,
         lower: 0,
@@ -391,7 +510,7 @@ function _getSizeTextOptionList() {
 
      optionList.push(
         _optionsItem(
-            _makeTitle(_('Pop-up Size')),
+            _makeTitle(_('Pop-up Proportions')),
             null
         )
     );
@@ -408,8 +527,8 @@ function _getSizeTextOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Pop-up Scale (%)'),
-            _("Sets the size of the pop-up relative to the original."),
+            _('Global Scale (%)'),
+            _("Adjusts size of the pop-up relative to the original."),
             dpSize,
             'popupScale'
         )
@@ -427,15 +546,15 @@ function _getSizeTextOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Pop-up Width Scale (%)'),
-            _("Allows to make pop-up box representing single workspace wider or narrower."),
+            _('WS Box Width Scale (%)'),
+            _("Allows to change workspace box ratio."),
             boxWidth,
             'popupWidthScale'
         )
     );
     //-----------------------------------------------------
     const paddingAdjustment = new Gtk.Adjustment({
-        upper: 200,
+        upper: 500,
         lower: 0,
         step_increment: 1,
         page_increment: 1,
@@ -446,15 +565,15 @@ function _getSizeTextOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Pop-up Padding (%)'),
-            _("Adjusts pop-up background padding."),
+            _('Padding (%)'),
+            _("Adjusts background padding."),
             padding,
             'popupPaddingScale'
         )
     );
     //-----------------------------------------------------
     const spacingAdjustment = new Gtk.Adjustment({
-        upper: 200,
+        upper: 500,
         lower: 0,
         step_increment: 1,
         page_increment: 1,
@@ -465,10 +584,29 @@ function _getSizeTextOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Pop-up Spacing (%)'),
-            _("Adjusts pop-up box spacing."),
+            _('Spacing (%)'),
+            _("Adjusts space between workspace boxes."),
             spacing,
             'popupSpacingScale'
+        )
+    );
+    //-----------------------------------------------------
+    const radiusAdjustment = new Gtk.Adjustment({
+        upper: 1000,
+        lower: 0,
+        step_increment: 1,
+        page_increment: 1,
+    });
+
+    const radius = _newScale(radiusAdjustment);
+    radius.add_mark(100, Gtk.PositionType.TOP, null);
+
+    optionList.push(
+        _optionsItem(
+            _('Corner Radius (%)'),
+            _("Adjusts radius of all corners."),
+            radius,
+            'popupRadiusScale'
         )
     );
     //-----------------------------------------------------
@@ -491,7 +629,7 @@ function _getSizeTextOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Font Size Finetune (%)'),
+            _('Font Size Scale (%)'),
             _('Size resizes acording to the pop-up sclae, use this scale to precisely adjust the text size.'),
             fsScale,
             'fontScale',
@@ -510,7 +648,7 @@ function _getSizeTextOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Index Size Finetune (%)'),
+            _('WS Index Size Scale (%)'),
             _('If only "Show Workspace Index" text (or "Show App Name" on workspace without app) content option is active this scale takes effect. Single digit always looks smaller then longer text with the same font size.'),
             idxScale,
             'indexScale',
@@ -574,7 +712,7 @@ function _getColorOptionList() {
     });
 
     const opacityScale = _newScale(opacityAdjustment);
-    opacityScale.add_mark(90, Gtk.PositionType.TOP, null);
+    opacityScale.add_mark(98, Gtk.PositionType.TOP, null);
 
     optionList.push(
         _optionsItem(
@@ -830,105 +968,222 @@ function _getWorkspacesOptionList() {
     return optionList;
 }
 
-
 ///////////////////////////////////////////////////
 
-const OptionsPageWSPM = GObject.registerClass(
-class OptionsPageWSPM extends Gtk.ScrolledWindow {
-    _init(optionList, widgetPropetrties = {
+function _getPresetsOptionList() {
+    const optionList = [];
+
+    optionList.push(
+        _optionsItem(
+            _makeTitle(_('Predefined Pop-up Customizations')),
+            _('Because pop-up adjustments are relative to the default popup, results may vary depending on the shell theme.')
+        )
+    );
+
+    optionList.push(
+        _optionsItem(
+            _('Preset 1'),
+            null,
+            _newGtkButton(),
+            'preset',
+            [
+                // popup mode,
+                0,
+                // scale, box width, padding, spacing, radius, font size, index size, wrap text, shadow, bold,
+                66, 133, 200, 180, 180, 133, 300, true, false, true,
+                // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg, act show index,
+                98, '#1D1D1D', '#353535', '#FFFFFF', '#690000', '#FFFFFF', '#353535',
+                // act show ws, act show app, inact show index, inact show ws, inact show app
+                false, false, true, false, false, true
+            ]
+        )
+    );
+
+    optionList.push(
+        _optionsItem(
+            _('Preset 2'),
+            null,
+            _newGtkButton(),
+            'preset',
+            [
+                // popup mode,
+                0,
+                // scale, box width, padding, spacing, radius, font size, index size, wrap text, shadow, bold,
+                40, 55, 250, 250, 700, 100, 100, true, false, true,
+                // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg, act show index,
+                98, '#1D1D1D', '#353535', '#FFFFFF', '#0070FF', '#FFFFFF', '#353535',
+                // act show ws, act show app, inact show index, inact show ws, inact show app
+                false, false, false, false, false, false
+            ]
+        )
+    );
+
+    optionList.push(
+        _optionsItem(
+            _('Preset 3'),
+            null,
+            _newGtkButton(),
+            'preset',
+            [
+                // popup mode,
+                1,
+                // scale, box width, padding, spacing, radius, font size, index size, wrap text, shadow, bold,
+                300, 250, 100, 100, 100, 200, 500, false, true, true,
+                // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg,
+                98, 'rgba(53,53,53,0)', 'rgba(53,53,53,0)', 'rgba(0,0,0,0.564189)', 'rgba(53,53,53,0)', '#FFFFFF', '#353535',
+                // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
+                true, false, true, false, false, false
+            ]
+        )
+    );
+
+    optionList.push(
+        _optionsItem(
+            _('Preset 4'),
+            null,
+            _newGtkButton(),
+            'preset',
+            [
+                // popup mode,
+                1,
+                // scale, box width, padding, spacing, radius, font size, index size, wrap text, shadow, bold,
+                100, 57, 200, 100, 700, 150, 500, false, false, true,
+                // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg,
+                98, 'rgba(29,29,29,0.689189)', 'rgba(53,53,53,0)', 'rgb(255,255,255)', 'rgb(233,84,32)', '#FFFFFF', '#353535',
+                // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
+                true, false, false, false, false, false
+            ]
+        )
+    );
+
+    return optionList;
+}
+
+///////////////////////////////////////////////////
+function getAdwPage(optionList, pageProperties = {}) {
+    const groupWidth = 800;
+    pageProperties.width_request = groupWidth + 100;
+    const page = new Adw.PreferencesPage(pageProperties);
+    let group;
+    for (let item of optionList) {
+        // label can be plain text for Section Title
+        // or GtkBox for Option
+        const option = item[0];
+        const widget = item[1];
+        if (!widget) {
+            if (group) {
+                page.add(group);
+            }
+            group = new Adw.PreferencesGroup({
+                title: option,
+                hexpand: true,
+                width_request: groupWidth
+            });
+            continue;
+        }
+
+        const row = new Adw.PreferencesRow({
+            title: option._title,
+        });
+        const grid = new Gtk.Grid({
+            column_homogeneous: true,
+            column_spacing: 10,
+            margin_start: 8,
+            margin_end: 8,
+            margin_top: 8,
+            margin_bottom: 8,
+            hexpand: true,
+        })
+        /*for (let i of item) {
+            box[box.add ? 'add' : 'append'](i);*/
+        grid.attach(option, 0, 0, 6, 1);
+        if (widget) {
+            grid.attach(widget, 6, 0, 3, 1);
+        }
+        row.set_child(grid);
+        group.add(row);
+    }
+    page.add(group);
+    return page;
+}
+
+function getLegacyPage(optionList) {
+    const page = new Gtk.ScrolledWindow({
         hscrollbar_policy: Gtk.PolicyType.NEVER,
         vscrollbar_policy: Gtk.PolicyType.NEVER,
-        //vscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
         vexpand: true,
         hexpand: true,
-    }) {
-        super._init(widgetPropetrties);
+    });
 
-        this.optionList = optionList;
-        this._alreadyBuilt = false;
-        this.buildPage();
-    }
+    const context = page.get_style_context();
+    context.add_class('background');
 
-    buildPage() {
-        if (this._alreadyBuilt)
-            return;
+    const mainBox = new Gtk.Box({
+        orientation: Gtk.Orientation.VERTICAL,
+        spacing: 5,
+        homogeneous: false,
+        margin_start: 16,
+        margin_end: 16,
+        margin_top: 16,
+        margin_bottom: 16,
+    });
 
-        const context = this.get_style_context();
-        context.add_class('background');
+    let frame;
+    let frameBox;
 
-        const mainBox = new Gtk.Box({
-            orientation: Gtk.Orientation.VERTICAL,
-            spacing: 5,
-            homogeneous: false,
-            margin_start: 16,
-            margin_end: 16,
-            margin_top: 16,
-            margin_bottom: 16,
-            visible: true,
-        });
-
-        let frame;
-        let frameBox;
-        for (let item of this.optionList) {
-            // item structure: [labelBox, control widget]
-            const option = item[0];
-            const widget = item[1];
-
-            if (!widget) {
-                // new section
-                let lbl = new Gtk.Label({
-                    xalign: 0,
-                    visible: true,
-                    margin_top: 4,
-                    margin_bottom: 2
-                });
-                lbl.set_markup(option); // option is plain text if item is section title
-                mainBox[mainBox.add ? 'add' : 'append'](lbl);
-                frame = new Gtk.Frame({
-                    visible: true,
-                    margin_bottom: 10,
-                });
-                frameBox = new Gtk.ListBox({
-                    selection_mode: null,
-                    visible: true,
-                });
-                mainBox[mainBox.add ? 'add' : 'append'](frame);
-                frame[frame.add ? 'add' : 'set_child'](frameBox);
-                continue;
-            }
-
-            const grid = new Gtk.Grid({
-                column_homogeneous: true,
-                column_spacing: 10,
-                margin_start: 8,
-                margin_end: 8,
-                margin_top: 8,
-                margin_bottom: 8,
-                hexpand: true,
-                visible: true,
-            })
-
-            grid.attach(option, 0, 0, 6, 1);
-            if (widget) {
-                grid.attach(widget, 6, 0, 3, 1);
-            }
-            /*if (item.length === 2)
-                box.set_tooltip_text(itemTooltip);*/
-            frameBox[frameBox.add ? 'add' : 'append'](grid);
+    for (let item of optionList) {
+        // item structure: [labelBox, control widget]
+        const option = item[0];
+        const widget = item[1];
+        if (!widget) {
+            // new section
+            let lbl = new Gtk.Label({
+                xalign: 0,
+                margin_top: 4,
+                margin_bottom: 2
+            });
+            lbl.set_markup(option); // option is plain text if item is section title
+            mainBox[mainBox.add ? 'add' : 'append'](lbl);
+            frame = new Gtk.Frame({
+                margin_bottom: 10,
+            });
+            frameBox = new Gtk.ListBox({
+                selection_mode: null,
+            });
+            mainBox[mainBox.add ? 'add' : 'append'](frame);
+            frame[frame.add ? 'add' : 'set_child'](frameBox);
+            continue;
         }
-        this[this.add ? 'add' : 'set_child'](mainBox);
+        const grid = new Gtk.Grid({
+            column_homogeneous: true,
+            column_spacing: 10,
+            margin_start: 8,
+            margin_end: 8,
+            margin_top: 8,
+            margin_bottom: 8,
+            hexpand: true,
+        })
 
-        this.show_all && this.show_all();
-        this._alreadyBuilt = true;
+        grid.attach(option, 0, 0, 6, 1);
+        if (widget) {
+            grid.attach(widget, 6, 0, 3, 1);
+        }
+        /*if (item.length === 2)
+            box.set_tooltip_text(itemTooltip);*/
+        frameBox[frameBox.add ? 'add' : 'append'](grid);
     }
-});
+
+    page[page.add ? 'add' : 'set_child'](mainBox);
+    page.show_all && page.show_all();
+
+    return page;
+}
 
 function _newGtkSwitch() {
     let sw = new Gtk.Switch({
         halign: Gtk.Align.END,
         valign: Gtk.Align.CENTER,
         hexpand: true,
-        visible: true,
     });
     sw.is_switch = true;
     return sw;
@@ -939,7 +1194,6 @@ function _newSpinButton(adjustment) {
         halign: Gtk.Align.END,
         hexpand: true,
         xalign: 0.5,
-        visible: true,
     });
     spinButton.set_adjustment(adjustment);
     spinButton.is_spinbutton = true;
@@ -954,7 +1208,6 @@ function _newComboBox() {
         halign: Gtk.Align.END,
         valign: Gtk.Align.CENTER,
         hexpand: true,
-        visible: true,
     });
     const renderer = new Gtk.CellRendererText();
     comboBox.pack_start(renderer, true);
@@ -965,7 +1218,6 @@ function _newComboBox() {
 
 function _newGtkEntry() {
     const entry = new Gtk.Entry({
-        visible: true,
         width_chars: 25,
         halign: Gtk.Align.END,
         valign: Gtk.Align.CENTER,
@@ -981,7 +1233,6 @@ function _newGtkEntry() {
 
 function _newScale(adjustment) {
     const scale = new Gtk.Scale({
-        visible:     true,
         orientation: Gtk.Orientation.HORIZONTAL,
         draw_value:  true,
         has_origin:  false,
@@ -1019,10 +1270,12 @@ function _newColorResetBtn(colIndex, colorBtn) {
         colorReset.add(Gtk.Image.new_from_icon_name('edit-clear-symbolic', Gtk.IconSize.BUTTON));
     }
     colorReset.connect('clicked', () =>{
-        let color = mscOptions.defaultColors[colIndex];
+        const color = mscOptions.defaultColors[colIndex];
+        if (!color) return;
         const rgba = colorBtn.get_rgba();
-        rgba.parse(color);
-        colorBtn.set_rgba(rgba);
+        const success = rgba.parse(color);
+        if (success)
+            colorBtn.set_rgba(rgba);
         mscOptions[colorBtn._gsettingsVar] = rgba.to_string();
     });
 
@@ -1039,8 +1292,19 @@ function _newColorButtonBox() {
     return box;
 }
 
+function _newGtkButton() {
+    const button = new Gtk.Button({
+        label: 'Apply',
+        hexpand: false,
+        halign: Gtk.Align.END
+    });
+    button.is_button = true;
+
+    return button;
+}
+
 function _optionsItem(text, tooltip, widget, variable, options = []) {
-    if (widget && mscOptions[variable] === undefined) {
+    if (widget && mscOptions[variable] === undefined && variable != 'preset') {
         throw new Error(
             `Settings variable ${variable} doesn't exist, check your code dude!`
         );
@@ -1054,12 +1318,11 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
             spacing: 4,
             halign: Gtk.Align.START,
             valign: Gtk.Align.CENTER,
-            visible: true,
         });
 
+        label._title = text;
         const option = new Gtk.Label({
             halign: Gtk.Align.START,
-            visible: true,
         });
         option.set_markup(text);
 
@@ -1068,7 +1331,6 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
         if (tooltip) {
             const caption = new Gtk.Label({
                 halign: Gtk.Align.START,
-                visible: true,
                 wrap: true,
                 xalign: 0
             })
@@ -1090,6 +1352,11 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
         widget.connect('notify::active', () => {
             mscOptions[variable] = widget.active;
         });
+        widget._updateValue = () => {
+            widget.set_active(mscOptions[variable]);
+        };
+        // store widget for future updates
+        widgets.push(widget);
 
     } else if (widget && widget.is_spinbutton) {
         widget.value = mscOptions[variable];
@@ -1125,6 +1392,11 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
 
             mscOptions[variable] = model.get_value(iter, 1);
         });
+        widget._updateValue = () => {
+            widget.set_active(mscOptions[variable]);
+        };
+        // store widget for future updates
+        widgets.push(widget);
 
     } else if (widget && widget.is_entry) {
         if (options) {
@@ -1171,6 +1443,11 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
                 }
             )
         });
+        widget._updateValue = () => {
+            widget.set_value(mscOptions[variable]);
+        };
+        // store widget for future updates
+        widgets.push(widget);
 
     } else if (widget && (widget.is_color_btn || widget.is_color_box)) {
         let colorBtn;
@@ -1184,6 +1461,45 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
         colorBtn.set_rgba(rgba);
         colorBtn.connect('color_set', () => {
             mscOptions[variable] = `${colorBtn.get_rgba().to_string()}`;
+        });
+        colorBtn._updateValue = () => {
+            const rgba = colorBtn.get_rgba();
+            rgba.parse(mscOptions[variable]);
+            colorBtn.set_rgba(rgba);
+        };
+        // store widget for future updates
+        widgets.push(colorBtn);
+    } else if (widget && widget.is_button) {
+        widget.connect('clicked', () => {
+            mscOptions.popupMode = options[0];
+            mscOptions.popupScale = options[1];
+            mscOptions.popupWidthScale = options[2];
+            mscOptions.popupPaddingScale = options[3];
+            mscOptions.popupSpacingScale = options[4];
+            mscOptions.popupRadiusScale = options[5];
+            mscOptions.fontScale = options[6];
+            mscOptions.indexScale = options[7];
+            mscOptions.wrapAppNames = options[8];
+            mscOptions.textShadow = options[9];
+            mscOptions.textBold = options[10];
+            mscOptions.popupOpacity = options[11];
+            mscOptions.popupBgColor = options[12];
+            mscOptions.popupBorderColor = options[13];
+            mscOptions.popupActiveFgColor = options[14];
+            mscOptions.popupActiveBgColor = options[15];
+            mscOptions.popupInactiveFgColor = options[16];
+            mscOptions.popupInactiveBgColor = options[17];
+            mscOptions.activeShowWsIndex = options[18];
+            mscOptions.activeShowWsName = options[19];
+            mscOptions.activeShowAppName = options[20];
+            mscOptions.inactiveShowWsIndex = options[21];
+            mscOptions.inactiveShowWsName = options[22];
+            mscOptions.inactiveShowAppName = options[23];
+            mscOptions.allowCustomColors = true;
+            // update controls
+            for (widget of widgets) {
+                widget._updateValue();
+            }
         });
     }
 
