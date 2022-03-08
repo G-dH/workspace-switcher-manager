@@ -99,6 +99,9 @@
     <key type="b" name="active-show-app-name">
       <default>true</default>
     </key>
+    <key type="b" name="active-show-win-title">
+      <default>false</default>
+    </key>
     <key type="b" name="inactive-show-ws-index">
       <default>true</default>
     </key>
@@ -107,6 +110,9 @@
     </key>
     <key type="b" name="inactive-show-app-name">
       <default>true</default>
+    </key>
+    <key type="b" name="inactive-show-win-title">
+      <default>false</default>
     </key>
     <key type="b" name="modifiers-hide-popup">
       <default>false</default>

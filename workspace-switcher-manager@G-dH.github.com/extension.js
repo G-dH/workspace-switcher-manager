@@ -344,11 +344,11 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         this._activeShowWsIndex = mscOptions.activeShowWsIndex;
         this._activeShowWsName = mscOptions.activeShowWsName;
         this._activeShowAppName = mscOptions.activeShowAppName;
+        this._activeShowWinTitle = mscOptions.activeShowWinTitle;
         this._inactiveShowWsIndex = mscOptions.inactiveShowWsIndex;
         this._inactiveShowWsName  = mscOptions.inactiveShowWsName;
         this._inactiveShowAppName = mscOptions.inactiveShowAppName;
-        this._labelRescaleNeeded = this._activeShowWsIndex || this._activeShowWsName || this._activeShowAppName
-                                || this._inactiveShowWsIndex || this._inactiveShowWsName || this._inactiveShowAppName;
+        this._inactiveShowWinTitle = mscOptions.inactiveShowWinTitle;
 
         //this._redisplay();
 
@@ -524,7 +524,11 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
                                             border-radius: ${this._boxRadius}px;
                                             color: ${this._activeFgColor};
                                             background-color: ${this._activeBgColor};
-                                            border-color: ${this._activeBgColor};`
+                                            border-color: ${this._activeBgColor};
+                                            box-shadow: none;
+                                            `
+                                            // latest versions of ubuntu yaru theme don't follow transparency of the background and stay on the screen even if the background is fully transparent.
+                                            //box-shadow: 0 3px 9px 0px ${this._bgColor} // bgColor for the shadow needs to be more transparent to be used
                     );
                 } else {
                     children[i].set_style( `background-size: ${this._boxBgSize}px;
@@ -610,15 +614,17 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         let labelBox = null;
         let textLabel = null;
         let indexLabel = null;
+        let titleLabel = null;
         let text = '';
 
         const wsIndexIsActiveWS = wsIndex == this._activeWorkspaceIndex;
 
-        const showIndex = wsIndexIsActiveWS ? this._activeShowWsIndex : this._inactiveShowWsIndex;
-        const showName  = wsIndexIsActiveWS ? this._activeShowWsName  : this._inactiveShowWsName;
-        const showApp   = wsIndexIsActiveWS ? this._activeShowAppName : this._inactiveShowAppName;
+        const showIndex = wsIndexIsActiveWS ? this._activeShowWsIndex  : this._inactiveShowWsIndex;
+        const showName  = wsIndexIsActiveWS ? this._activeShowWsName   : this._inactiveShowWsName;
+        const showApp   = wsIndexIsActiveWS ? this._activeShowAppName  : this._inactiveShowAppName;
+        const showTitle = wsIndexIsActiveWS ? this._activeShowWinTitle : this._inactiveShowWinTitle;
 
-        if (!(showIndex || showName || showApp))
+        if (!(showIndex || showName || showApp || showTitle))
             return null;
 
         if (showIndex) {
@@ -656,10 +662,29 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
             }
         }
 
+        if (showTitle) {
+            const winTitle = this._getWinTitle(wsIndex);
+            const fontSize = this._popScale * this._fontScale * 0.8 * this._list._fitToScreenScale;
+            if (winTitle && !text.split('\n').includes(winTitle)) {
+                titleLabel = new St.Label({
+                    x_align: Clutter.ActorAlign.CENTER,
+                    y_align: Clutter.ActorAlign.CENTER,
+                    style: `text-align: center;
+                            font-size: ${fontSize}em;
+                            ${this._textBold ? 'font-weight: bold;' : ''}
+                            ${this._textShadow ? 'text-shadow: +1px -1px rgb(200, 200, 200);' : ''}
+                            padding-top: 0.3em;
+                            padding-left: 0.5em;
+                            padding-right: 0.5em;`,
+                    text: winTitle
+                });
+            }
+        }
+
         let fontSize = this._popScale * this._fontScale * this._list._fitToScreenScale;
         // if text is ordered but not delivered (no app name, no ws name) but ws index will be shown,
         // add an empty line to avoid index jumping during switching (at least when app name wprapping is disabled)
-        if (this._popupMode === ws_popup_mode.ACTIVE && (showName || showApp) && showIndex && !text)
+        if (this._popupMode === ws_popup_mode.ACTIVE && (showName || showApp || showTitle) && showIndex && !text)
             text = ' ';
 
         // if text is ordered but not delivered (no app name, no ws name) show ws index
@@ -677,12 +702,14 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
                         font-size: ${fontSize}em;
                         ${this._textBold ? 'font-weight: bold;' : ''}
                         ${this._textShadow ? 'text-shadow: +1px -1px rgb(200, 200, 200);' : ''}
-                        padding: 2px`,
+                        padding-top: 0.3em;
+                        padding-left: 0.5em;
+                        padding-right: 0.5em;`,
                 text: text
             });
         }
 
-        if (indexLabel || textLabel) {
+        if (indexLabel || textLabel || titleLabel) {
             labelBox = new St.BoxLayout({
                 x_align: Clutter.ActorAlign.CENTER,
                 y_align: Clutter.ActorAlign.CENTER,
@@ -694,6 +721,10 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         }
         if (textLabel) {
             labelBox.add_child(textLabel);
+        }
+
+        if (titleLabel) {
+            labelBox.add_child(titleLabel);
         }
 
         return labelBox;
@@ -711,11 +742,12 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         return null;
     }
 
-    _getWsAppName(wsIndex) {
+    _getCurrentWsWin(wsIndex) {
         const ws = global.workspaceManager.get_workspace_by_index(wsIndex);
         // AltTab.get_windows(ws) gives strange results after GS restart on X11
         // filtered get_windows(null) gives constant results (GS 3.36 - 41)
         let wins = AltTab.getWindows(null);
+
         wins = wins.filter(w => w.get_workspace() === ws);
 
         if (this._workspacesOnPrimaryOnly) {
@@ -723,7 +755,15 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
             wins = wins.filter(w => w.get_monitor() === monitor);
         }
 
-        const win = wins[0];
+        if (wins.length > 0) {
+            return wins[0];
+        } else {
+            return null;
+        }
+    }
+
+    _getWsAppName(wsIndex) {
+        const win = this._getCurrentWsWin(wsIndex);
 
         let appName = null;
         if (win) {
@@ -735,6 +775,17 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         }
 
         return appName;
+    }
+
+
+    _getWinTitle(wsIndex) {
+        const win = this._getCurrentWsWin(wsIndex);
+        let title = null;
+        if (win) {
+            title = win.get_title();
+        }
+
+        return title;
     }
 });
 

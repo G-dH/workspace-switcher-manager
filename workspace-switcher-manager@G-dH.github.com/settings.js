@@ -274,6 +274,13 @@ var MscOptions = class MscOptions {
         this._gsettings.set_boolean('active-show-app-name', bool_val);
     }
 
+    get activeShowWinTitle() {
+        return this._gsettings.get_boolean('active-show-win-title');
+    }
+    set activeShowWinTitle(bool_val) {
+        this._gsettings.set_boolean('active-show-win-title', bool_val);
+    }
+
     get inactiveShowWsIndex() {
         return this._gsettings.get_boolean('inactive-show-ws-index');
     }
@@ -293,6 +300,13 @@ var MscOptions = class MscOptions {
     }
     set inactiveShowAppName(bool_val) {
         this._gsettings.set_boolean('inactive-show-app-name', bool_val);
+    }
+
+    get inactiveShowWinTitle() {
+        return this._gsettings.get_boolean('inactive-show-win-title');
+    }
+    set inactiveShowWinTitle(bool_val) {
+        this._gsettings.set_boolean('inactive-show-win-title', bool_val);
     }
 
     get workspaceMode() {

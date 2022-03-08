@@ -442,7 +442,7 @@ function _getContentOptionList() {
     optionList.push(
         _optionsItem(
              _('Show Workspace Index'),
-             _('Highlighted workspace box shows its index.'),
+             _('Active workspace box shows workspace index.'),
              _newGtkSwitch(),
              'activeShowWsIndex'
          )
@@ -451,7 +451,7 @@ function _getContentOptionList() {
     optionList.push(
        _optionsItem(
             _('Show Workspace Name'),
-            _('Highlighted workspace box shows workspace name if the name is set.'),
+            _('Active workspace box shows workspace name if the name is set.'),
             _newGtkSwitch(),
             'activeShowWsName'
         )
@@ -460,9 +460,18 @@ function _getContentOptionList() {
     optionList.push(
         _optionsItem(
             _('Show Current App Name'),
-            _('Highlighted workspace box shows the name of the most recently used application on the represented workspace.'),
+            _('Active workspace box shows the name of the most recently used application on the represented workspace.'),
             _newGtkSwitch(),
             'activeShowAppName'
+         )
+     );
+    //-----------------------------------------------------
+    optionList.push(
+        _optionsItem(
+            _('Show Current Window Title'),
+            _('Active workspace box shows the title of the most recently used window on the represented workspace.'),
+            _newGtkSwitch(),
+            'activeShowWinTitle'
          )
      );
 
@@ -476,7 +485,7 @@ function _getContentOptionList() {
     optionList.push(
         _optionsItem(
              _('Show Workspace Index'),
-             _('Inactive workspace box shows its index.'),
+             _('Inactive workspace box shows workspace index.'),
              _newGtkSwitch(),
              'inactiveShowWsIndex'
          )
@@ -497,6 +506,15 @@ function _getContentOptionList() {
             _('Inactive workspace box shows the name of the most recently used application on represented workspace.'),
             _newGtkSwitch(),
             'inactiveShowAppName'
+         )
+     );
+     //-----------------------------------------------------
+    optionList.push(
+        _optionsItem(
+            _('Show Current Window Title'),
+            _('Inactive workspace box shows the title of the most recently used window on the represented workspace.'),
+            _newGtkSwitch(),
+            'inactiveShowWinTitle'
          )
      );
 
@@ -991,10 +1009,10 @@ function _getPresetsOptionList() {
                 0,
                 // scale, box width, padding, spacing, radius, font size, index size, wrap text, shadow, bold,
                 66, 133, 200, 180, 180, 133, 300, true, false, true,
-                // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg, act show index,
-                98, '#1D1D1D', '#353535', '#FFFFFF', '#690000', '#FFFFFF', '#353535',
-                // act show ws, act show app, inact show index, inact show ws, inact show app
-                false, false, true, false, false, true
+                // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg
+                98, 'rgb(29,29,29)', 'rgb(53,53,53)', 'rgb(255,255,255)', 'rgb(105,0,0)', 'rgb(255,255,255)', 'rgb(53,53,53)',
+                // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
+                false, false, true, false, false, false, true, false
             ]
         )
     );
@@ -1010,10 +1028,10 @@ function _getPresetsOptionList() {
                 0,
                 // scale, box width, padding, spacing, radius, font size, index size, wrap text, shadow, bold,
                 40, 55, 250, 250, 700, 100, 100, true, false, true,
-                // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg, act show index,
+                // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg
                 98, '#1D1D1D', '#353535', '#FFFFFF', '#0070FF', '#FFFFFF', '#353535',
-                // act show ws, act show app, inact show index, inact show ws, inact show app
-                false, false, false, false, false, false
+                // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
+                false, false, false, false, false, false, false, false
             ]
         )
     );
@@ -1030,9 +1048,9 @@ function _getPresetsOptionList() {
                 // scale, box width, padding, spacing, radius, font size, index size, wrap text, shadow, bold,
                 300, 250, 100, 100, 100, 200, 500, false, true, true,
                 // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg,
-                98, 'rgba(53,53,53,0)', 'rgba(53,53,53,0)', 'rgba(0,0,0,0.564189)', 'rgba(53,53,53,0)', '#FFFFFF', '#353535',
+                98, 'rgba(53,53,53,0)', 'rgba(53,53,53,0)', 'rgba(0,0,0,0.564189)', 'rgba(53,53,53,0)', 'rgb(255,255,255)', '#353535',
                 // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
-                true, false, true, false, false, false
+                true, false, true, true, false, false, false, false
             ]
         )
     );
@@ -1051,7 +1069,7 @@ function _getPresetsOptionList() {
                 // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg,
                 98, 'rgba(29,29,29,0.689189)', 'rgba(53,53,53,0)', 'rgb(255,255,255)', 'rgb(233,84,32)', '#FFFFFF', '#353535',
                 // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
-                true, false, false, false, false, false
+                true, false, false, false, false, false, false, false
             ]
         )
     );
@@ -1492,9 +1510,11 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
             mscOptions.activeShowWsIndex = options[18];
             mscOptions.activeShowWsName = options[19];
             mscOptions.activeShowAppName = options[20];
-            mscOptions.inactiveShowWsIndex = options[21];
-            mscOptions.inactiveShowWsName = options[22];
-            mscOptions.inactiveShowAppName = options[23];
+            mscOptions.activeShowWinTitle = options[21];
+            mscOptions.inactiveShowWsIndex = options[22];
+            mscOptions.inactiveShowWsName = options[23];
+            mscOptions.inactiveShowAppName = options[24];
+            mscOptions.inactiveShowWinTitle = options[25];
             mscOptions.allowCustomColors = true;
             // update controls
             for (widget of widgets) {
