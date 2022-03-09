@@ -184,19 +184,15 @@ function _storeDefaultColors() {
         _setCustomWsPopup();
     }
 
-    const workspaceMode = mscOptions.workspaceMode;
-    mscOptions.workspaceMode = 1;
+    /*const workspaceMode = mscOptions.workspaceMode;
+    mscOptions.workspaceMode = 1; // set workspace mode to static
     const numWS = mscOptions.numWorkspaces;
-    mscOptions.numWorkspaces = 2;
+    mscOptions.numWorkspaces = 2; // ... and set 2 workspaces to get colors of inactive ws*/
     const popupMode = mscOptions.popupMode;
-    mscOptions.popupMode = 0;
+    mscOptions.popupMode = 0; // ... set popup mode to Show all workspaces
 
     const popup = new WorkspaceSwitcherPopup.WorkspaceSwitcherPopup();
     popup._allowCustomColors = false;
-
-    mscOptions.workspaceMode = workspaceMode;
-    mscOptions.numWorkspaces = numWS;
-    mscOptions.popupMode = popupMode;
 
     if (shellVersion >= 42 && mscOptions.popupMode === 3) {
         _setDefaultWsPopup();
@@ -207,10 +203,15 @@ function _storeDefaultColors() {
     popup.display(Meta.MotionDirection.UP, 0);
     popup.opacity = 0;
 
+    /*mscOptions.workspaceMode = workspaceMode;
+    mscOptions.numWorkspaces = numWS;*/
+    mscOptions.popupMode = popupMode;
+
     const containerNode = popup._container.get_theme_node();
     const listItems = popup._list.get_children();
     const activeNode = listItems[0].get_theme_node();
-    const inactiveNode = popup._list.get_children()[1].get_theme_node();
+    let inactiveNode;
+
     const popupBgColor = containerNode.lookup_color('background-color', true)[1];
     // border color in default theme is set in 'border' element and can not be read directly
     let [result, borderColor] = activeNode.lookup_color('border-color', true);
@@ -221,8 +222,13 @@ function _storeDefaultColors() {
     }
     const activeFgColor = activeNode.get_foreground_color();
     const activeBgColor = activeNode.get_background_color();
-    const inactiveFgColor = inactiveNode.get_foreground_color();
-    const inactiveBgColor = inactiveNode.get_background_color();
+    let inactiveFgColor = {};
+    let inactiveBgColor = {};
+    if (popup._list.get_children()[1]) {
+        inactiveNode = popup._list.get_children()[1].get_theme_node();
+        inactiveFgColor = inactiveNode.get_foreground_color();
+        inactiveBgColor = inactiveNode.get_background_color();
+    }
     // workaround - at session start there is only one workspace usually, and following colors are usually the same in default themes
     //const inactiveFgColor = activeNode.get_foreground_color();
     //const inactiveBgColor = popupBgColor;
@@ -234,8 +240,8 @@ function _storeDefaultColors() {
          borderColor,
          `rgba(${activeFgColor.red},${activeFgColor.green},${activeFgColor.blue},${activeFgColor.alpha})`,
          `rgba(${activeBgColor.red},${activeBgColor.green},${activeBgColor.blue},${activeBgColor.alpha})`,
-         `rgba(${inactiveFgColor.red},${inactiveFgColor.green},${inactiveFgColor.blue},${inactiveFgColor.alpha})`,
-         `rgba(${inactiveBgColor.red},${inactiveBgColor.green},${inactiveBgColor.blue},${inactiveBgColor.alpha})`
+         `rgba(${inactiveFgColor.red || activeFgColor.red},${inactiveFgColor.green || activeFgColor.green},${inactiveFgColor.blue || activeFgColor.blue},${inactiveFgColor.alpha || activeFgColor.alpha})`,
+         `rgba(${inactiveBgColor.red || popupBgColor.red},${inactiveBgColor.green || popupBgColor.green},${inactiveBgColor.blue || popupBgColor.blue},${inactiveBgColor.alpha || activeBgColor.alpha})`,
     ];
     mscOptions.defaultColors = defaultColors;
 
