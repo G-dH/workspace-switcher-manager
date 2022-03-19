@@ -14,7 +14,7 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me             = ExtensionUtils.getCurrentExtension();
 const Settings       = Me.imports.settings;
 
-let mscOptions;
+let gOptions;
 let customPages;
 let wsEntries;
 let windowWidget;
@@ -28,7 +28,7 @@ const shellVersion = Settings.shellVersion;
 
 function init() {
     ExtensionUtils.initTranslations(Me.metadata['gettext-domain']);
-    mscOptions = new Settings.MscOptions();
+    gOptions = new Settings.MscOptions();
     prevPopupMode = -1;
     wsEntries = [];
     widgets = [];
@@ -75,7 +75,7 @@ function fillPreferencesWindow(window) {
     windowWidget = window;
     _updateAdwActivePages();
 
-    mscOptions.connect('changed::popup-mode', _updateAdwActivePages);
+    gOptions.connect('changed::popup-mode', _updateAdwActivePages);
     window.connect('destroy', _onDestroy);
 
     return window;
@@ -83,15 +83,15 @@ function fillPreferencesWindow(window) {
 
 function _onDestroy() {
     prevPopupMode = -1;
-    mscOptions.destroy();
-    mscOptions = null;
+    gOptions.destroy();
+    gOptions = null;
     customPages = null;
     wsEntries = null;
     windowWidget = null;
 }
 
 function _updateAdwActivePages() {
-    const mode = mscOptions.popupMode;
+    const mode = gOptions.get('popupMode');
     if (_shouldUpdatePages(mode)) {
         for (let page of customPages) {
             if (mode < 2) {
@@ -113,7 +113,7 @@ function _shouldUpdatePages(mode) {
 }
 
 function _updateLegacyActivePages() {
-    const mode = mscOptions.popupMode;
+    const mode = gOptions.get('popupMode');
     if (_shouldUpdatePages(mode)) {
         for (let page of customPages) {
             if (mode < 2) {
@@ -180,7 +180,7 @@ function buildPrefsWidget() {
 
     windowWidget = optionsNotebook;
     _updateLegacyActivePages();
-    mscOptions.connect('changed::popup-mode', _updateLegacyActivePages);
+    gOptions.connect('changed::popup-mode', _updateLegacyActivePages);
 
     optionsNotebook.show_all && optionsNotebook.show_all();
 
@@ -223,13 +223,11 @@ function _getGeneralOptionList() {
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
-            _('Mode'),
+            _('Dynamic Workspaces'),
             _(`Dynamic - workspaces can be created on demand, and are automaticaly removed when empty.
 Static - number of workspaces is fixed to the number you can set below.`),
-            _newComboBox(),
-            'workspaceMode',
-           [[_('Dynamic'), 0],
-            [_('Static'),  1]]
+            _newGtkSwitch(),
+            'dynamicWorkspaces'
         )
     );
     //-----------------------------------------------------
@@ -1046,7 +1044,7 @@ function _getPresetsOptionList() {
                 // popup mode,
                 1,
                 // scale, box width, padding, spacing, radius, font size, index size, wrap text, shadow, bold,
-                300, 250, 100, 100, 100, 200, 500, false, true, true,
+                527, 150, 100, 100, 100, 120, 230, false, true, true,
                 // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg,
                 98, 'rgba(53,53,53,0)', 'rgba(53,53,53,0)', 'rgba(0,0,0,0.564189)', 'rgba(53,53,53,0)', 'rgb(255,255,255)', '#353535',
                 // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
@@ -1288,13 +1286,13 @@ function _newColorResetBtn(colIndex, colorBtn) {
         colorReset.add(Gtk.Image.new_from_icon_name('edit-clear-symbolic', Gtk.IconSize.BUTTON));
     }
     colorReset.connect('clicked', () =>{
-        const color = mscOptions.defaultColors[colIndex];
+        const color = gOptions.get('defaultColors')[colIndex];
         if (!color) return;
         const rgba = colorBtn.get_rgba();
         const success = rgba.parse(color);
         if (success)
             colorBtn.set_rgba(rgba);
-        mscOptions[colorBtn._gsettingsVar] = rgba.to_string();
+        gOptions.set(colorBtn._gsettingsVar, rgba.to_string());
     });
 
     return colorReset;
@@ -1322,11 +1320,11 @@ function _newGtkButton() {
 }
 
 function _optionsItem(text, tooltip, widget, variable, options = []) {
-    if (widget && mscOptions[variable] === undefined && variable != 'preset') {
+    /*if (widget && gOptions.get(variable) === undefined && variable != 'preset') {
         throw new Error(
             `Settings variable ${variable} doesn't exist, check your code dude!`
         );
-    }
+    }*/
     // item structure: [option(label/caption), widget]
     let item = [];
     let label;
@@ -1366,18 +1364,18 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
     item.push(widget);
 
     if (widget && widget.is_switch) {
-        widget.active = mscOptions[variable];
+        widget.active = gOptions.get(variable);
         widget.connect('notify::active', () => {
-            mscOptions[variable] = widget.active;
+            gOptions.set(variable, widget.active);
         });
         widget._updateValue = () => {
-            widget.set_active(mscOptions[variable]);
+            widget.set_active(gOptions.get(variable));
         };
         // store widget for future updates
         widgets.push(widget);
 
     } else if (widget && widget.is_spinbutton) {
-        widget.value = mscOptions[variable];
+        widget.value = gOptions.get(variable);
         widget.timeout_id = null;
         widget.connect('value-changed', () => {
             widget.update();
@@ -1388,7 +1386,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
                 GLib.PRIORITY_DEFAULT,
                 500,
                 () => {
-                    mscOptions[variable] = widget.value;
+                    gOptions.set(variable, widget.value);
                     widget.timeout_id = null;
                     return 0;
                 }
@@ -1400,7 +1398,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
         for (const [label, value] of options) {
             let iter;
             model.set(iter = model.append(), [0, 1], [label, value]);
-            if (value === mscOptions[variable])
+            if (value === gOptions.get(variable))
                 widget.set_active_iter(iter);
         }
         widget.connect('changed', () => {
@@ -1408,17 +1406,17 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
             if (!success)
                 return;
 
-            mscOptions[variable] = model.get_value(iter, 1);
+            gOptions.set(variable, model.get_value(iter, 1));
         });
         widget._updateValue = () => {
-            widget.set_active(mscOptions[variable]);
+            widget.set_active(gOptions.get(variable));
         };
         // store widget for future updates
         widgets.push(widget);
 
     } else if (widget && widget.is_entry) {
         if (options) {
-            const names = mscOptions[variable];
+            const names = gOptions.get(variable);
             if (names[options - 1])
                 widget.set_text(names[options - 1]);
 
@@ -1436,7 +1434,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
                         if (e.get_text())
                             names.push(e.get_text());
                         })
-                        mscOptions.wsNames = names;
+                        gOptions.set('wsNames', names);
                         entry._timeout_id = 0;
                         return GLib.SOURCE_REMOVE;
                     }
@@ -1447,7 +1445,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
         }
 
     } else if (widget && widget.is_scale) {
-        widget.set_value(mscOptions[variable]);
+        widget.set_value(gOptions.get(variable));
         widget.connect('value-changed', (w) => {
             if (w._timeout_id)
                 GLib.source_remove(w._timeout_id);
@@ -1455,14 +1453,14 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
                 GLib.PRIORITY_DEFAULT,
                 300,
                 () => {
-                    mscOptions[variable] = w.get_value();
+                    gOptions.set(variable, w.get_value());
                     w._timeout_id = 0;
                     return GLib.SOURCE_REMOVE;
                 }
             )
         });
         widget._updateValue = () => {
-            widget.set_value(mscOptions[variable]);
+            widget.set_value(gOptions.get(variable));
         };
         // store widget for future updates
         widgets.push(widget);
@@ -1475,47 +1473,47 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
             colorBtn = widget;
         }
         const rgba = colorBtn.get_rgba();
-        rgba.parse(mscOptions[variable]);
+        rgba.parse(gOptions.get(variable));
         colorBtn.set_rgba(rgba);
         colorBtn.connect('color_set', () => {
-            mscOptions[variable] = `${colorBtn.get_rgba().to_string()}`;
+            gOptions.set(variable, `${colorBtn.get_rgba().to_string()}`);
         });
         colorBtn._updateValue = () => {
             const rgba = colorBtn.get_rgba();
-            rgba.parse(mscOptions[variable]);
+            rgba.parse(gOptions.get(variable));
             colorBtn.set_rgba(rgba);
         };
         // store widget for future updates
         widgets.push(colorBtn);
     } else if (widget && widget.is_button) {
         widget.connect('clicked', () => {
-            mscOptions.popupMode = options[0];
-            mscOptions.popupScale = options[1];
-            mscOptions.popupWidthScale = options[2];
-            mscOptions.popupPaddingScale = options[3];
-            mscOptions.popupSpacingScale = options[4];
-            mscOptions.popupRadiusScale = options[5];
-            mscOptions.fontScale = options[6];
-            mscOptions.indexScale = options[7];
-            mscOptions.wrapAppNames = options[8];
-            mscOptions.textShadow = options[9];
-            mscOptions.textBold = options[10];
-            mscOptions.popupOpacity = options[11];
-            mscOptions.popupBgColor = options[12];
-            mscOptions.popupBorderColor = options[13];
-            mscOptions.popupActiveFgColor = options[14];
-            mscOptions.popupActiveBgColor = options[15];
-            mscOptions.popupInactiveFgColor = options[16];
-            mscOptions.popupInactiveBgColor = options[17];
-            mscOptions.activeShowWsIndex = options[18];
-            mscOptions.activeShowWsName = options[19];
-            mscOptions.activeShowAppName = options[20];
-            mscOptions.activeShowWinTitle = options[21];
-            mscOptions.inactiveShowWsIndex = options[22];
-            mscOptions.inactiveShowWsName = options[23];
-            mscOptions.inactiveShowAppName = options[24];
-            mscOptions.inactiveShowWinTitle = options[25];
-            mscOptions.allowCustomColors = true;
+            gOptions.set('popupMode',options[0]);
+            gOptions.set('popupScale',options[1]);
+            gOptions.set('popupWidthScale',options[2]);
+            gOptions.set('popupPaddingScale',options[3]);
+            gOptions.set('popupSpacingScale',options[4]);
+            gOptions.set('popupRadiusScale',options[5]);
+            gOptions.set('fontScale',options[6]);
+            gOptions.set('indexScale',options[7]);
+            gOptions.set('wrapAppNames',options[8]);
+            gOptions.set('textShadow',options[9]);
+            gOptions.set('textBold',options[10]);
+            gOptions.set('popupOpacity',options[11]);
+            gOptions.set('popupBgColor',options[12]);
+            gOptions.set('popupBorderColor',options[13]);
+            gOptions.set('popupActiveFgColor',options[14]);
+            gOptions.set('popupActiveBgColor',options[15]);
+            gOptions.set('popupInactiveFgColor',options[16]);
+            gOptions.set('popupInactiveBgColor',options[17]);
+            gOptions.set('activeShowWsIndex',options[18]);
+            gOptions.set('activeShowWsName',options[19]);
+            gOptions.set('activeShowAppName',options[20]);
+            gOptions.set('activeShowWinTitle',options[21]);
+            gOptions.set('inactiveShowWsIndex',options[22]);
+            gOptions.set('inactiveShowWsName',options[23]);
+            gOptions.set('inactiveShowAppName',options[24]);
+            gOptions.set('inactiveShowWinTitle',options[25]);
+            gOptions.set('allowCustomColors',true);
             // update controls
             for (widget of widgets) {
                 widget._updateValue();

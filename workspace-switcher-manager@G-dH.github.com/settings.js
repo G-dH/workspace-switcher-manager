@@ -19,6 +19,54 @@ var MscOptions = class MscOptions {
     constructor() {
         this._gsettings = ExtensionUtils.getSettings(_schema);
         this._connectionIds = [];
+
+        this.options = {
+            monitor: ['int', 'monitor'],
+            activePrefsPage: ['int', 'active-prefs-page'],
+            popupMode: ['int', 'popup-mode'],
+            popupHorizontal: ['int', 'horizontal'],
+            popupVertical: ['int', 'vertical'],
+            popupTimeout: ['int', 'on-screen-time'],
+            fadeOutTime: ['int', 'fade-out-time'],
+            wsSwitchWrap: ['boolean', 'ws-wraparound'],
+            wsSwitchIgnoreLast: ['boolean', 'ws-ignore-last'],
+            fontScale: ['int', 'font-scale'],
+            indexScale: ['int', 'index-scale'],
+            wrapAppNames: ['boolean', 'wrap-app-names'],
+            textShadow: ['boolean', 'text-shadow'],
+            textBold: ['boolean', 'text-bold'],
+            wsNames: ['strv', 'workspace-names'],
+            popupScale: ['int', 'popup-scale'],
+            popupWidthScale: ['int', 'popup-width-scale'],
+            popupPaddingScale: ['int', 'popup-padding-scale'],
+            popupSpacingScale: ['int', 'popup-spacing-scale'],
+            popupRadiusScale: ['int', 'popup-radius-scale'],
+            allowCustomColors: ['boolean', 'allow-custom-colors'],
+            popupOpacity: ['int', 'popup-opacity'],
+            popupBgColor: ['string', 'popup-bg-color'],
+            popupBorderColor: ['string', 'popup-border-color'],
+            popupActiveFgColor: ['string', 'popup-active-fg-color'],
+            popupActiveBgColor: ['string', 'popup-active-bg-color'],
+            popupInactiveFgColor: ['string', 'popup-inactive-fg-color'],
+            popupInactiveBgColor: ['string', 'popup-inactive-bg-color'],
+            defaultColors: ['strv', 'default-colors'],
+            activeShowWsIndex: ['boolean', 'active-show-ws-index'],
+            activeShowWsName: ['boolean', 'active-show-ws-name'],
+            activeShowAppName: ['boolean', 'active-show-app-name'],
+            activeShowWinTitle: ['boolean', 'active-show-win-title'],
+            inactiveShowWsIndex: ['boolean', 'inactive-show-ws-index'],
+            inactiveShowWsName: ['boolean', 'inactive-show-ws-name'],
+            inactiveShowAppName: ['boolean', 'inactive-show-app-name'],
+            inactiveShowWinTitle: ['boolean', 'inactive-show-win-title'],
+            reverseWsOrientation: ['boolean', 'reverse-ws-orientation'],
+            modifiersHidePopup: ['boolean', 'modifiers-hide-popup'],
+            reversePopupOrientation: ['boolean', 'reverse-popup-orientation'],
+
+            wsNames: ['strv', 'workspace-names', this._getDesktopWmSettings],
+            dynamicWorkspaces: ['boolean', 'dynamic-workspaces', this._getMutterSettings],
+            numWorkspaces: ['int', 'num-workspaces', this._getDesktopWmSettings],
+            workspacesOnPrimaryOnly: ['boolean', 'workspaces-only-on-primary', this._getMutterSettings]
+        }
     }
 
     connect(name, callback) {
@@ -49,313 +97,52 @@ var MscOptions = class MscOptions {
         this._connectionIds.forEach(id => this._gsettings.disconnect(id));
     }
 
-    get activePrefsPage() {
-        return this._gsettings.get_int('active-prefs-page');
-    }
-    set activePrefsPage(int_val) {
-        this._gsettings.set_int('active-prefs-page', int_val);
+    get(option) {
+        const [format, key, settings] = this.options[option];
+
+        let gSettings = this._gsettings;
+
+        if (settings !== undefined) {
+            gSettings = settings();
+        }
+
+        return gSettings.get_value(key).deep_unpack();
     }
 
-    // common options
-    get popupMode() {
-        return this._gsettings.get_int('popup-mode');
-    }
-    set popupMode(int_val) {
-        this._gsettings.set_int('popup-mode', int_val);
+    set(option, value) {
+        const [format, key, settings] = this.options[option];
+
+        let gSettings = this._gsettings;
+
+        if (settings !== undefined) {
+            gSettings = settings();
+        }
+
+        switch (format) {
+            case 'boolean':
+                gSettings.set_boolean(key, value);
+                break;
+            case 'int':
+                gSettings.set_int(key, value);
+                break;
+            case 'string':
+                gSettings.set_string(key, value);
+                break;
+            case 'strv':
+                gSettings.set_strv(key, value);
+                break;
+        }
     }
 
-    get monitor() {
-        return this._gsettings.get_int('monitor');
-    }
-    set monitor(int_val) {
-        this._gsettings.set_int('monitor', int_val);
-    }
+    getDefault(option) {
+        const [format, key, settings] = this.options[option];
 
-    get popupHorizontal() {
-        return this._gsettings.get_int('horizontal');
-    }
-    set popupHorizontal(int_val) {
-        this._gsettings.set_int('horizontal', int_val);
-    }
+        let gSettings = this._gsettings;
 
-    get popupVertical() {
-        return this._gsettings.get_int('vertical');
-    }
-    set popupVertical(int_val) {
-        this._gsettings.set_int('vertical', int_val);
-    }
+        if (settings !== undefined) {
+            gSettings = settings();
+        }
 
-    get popupTimeout() {
-        return this._gsettings.get_int('on-screen-time');
-    }
-    set popupTimeout(int_val) {
-        this._gsettings.set_int('on-screen-time', int_val);
-    }
-
-    get fadeOutTime() {
-        return this._gsettings.get_int('fade-out-time');
-    }
-    set fadeOutTime(int_val) {
-        this._gsettings.set_int('fade-out-time', int_val);
-    }
-
-    get wsSwitchWrap() {
-        return this._gsettings.get_boolean('ws-wraparound');
-    }
-    set wsSwitchWrap(bool_val) {
-        this._gsettings.set_boolean('ws-wraparound', bool_val);
-    }
-
-    get wsSwitchIgnoreLast() {
-        return this._gsettings.get_boolean('ws-ignore-last');
-    }
-    set wsSwitchIgnoreLast(bool_val) {
-        this._gsettings.set_boolean('ws-ignore-last', bool_val);
-    }
-
-    get fontScale() {
-        return this._gsettings.get_int('font-scale');
-    }
-    set fontScale(int_val) {
-        this._gsettings.set_int('font-scale', int_val);
-    }
-
-    get indexScale() {
-        return this._gsettings.get_int('index-scale');
-    }
-    set indexScale(int_val) {
-        this._gsettings.set_int('index-scale', int_val);
-    }
-
-    get wrapAppNames() {
-        return this._gsettings.get_boolean('wrap-app-names');
-    }
-    set wrapAppNames(bool_val) {
-        this._gsettings.set_boolean('wrap-app-names', bool_val);
-    }
-
-    get textShadow() {
-        return this._gsettings.get_boolean('text-shadow');
-    }
-    set textShadow(bool_val) {
-        this._gsettings.set_boolean('text-shadow', bool_val);
-    }
-
-    get textBold() {
-        return this._gsettings.get_boolean('text-bold');
-    }
-    set textBold(bool_val) {
-        this._gsettings.set_boolean('text-bold', bool_val);
-    }
-
-    get wsNames() {
-        return this._getWsNamesSettings().get_strv('workspace-names');
-    }
-    set wsNames(names) {
-        this._getWsNamesSettings().set_strv('workspace-names', names);
-    }
-
-    get popupScale() {
-        return this._gsettings.get_int('popup-scale');
-    }
-    set popupScale(int_val) {
-        this._gsettings.set_int('popup-scale', int_val);
-    }
-
-    get popupWidthScale() {
-        return this._gsettings.get_int('popup-width-scale');
-    }
-    set popupWidthScale(int_val) {
-        this._gsettings.set_int('popup-width-scale', int_val);
-    }
-
-    get popupPaddingScale() {
-        return this._gsettings.get_int('popup-padding-scale');
-    }
-    set popupPaddingScale(int_val) {
-        this._gsettings.set_int('popup-padding-scale', int_val);
-    }
-
-    get popupSpacingScale() {
-        return this._gsettings.get_int('popup-spacing-scale');
-    }
-    set popupSpacingScale(int_val) {
-        this._gsettings.set_int('popup-spacing-scale', int_val);
-    }
-
-    get popupRadiusScale() {
-        return this._gsettings.get_int('popup-radius-scale');
-    }
-    set popupRadiusScale(int_val) {
-        this._gsettings.set_int('popup-radius-scale', int_val);
-    }
-
-    get allowCustomColors() {
-        return this._gsettings.get_boolean('allow-custom-colors');
-    }
-    set allowCustomColors(bool_val) {
-        this._gsettings.set_boolean('allow-custom-colors', bool_val);
-    }
-
-    get popupOpacity() {
-        return this._gsettings.get_int('popup-opacity');
-    }
-    set popupOpacity(int_val) {
-        this._gsettings.set_int('popup-opacity', int_val);
-    }
-
-    get popupBgColor() {
-        return this._gsettings.get_string('popup-bg-color');
-    }
-    set popupBgColor(string) {
-        this._gsettings.set_string('popup-bg-color', string);
-    }
-
-    get popupBorderColor() {
-        return this._gsettings.get_string('popup-border-color');
-    }
-    set popupBorderColor(string) {
-        this._gsettings.set_string('popup-border-color', string);
-    }
-
-    get popupActiveFgColor() {
-        return this._gsettings.get_string('popup-active-fg-color');
-    }
-    set popupActiveFgColor(string) {
-        this._gsettings.set_string('popup-active-fg-color', string);
-    }
-
-    get popupActiveBgColor() {
-        return this._gsettings.get_string('popup-active-bg-color');
-    }
-    set popupActiveBgColor(string) {
-        this._gsettings.set_string('popup-active-bg-color', string);
-    }
-
-    get popupInactiveFgColor() {
-        return this._gsettings.get_string('popup-inactive-fg-color');
-    }
-    set popupInactiveFgColor(string) {
-        this._gsettings.set_string('popup-inactive-fg-color', string);
-    }
-
-    get popupInactiveBgColor() {
-        return this._gsettings.get_string('popup-inactive-bg-color');
-    }
-    set popupInactiveBgColor(string) {
-        this._gsettings.set_string('popup-inactive-bg-color', string);
-    }
-
-    get defaultColors() {
-        return this._gsettings.get_strv('default-colors');
-    }
-    set defaultColors(array) {
-        this._gsettings.set_strv('default-colors', array);
-    }
-
-    get activeShowWsIndex() {
-        return this._gsettings.get_boolean('active-show-ws-index');
-    }
-    set activeShowWsIndex(bool_val) {
-        this._gsettings.set_boolean('active-show-ws-index', bool_val);
-    }
-
-    get activeShowWsName() {
-        return this._gsettings.get_boolean('active-show-ws-name');
-    }
-    set activeShowWsName(bool_val) {
-        this._gsettings.set_boolean('active-show-ws-name', bool_val);
-    }
-
-    get activeShowAppName() {
-        return this._gsettings.get_boolean('active-show-app-name');
-    }
-    set activeShowAppName(bool_val) {
-        this._gsettings.set_boolean('active-show-app-name', bool_val);
-    }
-
-    get activeShowWinTitle() {
-        return this._gsettings.get_boolean('active-show-win-title');
-    }
-    set activeShowWinTitle(bool_val) {
-        this._gsettings.set_boolean('active-show-win-title', bool_val);
-    }
-
-    get inactiveShowWsIndex() {
-        return this._gsettings.get_boolean('inactive-show-ws-index');
-    }
-    set inactiveShowWsIndex(bool_val) {
-        this._gsettings.set_boolean('inactive-show-ws-index', bool_val);
-    }
-
-    get inactiveShowWsName() {
-        return this._gsettings.get_boolean('inactive-show-ws-name');
-    }
-    set inactiveShowWsName(bool_val) {
-        this._gsettings.set_boolean('inactive-show-ws-name', bool_val);
-    }
-
-    get inactiveShowAppName() {
-        return this._gsettings.get_boolean('inactive-show-app-name');
-    }
-    set inactiveShowAppName(bool_val) {
-        this._gsettings.set_boolean('inactive-show-app-name', bool_val);
-    }
-
-    get inactiveShowWinTitle() {
-        return this._gsettings.get_boolean('inactive-show-win-title');
-    }
-    set inactiveShowWinTitle(bool_val) {
-        this._gsettings.set_boolean('inactive-show-win-title', bool_val);
-    }
-
-    get workspaceMode() {
-        const settings = this._getMutterSettings();
-        const val = settings.get_boolean('dynamic-workspaces');
-        return val ? 0 : 1;
-    }
-    set workspaceMode(int_val) {
-        const settings = this._getMutterSettings();
-        const dynamic = int_val === 0;
-        settings.set_boolean('dynamic-workspaces', dynamic);
-    }
-
-    get numWorkspaces() {
-        const settings = this._getDesktopWmSettings();
-        return settings.get_int('num-workspaces');
-    }
-    set numWorkspaces(int_val) {
-        const settings = this._getDesktopWmSettings();
-        settings.set_int('num-workspaces', int_val);
-    }
-
-    get reverseWsOrientation() {
-        return this._gsettings.get_boolean('reverse-ws-orientation');
-    }
-    set reverseWsOrientation(bool_val) {
-        this._gsettings.set_boolean('reverse-ws-orientation', bool_val);
-    }
-
-    get modifiersHidePopup() {
-        return this._gsettings.get_boolean('modifiers-hide-popup');
-    }
-    set modifiersHidePopup(bool_val) {
-        this._gsettings.set_boolean('modifiers-hide-popup', bool_val);
-    }
-
-    get reversePopupOrientation() {
-        return this._gsettings.get_boolean('reverse-popup-orientation');
-    }
-    set reversePopupOrientation(bool_val) {
-        this._gsettings.set_boolean('reverse-popup-orientation', bool_val);
-    }
-
-    get workspacesOnPrimaryOnly() {
-        const settings = this._getMutterSettings();
-        return settings.get_boolean('workspaces-only-on-primary');
-    }
-    set workspacesOnPrimaryOnly(bool_val) {
-        const settings = this._getMutterSettings();
-        settings.set_boolean('workspaces-only-on-primary', bool_val);
+        return gSettings.get_default_value(key).deep_unpack();
     }
 };

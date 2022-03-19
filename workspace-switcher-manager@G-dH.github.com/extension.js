@@ -20,7 +20,7 @@ let defaultOrientationVertical;
 let enableTimeoutId = 0;
 let prefsDemoTimeoutId = 0;
 
-let mscOptions;
+let gOptions;
 
 var DISPLAY_TIMEOUT = 300;
 var ANIMATION_TIME = 100;
@@ -46,16 +46,16 @@ function enable() {
         700,
         () => {
 
-            mscOptions = new Settings.MscOptions();
+            gOptions = new Settings.MscOptions();
 
             _storeDefaultColors();
 
-            mscOptions.connect('changed', _updateSettings);
+            gOptions.connect('changed', _updateSettings);
 
-            DISPLAY_TIMEOUT = mscOptions.popupTimeout;
-            if (mscOptions.popupMode !== 3)
+            DISPLAY_TIMEOUT = gOptions.get('popupTimeout');
+            if (gOptions.get('popupMode') !== 3)
                 _setCustomWsPopup();
-            _reverseWsOrientation(mscOptions.reverseWsOrientation);
+            _reverseWsOrientation(gOptions.get('reverseWsOrientation'));
             _updateNeighbor();
 
             enableTimeoutId = 0;
@@ -81,9 +81,9 @@ function disable() {
         Main.wm._workspaceSwitcherPopup = null;
     }
 
-    if (mscOptions) {
-        mscOptions.destroy();
-        mscOptions = null;
+    if (gOptions) {
+        gOptions.destroy();
+        gOptions = null;
     }
     _setDefaultWsPopup();
     Meta.Workspace.prototype.get_neighbor = origNeighbor;
@@ -107,7 +107,7 @@ function _updateSettings(settings, key) {
         _updatePopupMode();
         break;
     case 'on-screen-time':
-        DISPLAY_TIMEOUT = mscOptions.popupTimeout;
+        DISPLAY_TIMEOUT = gOptions.get('popupTimeout');
         break;
     case 'default-colors':
         return;
@@ -116,7 +116,7 @@ function _updateSettings(settings, key) {
         _updateNeighbor();
         return;
     case 'reverse-ws-orientation':
-        _reverseWsOrientation(mscOptions.reverseWsOrientation);
+        _reverseWsOrientation(gOptions.get('reverseWsOrientation'));
         _updateNeighbor();
         return;
     }
@@ -129,7 +129,7 @@ function _updateSettings(settings, key) {
 }
 
 function _updatePopupMode() {
-    const popupMode = mscOptions.popupMode;
+    const popupMode = gOptions.get('popupMode');
     if (popupMode === 3) {//default
         _setDefaultWsPopup();
     } else {
@@ -138,7 +138,7 @@ function _updatePopupMode() {
 }
 
 function _updateNeighbor() {
-    if (mscOptions.wsSwitchWrap || mscOptions.wsSwitchIgnoreLast || mscOptions.reverseWsOrientation) {
+    if (gOptions.get('wsSwitchWrap') || gOptions.get('wsSwitchIgnoreLast') || gOptions.get('reverseWsOrientation')) {
         Meta.Workspace.prototype.get_neighbor = getNeighbor;
     } else {
         Meta.Workspace.prototype.get_neighbor = origNeighbor;
@@ -168,7 +168,7 @@ function _showPopupForPrefs() {
         Main.wm._workspaceSwitcherPopup = null;
     });
 
-    if (shellVersion >= 42 && mscOptions.popupMode === 3) {
+    if (shellVersion >= 42 && gOptions.get('popupMode') === 3) {
         Main.wm._workspaceSwitcherPopup.display(wsIndex);
     } else {
         Main.wm._workspaceSwitcherPopup.display(direction, wsIndex);
@@ -184,17 +184,17 @@ function _storeDefaultColors() {
         _setCustomWsPopup();
     }
 
-    /*const workspaceMode = mscOptions.workspaceMode;
-    mscOptions.workspaceMode = 1; // set workspace mode to static
-    const numWS = mscOptions.numWorkspaces;
-    mscOptions.numWorkspaces = 2; // ... and set 2 workspaces to get colors of inactive ws*/
-    const popupMode = mscOptions.popupMode;
-    mscOptions.popupMode = 0; // ... set popup mode to Show all workspaces
+    /*const dynamicWorkspaces = gOptions.get('dynamicWorkspaces');
+    gOptions.set(dynamicWorkspaces, false); // set workspace mode to static
+    const numWS = gOptions.get('numWorkspaces');
+    gOptions.set('numWorkspaces', 2); // ... and set 2 workspaces to get colors of inactive ws*/
+    const popupMode = gOptions.get('popupMode');
+    gOptions.set('popupMode', 0); // ... set popup mode to Show all workspaces
 
     const popup = new WorkspaceSwitcherPopup.WorkspaceSwitcherPopup();
     popup._allowCustomColors = false;
 
-    if (shellVersion >= 42 && mscOptions.popupMode === 3) {
+    if (shellVersion >= 42 && gOptions.get('popupMode') === 3) {
         _setDefaultWsPopup();
     }
 
@@ -203,9 +203,9 @@ function _storeDefaultColors() {
     popup.display(Meta.MotionDirection.UP, 0);
     popup.opacity = 0;
 
-    /*mscOptions.workspaceMode = workspaceMode;
-    mscOptions.numWorkspaces = numWS;*/
-    mscOptions.popupMode = popupMode;
+    /*gOptions.set('dynamicWorkspaces', dynamicWorkspaces);
+    gOptions.set('numWorkspaces', numWS);*/
+    gOptions.set('popupMode', popupMode);
 
     const containerNode = popup._container.get_theme_node();
     const listItems = popup._list.get_children();
@@ -243,26 +243,26 @@ function _storeDefaultColors() {
          `rgba(${inactiveFgColor.red || activeFgColor.red},${inactiveFgColor.green || activeFgColor.green},${inactiveFgColor.blue || activeFgColor.blue},${inactiveFgColor.alpha || activeFgColor.alpha})`,
          `rgba(${inactiveBgColor.red || popupBgColor.red},${inactiveBgColor.green || popupBgColor.green},${inactiveBgColor.blue || popupBgColor.blue},${inactiveBgColor.alpha || activeBgColor.alpha})`,
     ];
-    mscOptions.defaultColors = defaultColors;
+    gOptions.set('defaultColors', defaultColors);
 
-    if (!mscOptions.popupBgColor)
-        mscOptions.popupBgColor = defaultColors[0];
-    if (!mscOptions.popupBorderColor)
-        mscOptions.popupBorderColor = defaultColors[1];
-    if (!mscOptions.popupActiveFgColor)
-        mscOptions.popupActiveFgColor = defaultColors[2];
-    if (!mscOptions.popupActiveBgColor)
-        mscOptions.popupActiveBgColor = defaultColors[3];
-    if (!mscOptions.popupInactiveFgColor)
-        mscOptions.popupInactiveFgColor = defaultColors[4];
-    if (!mscOptions.popupInactiveBgColor)
-        mscOptions.popupInactiveBgColor = defaultColors[5];
+    if (!gOptions.get('popupBgColor'))
+        gOptions.set('popupBgColor', defaultColors[0]);
+    if (!gOptions.get('popupBorderColor'))
+        gOptions.set('popupBorderColor', defaultColors[1]);
+    if (!gOptions.get('popupActiveFgColor'))
+        gOptions.set('popupActiveFgColor', defaultColors[2]);
+    if (!gOptions.get('popupActiveBgColor'))
+        gOptions.set('popupActiveBgColor', defaultColors[3]);
+    if (!gOptions.get('popupInactiveFgColor'))
+        gOptions.set('popupInactiveFgColor', defaultColors[4]);
+    if (!gOptions.get('popupInactiveBgColor'))
+        gOptions.set('popupInactiveBgColor', defaultColors[5]);
 }
 
 function getNeighbor(direction) {
     const activeIndex = this.index();
-    const ignoreLast = mscOptions.wsSwitchIgnoreLast;
-    const wraparound = mscOptions.wsSwitchWrap;
+    const ignoreLast = gOptions.get('wsSwitchIgnoreLast');
+    const wraparound = gOptions.get('wsSwitchWrap');
     const nWorkspaces = global.workspace_manager.n_workspaces - (ignoreLast ? 1 : 0);
     const lastIndex = nWorkspaces - 1;
 
@@ -300,7 +300,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
 
         this._timeoutId = 0;
 
-        this._popupMode = mscOptions.popupMode;
+        this._popupMode = gOptions.get('popupMode');
         // if popup disabled don't allocate more resources
         if (this._popupMode === ws_popup_mode.DISABLE) {
             return;
@@ -315,46 +315,46 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         this._list._popupMode = this._popupMode;
         this._container.add_child(this._list);
 
-        this._monitorOption = mscOptions.monitor;
-        this._workspacesOnPrimaryOnly = mscOptions.workspacesOnPrimaryOnly;
+        this._monitorOption = gOptions.get('monitor');
+        this._workspacesOnPrimaryOnly = gOptions.get('workspacesOnPrimaryOnly');
 
-        this._horizontalPosition = mscOptions.popupHorizontal;
-        this._verticalPosition = mscOptions.popupVertical;
-        this._modifiersCancelTimeout = mscOptions.modifiersHidePopup;
-        this._fadeOutTime = mscOptions.fadeOutTime;
+        this._horizontalPosition = gOptions.get('popupHorizontal');
+        this._verticalPosition = gOptions.get('popupVertical');
+        this._modifiersCancelTimeout = gOptions.get('modifiersHidePopup');
+        this._fadeOutTime = gOptions.get('fadeOutTime');
 
-        this._popScale = mscOptions.popupScale / 100;
-        this._paddingScale = mscOptions.popupPaddingScale / 100;
-        this._spacingScale = mscOptions.popupSpacingScale / 100;
-        this._radiusScale = mscOptions.popupRadiusScale / 100;
+        this._popScale = gOptions.get('popupScale') / 100;
+        this._paddingScale = gOptions.get('popupPaddingScale') / 100;
+        this._spacingScale = gOptions.get('popupSpacingScale') / 100;
+        this._radiusScale = gOptions.get('popupRadiusScale') / 100;
         this._list._popScale = this._popScale;
 
-        this._indexScale = mscOptions.indexScale / 100;
-        this._fontScale = mscOptions.fontScale / 100;
-        this._textBold = mscOptions.textBold;
-        this._textShadow = mscOptions.textShadow;
-        this._wrapAppNames = mscOptions.wrapAppNames;
+        this._indexScale = gOptions.get('indexScale') / 100;
+        this._fontScale = gOptions.get('fontScale') / 100;
+        this._textBold = gOptions.get('textBold');
+        this._textShadow = gOptions.get('textShadow');
+        this._wrapAppNames = gOptions.get('wrapAppNames');
 
-        this._popupOpacity = mscOptions.popupOpacity;
-        this._allowCustomColors = mscOptions.allowCustomColors;
+        this._popupOpacity = gOptions.get('popupOpacity');
+        this._allowCustomColors = gOptions.get('allowCustomColors');
         if (this._allowCustomColors) {
-            this._bgColor = mscOptions.popupBgColor;
-            this._borderColor = mscOptions.popupBorderColor;
-            this._activeFgColor = mscOptions.popupActiveFgColor;
-            this._activeBgColor = mscOptions.popupActiveBgColor;
-            this._inactiveFgColor = mscOptions.popupInactiveFgColor;
-            this._inactiveBgColor = mscOptions.popupInactiveBgColor;
-            this._borderColor = mscOptions.popupBorderColor;
+            this._bgColor = gOptions.get('popupBgColor');
+            this._borderColor = gOptions.get('popupBorderColor');
+            this._activeFgColor = gOptions.get('popupActiveFgColor');
+            this._activeBgColor = gOptions.get('popupActiveBgColor');
+            this._inactiveFgColor = gOptions.get('popupInactiveFgColor');
+            this._inactiveBgColor = gOptions.get('popupInactiveBgColor');
+            this._borderColor = gOptions.get('popupBorderColor');
         }
 
-        this._activeShowWsIndex = mscOptions.activeShowWsIndex;
-        this._activeShowWsName = mscOptions.activeShowWsName;
-        this._activeShowAppName = mscOptions.activeShowAppName;
-        this._activeShowWinTitle = mscOptions.activeShowWinTitle;
-        this._inactiveShowWsIndex = mscOptions.inactiveShowWsIndex;
-        this._inactiveShowWsName  = mscOptions.inactiveShowWsName;
-        this._inactiveShowAppName = mscOptions.inactiveShowAppName;
-        this._inactiveShowWinTitle = mscOptions.inactiveShowWinTitle;
+        this._activeShowWsIndex = gOptions.get('activeShowWsIndex');
+        this._activeShowWsName = gOptions.get('activeShowWsName');
+        this._activeShowAppName = gOptions.get('activeShowAppName');
+        this._activeShowWinTitle = gOptions.get('activeShowWinTitle');
+        this._inactiveShowWsIndex = gOptions.get('inactiveShowWsIndex');
+        this._inactiveShowWsName  = gOptions.get('inactiveShowWsName');
+        this._inactiveShowAppName = gOptions.get('inactiveShowAppName');
+        this._inactiveShowWinTitle = gOptions.get('inactiveShowWinTitle');
 
         //this._redisplay();
 
@@ -808,9 +808,9 @@ class WorkspaceSwitcherPopupList extends St.Widget {
         this._childHeight = 0;
         this._childWidth = 0;
         this._fitToScreenScale = 1;
-        this._customWidthScale = mscOptions.popupWidthScale / 100;
+        this._customWidthScale = gOptions.get('popupWidthScale') / 100;
         let orientation = global.workspace_manager.layout_rows == -1;
-        if (mscOptions.reversePopupOrientation)
+        if (gOptions.get('reversePopupOrientation'))
             orientation = !orientation;
         this._orientation = orientation
             ? Clutter.Orientation.VERTICAL
