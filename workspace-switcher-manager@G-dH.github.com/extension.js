@@ -28,7 +28,8 @@ var ANIMATION_TIME = 100;
 const ws_popup_mode = {
     ALL     : 0,
     ACTIVE  : 1,
-    DISABLE : 2,
+    DEFAULT : 2,
+    DISABLE : 3,
 };
 
 
@@ -53,7 +54,7 @@ function enable() {
             gOptions.connect('changed', _updateSettings);
 
             DISPLAY_TIMEOUT = gOptions.get('popupTimeout');
-            if (gOptions.get('popupMode') !== 3)
+            if (gOptions.get('popupMode') !== ws_popup_mode.DEFAULT)
                 _setCustomWsPopup();
             _reverseWsOrientation(gOptions.get('reverseWsOrientation'));
             _updateNeighbor();
@@ -130,7 +131,7 @@ function _updateSettings(settings, key) {
 
 function _updatePopupMode() {
     const popupMode = gOptions.get('popupMode');
-    if (popupMode === 3) {//default
+    if (popupMode === ws_popup_mode.DEFAULT) {
         _setDefaultWsPopup();
     } else {
         _setCustomWsPopup();
@@ -168,7 +169,7 @@ function _showPopupForPrefs() {
         Main.wm._workspaceSwitcherPopup = null;
     });
 
-    if (shellVersion >= 42 && gOptions.get('popupMode') === 3) {
+    if (shellVersion >= 42 && gOptions.get('popupMode') === ws_popup_mode.DEFAULT) {
         Main.wm._workspaceSwitcherPopup.display(wsIndex);
     } else {
         Main.wm._workspaceSwitcherPopup.display(direction, wsIndex);
@@ -194,7 +195,7 @@ function _storeDefaultColors() {
     const popup = new WorkspaceSwitcherPopup.WorkspaceSwitcherPopup();
     popup._allowCustomColors = false;
 
-    if (shellVersion >= 42 && gOptions.get('popupMode') === 3) {
+    if (shellVersion >= 42 && gOptions.get('popupMode') === ws_popup_mode.DEFAULT) {
         _setDefaultWsPopup();
     }
 
@@ -845,7 +846,7 @@ class WorkspaceSwitcherPopupList extends St.Widget {
         }
 
         let workspaceManager = global.workspace_manager;
-        let spacing = this._itemSpacing * (this._popupMode ? 0 : workspaceManager.n_workspaces - 1);
+        let spacing = this._itemSpacing * (this._popupMode != ws_popup_mode.ALL ? 0 : workspaceManager.n_workspaces - 1);
         size += spacing;
 
         // note info about downsizing the popupup to calculate proper content size
@@ -854,10 +855,10 @@ class WorkspaceSwitcherPopupList extends St.Widget {
         size = Math.min(size, availSize);
 
         if (this._orientation == Clutter.Orientation.HORIZONTAL) {
-            this._childWidth = (size - spacing) / (this._popupMode ? 1 : workspaceManager.n_workspaces);
+            this._childWidth = (size - spacing) / (this._popupMode != ws_popup_mode.ALL ? 1 : workspaceManager.n_workspaces);
             return themeNode.adjust_preferred_width(size, size);
         } else {
-            this._childHeight = (size - spacing) / (this._popupMode ? 1 : workspaceManager.n_workspaces);
+            this._childHeight = (size - spacing) / (this._popupMode != ws_popup_mode.ALL ? 1 : workspaceManager.n_workspaces);
             return themeNode.adjust_preferred_height(size, size);
         }
     }
