@@ -20,6 +20,7 @@ let wsEntries;
 let windowWidget;
 let prevPopupMode;
 let widgets;
+let stackSwitcher;
 
 // gettext
 const _  = Settings._;
@@ -49,13 +50,13 @@ function fillPreferencesWindow(window) {
         title: _('Pop-up'),
         icon_name: 'user-available-symbolic',
     }));
-    customPages.push(getAdwPage(_getColorOptionList(), {
-        title: _('Colors'),
-        icon_name: 'applications-graphics-symbolic',
-    }));
     customPages.push(getAdwPage(_getSizeTextOptionList(), {
         title: _('Size & Text'),
         icon_name: 'view-fullscreen-symbolic',
+    }));
+    customPages.push(getAdwPage(_getColorOptionList(), {
+        title: _('Colors'),
+        icon_name: 'applications-graphics-symbolic',
     }));
     customPages.push(getAdwPage(_getContentOptionList(), {
         title: _('Content'),
@@ -66,7 +67,7 @@ function fillPreferencesWindow(window) {
         icon_name: 'text-editor-symbolic',
     }));
     customPages.push(getAdwPage(_getPresetsOptionList(), {
-        title: _('Profiles'),
+        title: _('Examples'),
         icon_name: 'view-list-bullet-symbolic',
     }));
 
@@ -105,7 +106,7 @@ function _updateAdwActivePages() {
 }
 
 function _shouldUpdatePages(mode) {
-    if ((prevPopupMode > 1 && mode < 2) || ([0, 1].includes(prevPopupMode) && mode > 1) || (prevPopupMode === -1 && mode < 2)) {
+    if ((prevPopupMode > 1 && mode < 2) || ([0, 1].includes(prevPopupMode) && mode > 1) || (prevPopupMode === -1 && mode > 1)) {
         return true;
     } else {
         return false;
@@ -115,23 +116,42 @@ function _shouldUpdatePages(mode) {
 function _updateLegacyActivePages() {
     const mode = gOptions.get('popupMode');
     if (_shouldUpdatePages(mode)) {
-        for (let page of customPages) {
-            if (mode < 2) {
-                windowWidget.append_page(...page);
-            } else {
-                // remove last page
-                windowWidget.remove_page( -1);
-            }
+        let stBtn = stackSwitcher.get_first_child ? stackSwitcher.get_first_child() : null;
+        for (let i = 0; i < 7; i++) {
+                if (stackSwitcher.get_children) {
+                    stackSwitcher.get_children()[i].visible = mode < 2 ? true : (i != 0 ? false : true);
+                } else {
+                    stBtn.visible = mode < 2 ? true : (i != 0 ? false : true);
+                    stBtn = stBtn.get_next_sibling();
+                }
         }
     }
+
     prevPopupMode = mode;
 }
 
 // this function is called by GS prior to 42 and also by 42 if fillPreferencesWindow not available
 function buildPrefsWidget() {
-    const optionsNotebook = new Gtk.Notebook({
-        tab_pos: Gtk.PositionType.TOP,
+    const prefsWidget = new Gtk.Box({
+        orientation: Gtk.Orientation.VERTICAL,
     });
+    const stack = new Gtk.Stack({
+        hexpand: true
+    });
+    const margin = 16;
+    stackSwitcher = new Gtk.StackSwitcher({
+        halign: Gtk.Align.CENTER,
+        hexpand: true,
+        margin_top: margin,
+        margin_bottom: shellVersion < 42 ? 6 : margin,
+    });
+    if (shellVersion < 40) stackSwitcher.homogeneous = true;
+    const context = stackSwitcher.get_style_context();
+    context.add_class('caption');
+
+    stackSwitcher.set_stack(stack);
+    stack.set_transition_duration(300);
+    stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT);
 
     const generalOptionsPage    = getLegacyPage(_getGeneralOptionList());
     const popupOptionsPage      = getLegacyPage(_getPopupOptionList());
@@ -141,54 +161,64 @@ function buildPrefsWidget() {
     const workspacesOptionsPage = getLegacyPage(_getWorkspacesOptionList());
     const presetsOptionsPage    = getLegacyPage(_getPresetsOptionList());
 
-    optionsNotebook.append_page(generalOptionsPage, new Gtk.Label({
-        label: _('General'),
-        halign: Gtk.Align.START,
-    }));
+    stack.add_named(generalOptionsPage, 'general    ');
+    stack.add_named(popupOptionsPage, 'popup');
+    stack.add_named(sizeTextOptionsPage, 'size-text');
+    stack.add_named(colorOptionsPage, 'color');
+    stack.add_named(contentOptionsPage, 'content');
+    stack.add_named(workspacesOptionsPage, 'workspaces');
+    stack.add_named(presetsOptionsPage, 'presets');
 
-    customPages = [];
+    const pagesBtns = [];
+    if (shellVersion >= 40) {
+        pagesBtns.push([new Gtk.Label({ label: _('General'), visible: true}), Gtk.Image.new_from_icon_name('preferences-system-symbolic')]);
+        pagesBtns.push([new Gtk.Label({ label: _('Popup'), visible: true}), Gtk.Image.new_from_icon_name('user-available-symbolic')]);
+        pagesBtns.push([new Gtk.Label({ label: _('Size & Text'), visible: true}), Gtk.Image.new_from_icon_name('view-fullscreen-symbolic')]);
+        pagesBtns.push([new Gtk.Label({ label: _('Colors'), visible: true}), Gtk.Image.new_from_icon_name('applications-graphics-symbolic')]);
+        pagesBtns.push([new Gtk.Label({ label: _('Content'), visible: true}), Gtk.Image.new_from_icon_name('view-reveal-symbolic')]);
+        pagesBtns.push([new Gtk.Label({ label: _('Workspaces'), visible: true}), Gtk.Image.new_from_icon_name('text-editor-symbolic')]);
+        pagesBtns.push([new Gtk.Label({ label: _('Examples'), visible: true}), Gtk.Image.new_from_icon_name('view-list-bullet-symbolic')]);
+    } else {
+        pagesBtns.push([new Gtk.Label({ label: _('General'), visible: true}), Gtk.Image.new_from_icon_name('preferences-system-symbolic', Gtk.IconSize.BUTTON)]);
+        pagesBtns.push([new Gtk.Label({ label: _('Popup'), visible: true}), Gtk.Image.new_from_icon_name('user-available-symbolic', Gtk.IconSize.BUTTON)]);
+        pagesBtns.push([new Gtk.Label({ label: _('Size & Text'), visible: true}), Gtk.Image.new_from_icon_name('view-fullscreen-symbolic', Gtk.IconSize.BUTTON)]);
+        pagesBtns.push([new Gtk.Label({ label: _('Colors'), visible: true}), Gtk.Image.new_from_icon_name('applications-graphics-symbolic', Gtk.IconSize.BUTTON)]);
+        pagesBtns.push([new Gtk.Label({ label: _('Content'), visible: true}), Gtk.Image.new_from_icon_name('view-reveal-symbolic', Gtk.IconSize.BUTTON)]);
+        pagesBtns.push([new Gtk.Label({ label: _('Workspaces'), visible: true}), Gtk.Image.new_from_icon_name('text-editor-symbolic', Gtk.IconSize.BUTTON)]);
+        pagesBtns.push([new Gtk.Label({ label: _('Examples'), visible: true}), Gtk.Image.new_from_icon_name('view-list-bullet-symbolic', Gtk.IconSize.BUTTON)]);
+    }
 
-    customPages.push([popupOptionsPage, new Gtk.Label({
-        label: _('Pop-up'),
-        halign: Gtk.Align.START,
-    })]);
+    let stBtn = stackSwitcher.get_first_child ? stackSwitcher.get_first_child() : null;
+    for (let i = 0; i < 7; i++) {
+        const box = new Gtk.Box({orientation: Gtk.Orientation.VERTICAL, spacing: 6, visible: true});
+        const icon = pagesBtns[i][1];
+        icon.margin_start = 30;
+        icon.margin_end = 30;
+        box[box.add ? 'add' : 'append'](icon);
+        box[box.add ? 'add' : 'append'](pagesBtns[i][0]);
+        if (stackSwitcher.get_children) {
+            stBtn = stackSwitcher.get_children()[i];
+            stBtn.add(box);
+        } else {
+            stBtn.set_child(box);
+            stBtn.visible = true;
+            stBtn = stBtn.get_next_sibling();
+        }
+    }
 
-    customPages.push([sizeTextOptionsPage, new Gtk.Label({
-        label: _('Size & Text'),
-        halign: Gtk.Align.START,
-    })]);
+    stack.show_all && stack.show_all();
+    stackSwitcher.show_all && stackSwitcher.show_all();
 
-    customPages.push([colorOptionsPage, new Gtk.Label({
-        label: _('Colors'),
-        halign: Gtk.Align.START,
-    })]);
+    prefsWidget[prefsWidget.add ? 'add' : 'append'](stackSwitcher);
+    prefsWidget[prefsWidget.add ? 'add' : 'append'](stack);
+    prefsWidget.show_all && prefsWidget.show_all();
 
-    customPages.push([contentOptionsPage, new Gtk.Label({
-        label: _('Content'),
-        halign: Gtk.Align.START,
-    })]);
-
-    customPages.push([workspacesOptionsPage, new Gtk.Label({
-        label: _('Workspace Names'),
-        halign: Gtk.Align.START,
-    })]);
-
-    customPages.push([presetsOptionsPage, new Gtk.Label({
-        label: _('Presets'),
-        halign: Gtk.Align.START,
-    })]);
-
-    windowWidget = optionsNotebook;
-    _updateLegacyActivePages();
     gOptions.connect('changed::popup-mode', _updateLegacyActivePages);
 
-    optionsNotebook.show_all && optionsNotebook.show_all();
+    _updateLegacyActivePages();
 
-    optionsNotebook.connect('destroy', _onDestroy);
-
-    return optionsNotebook;
+    return prefsWidget;
 }
-
 
 function _getGeneralOptionList() {
     const optionList = [];
@@ -991,22 +1021,22 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Predefined Pop-up Customizations')),
-            _('Because pop-up adjustments are relative to the default popup, results may vary depending on the shell theme.')
+            _makeTitle(_('Predefined examples of the pop-up customizations')),
+            _('Because pop-up adjustments are relative to the default popup (except for GNOME 42), results may vary depending on the shell theme.')
         )
     );
 
     optionList.push(
         _optionsItem(
-            _('Preset 1'),
-            null,
+            _('Example 1'),
+            _('All workspaces mode, with workspace index and current app info.'),
             _newGtkButton(),
             'preset',
             [
                 // popup mode,
                 0,
                 // scale, box width, padding, spacing, radius, font size, index size, wrap text, shadow, bold,
-                66, 133, 200, 180, 180, 133, 300, true, false, true,
+                66, 133, 130, 180, 180, 133, 300, true, false, true,
                 // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg
                 98, 'rgb(29,29,29)', 'rgb(53,53,53)', 'rgb(255,255,255)', 'rgb(105,0,0)', 'rgb(255,255,255)', 'rgb(53,53,53)',
                 // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
@@ -1017,8 +1047,8 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Preset 2'),
-            null,
+            _('Example 2'),
+            _('All workspaces mode, small popup with workspace boxes shaped to litle circle.'),
             _newGtkButton(),
             'preset',
             [
@@ -1027,7 +1057,7 @@ function _getPresetsOptionList() {
                 // scale, box width, padding, spacing, radius, font size, index size, wrap text, shadow, bold,
                 40, 55, 250, 250, 700, 100, 100, true, false, true,
                 // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg
-                98, '#1D1D1D', '#353535', '#FFFFFF', '#0070FF', '#FFFFFF', '#353535',
+                98, 'rgb(29,29,29)', 'rgb(53,53,53)', 'rgb(255,255,255)', 'rgb(0,112,255)', 'rgb(255,255,255)', 'rgb(53,53,53)',
                 // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
                 false, false, false, false, false, false, false, false
             ]
@@ -1036,8 +1066,8 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Preset 3'),
-            null,
+            _('Example 3'),
+            _('Active workspaces only mode, transparent background, big semi-transparent font, with the workspace index and current app info.'),
             _newGtkButton(),
             'preset',
             [
@@ -1046,7 +1076,7 @@ function _getPresetsOptionList() {
                 // scale, box width, padding, spacing, radius, font size, index size, wrap text, shadow, bold,
                 527, 150, 100, 100, 100, 120, 230, false, true, true,
                 // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg,
-                98, 'rgba(53,53,53,0)', 'rgba(53,53,53,0)', 'rgba(0,0,0,0.564189)', 'rgba(53,53,53,0)', 'rgb(255,255,255)', '#353535',
+                98, 'rgba(53,53,53,0)', 'rgba(53,53,53,0)', 'rgba(0,0,0,0.564189)', 'rgba(53,53,53,0)', 'rgb(255,255,255)', 'rgb(535353)',
                 // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
                 true, false, true, true, false, false, false, false
             ]
@@ -1055,8 +1085,8 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Preset 4'),
-            null,
+            _('Example 4'),
+            _('Active workspaces only mode, smaller circe with workspace index.'),
             _newGtkButton(),
             'preset',
             [
@@ -1065,7 +1095,7 @@ function _getPresetsOptionList() {
                 // scale, box width, padding, spacing, radius, font size, index size, wrap text, shadow, bold,
                 100, 57, 200, 100, 700, 150, 500, false, false, true,
                 // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg,
-                98, 'rgba(29,29,29,0.689189)', 'rgba(53,53,53,0)', 'rgb(255,255,255)', 'rgb(233,84,32)', '#FFFFFF', '#353535',
+                98, 'rgba(29,29,29,0.689189)', 'rgba(53,53,53,0)', 'rgb(255,255,255)', 'rgb(233,84,32)', 'rgb(255,255,255)', 'rgb(53,53,53)',
                 // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
                 true, false, false, false, false, false, false, false
             ]
@@ -1312,7 +1342,9 @@ function _newGtkButton() {
     const button = new Gtk.Button({
         label: 'Apply',
         hexpand: false,
-        halign: Gtk.Align.END
+        vexpand: false,
+        halign: Gtk.Align.END,
+        valign: Gtk.Align.CENTER
     });
     button.is_button = true;
 
