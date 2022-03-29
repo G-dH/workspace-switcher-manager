@@ -18,7 +18,7 @@ The `Workspace Switcher Manager` offers all workspaces related options in one pl
 - Any adjustments applyed to the ws switcher popup in the extension Preferences window automatically shows the popup to see the changes.
 - Example adjustment profiles are included to show you the possibilities
 
-## Instalation
+## Installation
 
 ### Installing from extensions.gnome.org
 
@@ -34,9 +34,6 @@ Install the extension (`--force` switch needs to be used only if some version of
 
     gnome-extensions install --force workspace-switcher-manager@G-dH.github.com.zip
 
-Then restart GNOME Shell (`ALt` + `F2`, `r`, `Enter`, or Log Out/Log In if you use Wayland). Now you should see the new extension in *Extensions* (or *GNOME Tweak Tool* on older systems) application (reopen the app too if needed to load new data), where you can enable it and access its Preferences. 
-
-
 ### Installing the latest development version
 The most recent version in the repository is the one I'm currently running on my own systems, problems may occure, but usually nothing serious.
 Run following commands in the terminal (`git` needs to installed, navigate to the directory you want to download the source):
@@ -45,7 +42,12 @@ Run following commands in the terminal (`git` needs to installed, navigate to th
     cd workspace-switcher-manager/workspace-switcher-manager@G-dH.github.com/
     make install
 
-Now restart the GNOME Shell session and enable the extension and access its preferences using `Extensions` application.
+## Enabling the extension
+
+After any installation you need to enable the extension and access its preferences.
+
+- First restart GNOME Shell (`ALt` + `F2`, `r`, `Enter`, or Log Out/Log In if you use Wayland)
+- Now you should see the new extension in *Extensions* (or *GNOME Tweak Tool* on older systems) application (reopen the app if needed to load new data), where you can enable it and access its Preferences/Settings.
 
 ## Contribution
 
