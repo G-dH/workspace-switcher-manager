@@ -22,7 +22,7 @@ The `Workspace Switcher Manager` offers all workspaces related options in one pl
 
 ### Installing from extensions.gnome.org
 
-Install the latest release from [extensions.gnome.org](https://extensions.gnome.org/extension/4788/workspace-switcher-manager/).
+The easiest way to install Workspace Switcher Manager: go to extensions.gnome.org and toggle the switch. This installation also gives you automatic updates in the future. [extensions.gnome.org](https://extensions.gnome.org/extension/4788/workspace-switcher-manager/).
 
 ### Installing from the latest Github release
 
