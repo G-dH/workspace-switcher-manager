@@ -1,7 +1,7 @@
 # Workspace Switcher Manager
 GNOME Shell extension
 
-The `Workspace Switcher Manager` offers all workspaces related options at one place, adds more options to it and allows you to adjust the workspace switcher popup size, colors, content and even its orientation.
+The `Workspace Switcher Manager` offers all workspaces related options in one place, adds more options to it and allows you to adjust the workspace switcher popup size, colors, content and even its orientation.
 
 ## Features:
 
@@ -10,26 +10,48 @@ The `Workspace Switcher Manager` offers all workspaces related options at one pl
 - Adds options `Wraparound` and `Ignore last (empty) workspace` to the workspace switcher.
 - Adds option to change workspace orientation. This option is usable in GS 3.36, 3.38, in 40+ brakes the overview (no crashes just miscalculations of size and behavior of some objects).
 - On-Screen and Fade Out time adjustmens.
-- **Allows to add workspace index, workspace name or the most recently used application name to the active and/or inactive workspace boxes in the workspace switcher popup**.
+- **Allows to add workspace index, workspace name or the most recently used application name or window title to the active and/or inactive workspace boxes in the workspace switcher popup**.
 - Allows to enter/edit a name for up to 10 workspaces. This option uses official GNOME gsettings key, which can be used by other applications too.
 - **Allows to change position, orientation, size, proportions, colors, opacity and font properties of the workspace popup**.
 - Option to show the popup with only the box representing the currently active workspace. If you set all popup background colors transparent, you can have just text with information about the active workspace as the ws switcher popup.
 - Option to keep the popup on screen until you release modifier keys of your workspace switcher shortcut.
 - Any adjustments applyed to the ws switcher popup in the extension Preferences window automatically shows the popup to see the changes.
+- Example adjustment profiles are included to show you the possibilities
 
 ## Instalation
 
-Install the latest release [from extensions.gnome.org](https://extensions.gnome.org/extension/4788/workspace-switcher-manager/).
+### Installing from extensions.gnome.org
 
-Or install the extension directly from the source:
-- download the code
-- extract the `workspace-switcher-manager@G-dH.github.com` direcotory to your `~/local/share/gnome-shell/extensions/` directory
-- restart Gnome Shell
-- enable the extension and access the Preferences window from the GNOME Extensions app
+Install the latest release from [extensions.gnome.org](https://extensions.gnome.org/extension/4788/workspace-switcher-manager/).
+
+### Installing from the latest Github release
+
+Download the latest release archive using following command:
+
+    wget https://github.com/G-dH/workspace-switcher-manager/releases/latest/download/workspace-switcher-manager@G-dH.github.com.zip
+
+Install the extension (`--force` switch needs to be used only if some version of the extension is already installed):
+
+    gnome-extensions install --force workspace-switcher-manager@G-dH.github.com.zip
+
+Then restart GNOME Shell (`ALt` + `F2`, `r`, `Enter`, or Log Out/Log In if you use Wayland). Now you should see the new extension in *Extensions* (or *GNOME Tweak Tool* on older systems) application (reopen the app too if needed to load new data), where you can enable it and access its Preferences. 
+
+
+### Installing the latest development version
+The most recent version in the repository is the one I'm currently running on my own systems, problems may occure, but usually nothing serious.
+Run following commands in the terminal (`git` needs to installed, navigate to the directory you want to download the source):
+
+    git clone https://github.com/G-dH/workspace-switcher-manager.git
+    cd workspace-switcher-manager/workspace-switcher-manager@G-dH.github.com/
+    make install
+
+Now restart the GNOME Shell session and enable the extension and access its preferences using `Extensions` application.
 
 ## Contribution
 
-Contributions are welcome.
+Contributions are welcome and I will try my best to answer quickly to all suggestions. I'd really appreciate corrections of my bad english.
+
+If you like my work and want to keep me motivated, give me some feedback. You can also [buy me a coffee](buymeacoffee.com/georgdh).
 
 ## Screenshots
 
