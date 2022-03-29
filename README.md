@@ -22,7 +22,9 @@ The `Workspace Switcher Manager` offers all workspaces related options in one pl
 
 ### Installing from extensions.gnome.org
 
-The easiest way to install Workspace Switcher Manager: go to extensions.gnome.org and toggle the switch. This installation also gives you automatic updates in the future. [extensions.gnome.org](https://extensions.gnome.org/extension/4788/workspace-switcher-manager/).
+The easiest way to install Workspace Switcher Manager: go to [extensions.gnome.org](https://extensions.gnome.org/extension/4788/workspace-switcher-manager/) and toggle the switch. This installation also gives you automatic updates in the future.
+
+[<img alt="" height="100" src="https://raw.githubusercontent.com/andyholmes/gnome-shell-extensions-badge/master/get-it-on-ego.svg?sanitize=true">](https://extensions.gnome.org/extension/4788/workspace-switcher-manager/)
 
 ### Installing from the latest Github release
 
@@ -30,7 +32,7 @@ Download the latest release archive using following command:
 
     wget https://github.com/G-dH/workspace-switcher-manager/releases/latest/download/workspace-switcher-manager@G-dH.github.com.zip
 
-Install the extension (`--force` switch needs to be used only if some version of the extension is already installed):
+Install the extension:
 
     gnome-extensions install --force workspace-switcher-manager@G-dH.github.com.zip
 
@@ -64,3 +66,4 @@ If you like my work and want to keep me motivated, give me some feedback. You ca
 ![](WSM4.png)
 ![](WSM5.png)
 ![](WSM6.png)
+![](WSM7.png)
