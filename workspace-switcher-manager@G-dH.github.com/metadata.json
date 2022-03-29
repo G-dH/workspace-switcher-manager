@@ -1,5 +1,5 @@
 {
-  "description": "Customize your workspace switcher behavior and its popup content, dimensions, position, orientation and colors.",
+  "description": "Make the workspace switcher popup useful! Customize your workspace switcher behavior and the content, dimensions, position, orientation and colors of its popup indicator.\n\n- all GNOME workspace related options in one place\n- adds ws switcher Wraparoud and Ignore Last (empty) Workspace options\n- allows to disable or customize switcher popup\n- allows adding content to the workspace switcher popup - Workspace Name, Current Application Name, Workspace Index\n- ws switcher popup appearance customization includes position on screen, timings, size, colors , orientation",
   "gettext-domain": "workspace-switcher-manager",
   "name": "Workspace Switcher Manager",
   "settings-schema": "org.gnome.shell.extensions.workspace-switcher-manager",
@@ -7,9 +7,10 @@
     "3.36",
     "3.38",
     "40",
-    "41"
+    "41",
+    "42"
   ],
   "url": "https://github.com/G-dH/workspace-switcher-manager",
   "uuid": "workspace-switcher-manager@G-dH.github.com",
-  "version": 2 
+  "version": 3
 }
