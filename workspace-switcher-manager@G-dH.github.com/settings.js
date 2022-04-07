@@ -18,6 +18,23 @@ const _schema = 'org.gnome.shell.extensions.workspace-switcher-manager';
 var MscOptions = class MscOptions {
     constructor() {
         this._gsettings = ExtensionUtils.getSettings(_schema);
+        this._writeTimeoutId = 0;
+        this._gsettings.delay();
+        this._gsettings.connect('changed', () => {
+            if (this._writeTimeoutId)
+                GLib.Source.remove(this._writeTimeoutId);
+
+            this._writeTimeoutId = GLib.timeout_add(
+                GLib.PRIORITY_DEFAULT,
+                300,
+                () => {
+                    this._gsettings.apply();
+                    this._writeTimeoutId = 0;
+                    return GLib.SOURCE_REMOVE;
+                }
+            );
+        });
+
         this._connectionIds = [];
 
         this.options = {

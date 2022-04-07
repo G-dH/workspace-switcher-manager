@@ -3,29 +3,51 @@
 'use strict';
 
 const { Gtk, GLib, Gio, GObject } = imports.gi;
-// libadwaita is available starting with GNOME Shell 42.
-let Adw = null;
-try {
-  Adw = imports.gi.Adw;
-} catch (e) {
-}
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me             = ExtensionUtils.getCurrentExtension();
 const Settings       = Me.imports.settings;
+
+// gettext
+const _  = Settings._;
+
+const shellVersion = Settings.shellVersion;
+
+// libadwaita is available starting with GNOME Shell 42.
+const Adw = null;
+if (shellVersion >= 42) Adw = imports.gi.Adw;
 
 let gOptions;
 let customPages;
 let wsEntries;
 let windowWidget;
 let prevPopupMode;
-let widgets;
 let stackSwitcher;
 let stack;
 
-// gettext
-const _  = Settings._;
-const shellVersion = Settings.shellVersion;
+// conversion of Gtk3 / Gtk4 widgets add methods
+const append = shellVersion < 40 ? 'add' : 'append';
+const set_child = shellVersion < 40 ? 'add' : 'set_child';
+
+const GENERAL_TITLE = _('General');
+const GENERAL_ICON = 'preferences-system-symbolic';
+const POPUP_TITLE = _('Pop-up');
+const POPUP_ICON = 'user-available-symbolic';
+const SIZE_TEXT_TITLE = _('Size & Text');
+const SIZE_TEXT_ICON = 'view-fullscreen-symbolic'
+const COLORS_TITLE = _('Colors');
+const COLORS_ICON = 'applications-graphics-symbolic';
+const CONTENT_TITLE = _('Content');
+const CONTENT_ICON = 'view-reveal-symbolic';
+const WS_TITLE = _('Workspaces');
+const WS_ICON = 'text-editor-symbolic';
+const PRESETS_TITLE = _('Examples');
+const PRESET_ICON = 'view-list-bullet-symbolic';
+
+function _newImageFromIconName(name, size = null) {
+    const args = shellVersion >= 40 ? [name] : [name, size];
+    return Gtk.Image.new_from_icon_name(...args);
+}
 
 
 function init() {
@@ -33,37 +55,36 @@ function init() {
     gOptions = new Settings.MscOptions();
     prevPopupMode = -1;
     wsEntries = [];
-    widgets = [];
 }
 
 // this function is called by GS42 if available and returns libadwaita prefes window
 function fillPreferencesWindow(window) {
     const generalOptionsPage   = getAdwPage(_getGeneralOptionList(), {
-        title: _('General'),
-        icon_name: 'preferences-system-symbolic',
+        title: GENERAL_TITLE,
+        icon_name: GENERAL_ICON,
     });
 
     window.add(generalOptionsPage);
 
     customPages = [
         getAdwPage(_getPopupOptionList(), {
-            title: _('Pop-up'),
-            icon_name: 'user-available-symbolic' }),
+            title: POPUP_TITLE,
+            icon_name: POPUP_ICON }),
         getAdwPage(_getSizeTextOptionList(), {
-            title: _('Size & Text'),
-            icon_name: 'view-fullscreen-symbolic' }),
+            title: SIZE_TEXT_TITLE,
+            icon_name: SIZE_TEXT_ICON }),
         getAdwPage(_getColorOptionList(), {
-            title: _('Colors'),
-            icon_name: 'applications-graphics-symbolic' }),
+            title: COLORS_TITLE,
+            icon_name: COLORS_ICON }),
         getAdwPage(_getContentOptionList(), {
-            title: _('Content'),
-            icon_name: 'view-reveal-symbolic' }),
+            title: CONTENT_TITLE,
+            icon_name: CONTENT_ICON }),
         getAdwPage(_getWorkspacesOptionList(), {
-            title: _('Workspaces'),
-            icon_name: 'text-editor-symbolic' }),
+            title: WS_TITLE,
+            icon_name: WS_ICON }),
         getAdwPage(_getPresetsOptionList(), {
-            title: _('Examples'),
-            icon_name: 'view-list-bullet-symbolic' })
+            title: PRESETS_TITLE,
+            icon_name: PRESET_ICON })
     ];
 
     window.set_search_enabled(true);
@@ -140,15 +161,14 @@ function buildPrefsWidget() {
     stack.add_named(getLegacyPage(_getWorkspacesOptionList()), 'workspaces');
     stack.add_named(getLegacyPage(_getPresetsOptionList()), 'presets');
 
-    const newImage = Gtk.Image.new_from_icon_name;
     const pagesBtns = [
-        [new Gtk.Label({ label: _('General')}), shellVersion >= 40 ? newImage('preferences-system-symbolic') : newImage('preferences-system-symbolic', Gtk.IconSize.BUTTON)],
-        [new Gtk.Label({ label: _('Popup')}), shellVersion >= 40 ? newImage('user-available-symbolic') : newImage('user-available-symbolic', Gtk.IconSize.BUTTON)],
-        [new Gtk.Label({ label: _('Size & Text')}), shellVersion >= 40 ? newImage('view-fullscreen-symbolic') : newImage('view-fullscreen-symbolic', Gtk.IconSize.BUTTON)],
-        [new Gtk.Label({ label: _('Colors')}), shellVersion >= 40 ? newImage('applications-graphics-symbolic') : newImage('applications-graphics-symbolic', Gtk.IconSize.BUTTON)],
-        [new Gtk.Label({ label: _('Content')}), shellVersion >= 40 ? newImage('view-reveal-symbolic') : newImage('view-reveal-symbolic', Gtk.IconSize.BUTTON)],
-        [new Gtk.Label({ label: _('Workspaces')}), shellVersion >= 40 ? newImage('text-editor-symbolic') : newImage('text-editor-symbolic', Gtk.IconSize.BUTTON)],
-        [new Gtk.Label({ label: _('Examples')}), shellVersion >= 40 ? newImage('view-list-bullet-symbolic') : newImage('view-list-bullet-symbolic', Gtk.IconSize.BUTTON)],
+        [new Gtk.Label({ label: GENERAL_TITLE}), _newImageFromIconName(GENERAL_ICON, Gtk.IconSize.BUTTON)],
+        [new Gtk.Label({ label: POPUP_TITLE}), _newImageFromIconName(POPUP_ICON, Gtk.IconSize.BUTTON)],
+        [new Gtk.Label({ label: SIZE_TEXT_TITLE}), _newImageFromIconName(SIZE_TEXT_ICON, Gtk.IconSize.BUTTON)],
+        [new Gtk.Label({ label: COLORS_TITLE}), _newImageFromIconName(COLORS_ICON, Gtk.IconSize.BUTTON)],
+        [new Gtk.Label({ label: CONTENT_TITLE}), _newImageFromIconName(CONTENT_ICON, Gtk.IconSize.BUTTON)],
+        [new Gtk.Label({ label: WS_TITLE}), _newImageFromIconName(WS_ICON, Gtk.IconSize.BUTTON)],
+        [new Gtk.Label({ label: PRESETS_TITLE}), _newImageFromIconName(PRESET_ICON, Gtk.IconSize.BUTTON)],
     ];
 
     let stBtn = stackSwitcher.get_first_child ? stackSwitcher.get_first_child() : null;
@@ -157,8 +177,8 @@ function buildPrefsWidget() {
         const icon = pagesBtns[i][1];
         icon.margin_start = 30;
         icon.margin_end = 30;
-        box[box.add ? 'add' : 'append'](icon);
-        box[box.add ? 'add' : 'append'](pagesBtns[i][0]);
+        box[append](icon);
+        box[append](pagesBtns[i][0]);
         if (stackSwitcher.get_children) {
             stBtn = stackSwitcher.get_children()[i];
             stBtn.add(box);
@@ -308,15 +328,15 @@ function getLegacyPage(optionList) {
                 margin_bottom: 2
             });
             lbl.set_markup(option); // option is plain text if item is section title
-            mainBox[mainBox.add ? 'add' : 'append'](lbl);
+            mainBox[append](lbl);
             frame = new Gtk.Frame({
                 margin_bottom: 10,
             });
             frameBox = new Gtk.ListBox({
                 selection_mode: null,
             });
-            mainBox[mainBox.add ? 'add' : 'append'](frame);
-            frame[frame.add ? 'add' : 'set_child'](frameBox);
+            mainBox[append](frame);
+            frame[set_child](frameBox);
             continue;
         }
         const grid = new Gtk.Grid({
@@ -334,10 +354,10 @@ function getLegacyPage(optionList) {
             grid.attach(widget, 6, 0, 3, 1);
         }
 
-        frameBox[frameBox.add ? 'add' : 'append'](grid);
+        frameBox[append](grid);
     }
 
-    page[page.add ? 'add' : 'set_child'](mainBox);
+    page[set_child](mainBox);
     page.show_all && page.show_all();
 
     return page;
@@ -430,6 +450,7 @@ function _newColorResetBtn(colIndex, colorBtn) {
         halign: Gtk.Align.END,
     });
     colorReset.set_tooltip_text(_('Reset color to default value'));
+
     if (colorReset.set_icon_name) {
         colorReset.set_icon_name('edit-clear-symbolic');
     } else {
@@ -494,7 +515,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
         });
         option.set_markup(text);
 
-        label[label.add ? 'add' : 'append'](option);
+        label[append](option);
 
         if (tooltip) {
             const caption = new Gtk.Label({
@@ -506,7 +527,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
             context.add_class('dim-label');
             context.add_class('caption');
             caption.set_text(tooltip);
-            label[label.add ? 'add' : 'append'](caption);
+            label[append](caption);
         }
 
     } else {
@@ -542,49 +563,20 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
 
             widget.set_placeholder_text(_('Workspace') + ` ${options}`);
 
-            widget.connect('changed', (entry) => {
-                if (entry._timeout_id)
-                   GLib.source_remove(entry._timeout_id);
-                entry._timeout_id = GLib.timeout_add(
-                    GLib.PRIORITY_DEFAULT,
-                    400,
-                    () => {
-                        const names = [];
-                        wsEntries.forEach(e => {
-                        if (e.get_text())
-                            names.push(e.get_text());
-                        })
-                        gOptions.set('wsNames', names);
-                        entry._timeout_id = 0;
-                        return GLib.SOURCE_REMOVE;
-                    }
-                )
+            widget.connect('changed', () => {
+                const names = [];
+                wsEntries.forEach(e => {
+                if (e.get_text())
+                    names.push(e.get_text());
+                })
+                gOptions.set('wsNames', names);
             });
 
             wsEntries.push(widget);
         }
 
     } else if (widget && widget.is_scale) {
-        settings.bind(key, widget.adjustment, 'value', Gio.SettingsBindFlags.GET);
-        //widget.set_value(gOptions.get(variable));
-        widget.connect('value-changed', (w) => {
-            if (w._timeout_id)
-                GLib.source_remove(w._timeout_id);
-            w._timeout_id = GLib.timeout_add(
-                GLib.PRIORITY_DEFAULT,
-                300,
-                () => {
-                    gOptions.set(variable, w.get_value());
-                    w._timeout_id = 0;
-                    return GLib.SOURCE_REMOVE;
-                }
-            )
-        });
-        widget._updateValue = () => {
-            widget.set_value(gOptions.get(variable));
-        };
-        // store widget for future updates
-        widgets.push(widget);
+        settings.bind(key, widget.adjustment, 'value', Gio.SettingsBindFlags.DEFAULT);
 
     } else if (widget && (widget.is_color_btn || widget.is_color_box)) {
         let colorBtn;
@@ -606,8 +598,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
             rgba.parse(gOptions.get(variable));
             colorBtn.set_rgba(rgba);
         });
-        // store widget for future updates
-        //widgets.push(colorBtn);
+
     } else if (widget && widget.is_button) {
         widget.connect('clicked', () => {
             gOptions.set('popupMode',options[0]);
@@ -1222,8 +1213,8 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     bgColorBox.colorBtn = bgColorBtn;
     bgColorBtn._gsettingsVar = 'popupBgColor';
 
-    bgColorBox[bgColorBox.add ? 'add' : 'append'](bgColorBtn);
-    bgColorBox[bgColorBox.add ? 'add' : 'append'](bgColorReset);
+    bgColorBox[append](bgColorBtn);
+    bgColorBox[append](bgColorReset);
 
     optionList.push(
         _optionsItem(
@@ -1240,8 +1231,8 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     borderColorBox.colorBtn = borderColorBtn;
     borderColorBtn._gsettingsVar = 'popupBorderColor';
 
-    borderColorBox[borderColorBox.add ? 'add' : 'append'](borderColorBtn);
-    borderColorBox[borderColorBox.add ? 'add' : 'append'](borderColorReset);
+    borderColorBox[append](borderColorBtn);
+    borderColorBox[append](borderColorReset);
 
     optionList.push(
         _optionsItem(
@@ -1258,8 +1249,8 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     activeFgColorBox.colorBtn = activeFgColorBtn;
     activeFgColorBtn._gsettingsVar = 'popupActiveFgColor';
 
-    activeFgColorBox[activeFgColorBox.add ? 'add' : 'append'](activeFgColorBtn);
-    activeFgColorBox[activeFgColorBox.add ? 'add' : 'append'](activeFgColorReset);
+    activeFgColorBox[append](activeFgColorBtn);
+    activeFgColorBox[append](activeFgColorReset);
 
     optionList.push(
         _optionsItem(
@@ -1276,8 +1267,8 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     activeBgColorBox.colorBtn = activeBgColorBtn;
     activeBgColorBtn._gsettingsVar = 'popupActiveBgColor';
 
-    activeBgColorBox[activeBgColorBox.add ? 'add' : 'append'](activeBgColorBtn);
-    activeBgColorBox[activeBgColorBox.add ? 'add' : 'append'](activeBgColorReset);
+    activeBgColorBox[append](activeBgColorBtn);
+    activeBgColorBox[append](activeBgColorReset);
 
     optionList.push(
         _optionsItem(
@@ -1294,8 +1285,8 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     inactiveFgColorBox.colorBtn = inactiveFgColorBtn;
     inactiveFgColorBtn._gsettingsVar = 'popupInactiveFgColor';
 
-    inactiveFgColorBox[inactiveFgColorBox.add ? 'add' : 'append'](inactiveFgColorBtn);
-    inactiveFgColorBox[inactiveFgColorBox.add ? 'add' : 'append'](inactiveFgColorReset);
+    inactiveFgColorBox[append](inactiveFgColorBtn);
+    inactiveFgColorBox[append](inactiveFgColorReset);
 
     optionList.push(
         _optionsItem(
@@ -1312,8 +1303,8 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     inactiveBgColorBox.colorBtn = inactiveBgColorBtn;
     inactiveBgColorBtn._gsettingsVar = 'popupInactiveBgColor';
 
-    inactiveBgColorBox[inactiveBgColorBox.add ? 'add' : 'append'](inactiveBgColorBtn);
-    inactiveBgColorBox[inactiveBgColorBox.add ? 'add' : 'append'](inactiveBgColorReset);
+    inactiveBgColorBox[append](inactiveBgColorBtn);
+    inactiveBgColorBox[append](inactiveBgColorReset);
 
     optionList.push(
         _optionsItem(
