@@ -17,7 +17,9 @@ ZIP_CONTENT = $(JS_FILES) $(LOCALES_MO) \
               schemas/gschemas.compiled metadata.json stylesheet.css ../LICENSE
 
 # These five recipes can be invoked by the user.
-.PHONY: zip install uninstall pot clean
+.PHONY: all zip install uninstall pot clean
+
+all: $(ZIP_CONTENT)
 
 # The zip recipes only bundles the extension without installing it.
 zip: $(ZIP_NAME)
@@ -36,7 +38,7 @@ pot: $(JS_FILES) $(UI_FILES)
 	@echo "Generating '$(NAME).pot'..."
 	@xgettext --from-code=UTF-8 \
 	          --add-comments=Translators \
-	          --copyright-holder="Simon Schneegans" \
+	          --copyright-holder="G-dH" \
 	          --package-name="$(NAME)" \
 	          --output=po/$(NAME).pot \
 	          $(JS_FILES) $(UI_FILES)
