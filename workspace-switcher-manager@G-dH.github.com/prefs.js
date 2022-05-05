@@ -14,8 +14,8 @@ const _  = Settings._;
 const shellVersion = Settings.shellVersion;
 
 // libadwaita is available starting with GNOME Shell 42.
-const Adw = null;
-if (shellVersion >= 42) Adw = imports.gi.Adw;
+let Adw = null;
+try { Adw = imports.gi.Adw; } catch (e) {}
 
 let gOptions;
 let customPages;
