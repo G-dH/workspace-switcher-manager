@@ -623,6 +623,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         let indexLabel = null;
         let titleLabel = null;
         let text = '';
+        const textShadowStyle = 'text-shadow: +1px -1px 4px rgb(200, 200, 200);'
 
         const wsIndexIsActiveWS = wsIndex == this._activeWorkspaceIndex;
 
@@ -643,7 +644,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
                 style: `text-align: center;
                         font-size: ${fontSize}em;
                         ${this._textBold ? 'font-weight: bold;' : ''}
-                        ${this._textShadow ? 'text-shadow: +1px -1px rgb(200, 200, 200);' : ''}
+                        ${this._textShadow ? textShadowStyle : ''}
                         padding: 2px`,
                 text: text
             });
@@ -679,7 +680,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
                     style: `text-align: center;
                             font-size: ${fontSize}em;
                             ${this._textBold ? 'font-weight: bold;' : ''}
-                            ${this._textShadow ? 'text-shadow: +1px -1px rgb(200, 200, 200);' : ''}
+                            ${this._textShadow ? textShadowStyle : ''}
                             padding-top: 0.3em;
                             padding-left: 0.5em;
                             padding-right: 0.5em;`,
@@ -708,7 +709,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
                 style: `text-align: center;
                         font-size: ${fontSize}em;
                         ${this._textBold ? 'font-weight: bold;' : ''}
-                        ${this._textShadow ? 'text-shadow: +1px -1px rgb(200, 200, 200);' : ''}
+                        ${this._textShadow ? textShadowStyle : ''}
                         padding-top: 0.3em;
                         padding-left: 0.5em;
                         padding-right: 0.5em;`,
