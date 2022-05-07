@@ -93,7 +93,7 @@ function fillPreferencesWindow(window) {
     _updateAdwActivePages();
 
     gOptions.connect('changed::popup-mode', _updateAdwActivePages);
-    window.connect('destroy', _onDestroy);
+    window.connect('close-request', _onDestroy);
 
     return window;
 }
@@ -221,6 +221,8 @@ function buildPrefsWidget() {
             }
         );
     });
+    const signal = Gtk.get_major_version() === 3 ? 'destroy' : 'close-request';
+    prefsWidget.connect(signal, _onDestroy);
 
     return prefsWidget;
 }

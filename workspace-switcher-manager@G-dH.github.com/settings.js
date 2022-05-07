@@ -112,6 +112,9 @@ var MscOptions = class MscOptions {
 
     destroy() {
         this._connectionIds.forEach(id => this._gsettings.disconnect(id));
+        if (this._writeTimeoutId) {
+            GLib.source_remove(this._writeTimeoutId);
+        }
     }
 
     get(option) {
