@@ -220,9 +220,10 @@ function buildPrefsWidget() {
                 window.set_size_request(-1, -1);
             }
         );
+
+        const signal = Gtk.get_major_version() === 3 ? 'destroy' : 'close-request';
+        window.connect(signal, _onDestroy);
     });
-    const signal = Gtk.get_major_version() === 3 ? 'destroy' : 'close-request';
-    prefsWidget.connect(signal, _onDestroy);
 
     return prefsWidget;
 }

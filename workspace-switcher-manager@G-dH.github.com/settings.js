@@ -114,6 +114,7 @@ var MscOptions = class MscOptions {
         this._connectionIds.forEach(id => this._gsettings.disconnect(id));
         if (this._writeTimeoutId) {
             GLib.source_remove(this._writeTimeoutId);
+            this._writeTimeoutId = 0;
         }
     }
 
