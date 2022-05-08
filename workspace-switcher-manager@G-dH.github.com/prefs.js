@@ -95,6 +95,9 @@ function fillPreferencesWindow(window) {
     gOptions.connect('changed::popup-mode', _updateAdwActivePages);
     window.connect('close-request', _onDestroy);
 
+    const height = 800;
+    window.set_default_size(-1, height);
+
     return window;
 }
 
@@ -202,8 +205,8 @@ function buildPrefsWidget() {
     prefsWidget.connect('realize', (widget) => {
         const window = widget.get_root ? widget.get_root() : widget.get_toplevel();
         const width = 800;
-        const height = 900;
-        window.set_size_request(width, height);
+        const height = 800;
+        window.set_default_size(width, height);
 
         
         const headerbar = window.get_titlebar();
@@ -212,14 +215,6 @@ function buildPrefsWidget() {
         } else {
             headerbar.custom_title = stackSwitcher;
         }
-
-        GLib.timeout_add(
-            GLib.PRIORITY_DEFAULT,
-            100,
-            () => {
-                window.set_size_request(-1, -1);
-            }
-        );
 
         const signal = Gtk.get_major_version() === 3 ? 'destroy' : 'close-request';
         window.connect(signal, _onDestroy);
