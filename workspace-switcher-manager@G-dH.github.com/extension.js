@@ -2,11 +2,14 @@
 // GPL v3 ©G-dH@Github.com
 'use strict'
 
-const { GLib, GObject, Clutter, St, Meta, Shell, Gio } = imports.gi;
+const { GLib, GObject, Clutter, St, Meta, Shell, Gio, Graphene } = imports.gi;
 const Main = imports.ui.main;
 const WorkspaceSwitcherPopup = imports.ui.workspaceSwitcherPopup;
 const AltTab = imports.ui.altTab;
 const WorkspaceThumbnail = imports.ui.workspaceThumbnail.WorkspaceThumbnail;
+const WorkspacesView = imports.ui.workspacesView;
+const Workspace = imports.ui.workspace;
+const WindowPreview = imports.ui.windowPreview;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
@@ -16,14 +19,22 @@ const shellVersion = Settings.shellVersion;
 let originalWsPopup;
 let originalWsPopupList;
 let origNeighbor;
+let originalWorkspacesView;
+let original_getFirstFitSingleWorkspaceBox;
+let original_getSpacing;
+let original_adjustSpacingAndPadding;
 let defaultOrientationVertical;
 let enableTimeoutId = 0;
 let prefsDemoTimeoutId = 0;
+let appButtonSigHandlerId = 0;
+let windowPreviewInjections;
 
 let gOptions;
 
 var DISPLAY_TIMEOUT = 300;
 var ANIMATION_TIME = 100;
+const WORKSPACE_MIN_SPACING = 24;
+const WORKSPACE_MAX_SPACING = 400;
 
 const ws_popup_mode = {
     ALL     : 0,
@@ -38,10 +49,14 @@ function init() {
     originalWsPopup = WorkspaceSwitcherPopup.WorkspaceSwitcherPopup;
     originalWsPopupList = WorkspaceSwitcherPopup.WorkspaceSwitcherPopupList;
     origNeighbor = Meta.Workspace.prototype.get_neighbor;
+    original_getFirstFitSingleWorkspaceBox = WorkspacesView.WorkspacesView.prototype._getFirstFitSingleWorkspaceBox;
+    original_getSpacing = WorkspacesView.WorkspacesView.prototype._getSpacing;
+    original_adjustSpacingAndPadding = Workspace.WorkspaceLayout.prototype._adjustSpacingAndPadding;
     defaultOrientationVertical = global.workspace_manager.layout_rows == -1;
 }
 
 function enable() {
+    windowPreviewInjections = {};
     enableTimeoutId = GLib.timeout_add(
         GLib.PRIORITY_DEFAULT,
         700,
@@ -59,7 +74,15 @@ function enable() {
             _reverseWsOrientation(gOptions.get('reverseWsOrientation'));
             _updateNeighbor();
 
+            if (shellVersion >= 40) {
+                WorkspacesView.WorkspacesView.prototype._getFirstFitSingleWorkspaceBox = _getFirstFitSingleWorkspaceBox;
+                WorkspacesView.WorkspacesView.prototype._getSpacing = _getSpacing;
+                Workspace.WorkspaceLayout.prototype._adjustSpacingAndPadding = _adjustSpacingAndPadding;
+                _injectWindowPreview();
+            }
+
             enableTimeoutId = 0;
+
 
             return GLib.SOURCE_REMOVE;
         }
@@ -88,7 +111,21 @@ function disable() {
     }
     _setDefaultWsPopup();
     Meta.Workspace.prototype.get_neighbor = origNeighbor;
+    if (original_getFirstFitSingleWorkspaceBox) {
+        WorkspacesView.WorkspacesView.prototype._getFirstFitSingleWorkspaceBox = original_getFirstFitSingleWorkspaceBox;
+    }
+    if (original_getSpacing) {
+        WorkspacesView.WorkspacesView.prototype._getSpacing = original_getSpacing;
+    }
+    if (original_adjustSpacingAndPadding) {
+        Workspace.WorkspaceLayout.prototype._adjustSpacingAndPadding = original_adjustSpacingAndPadding;
+    }
     _reverseWsOrientation(false);
+
+    for (let name in windowPreviewInjections) {
+        removeInjection(WindowPreview.WindowPreview.prototype, windowPreviewInjections, name);
+    }
+    windowPreviewInjections = {};
 }
 
 function _setCustomWsPopup() {
@@ -150,8 +187,21 @@ function _reverseWsOrientation(reverse = false) {
     const orientationVertical = reverse ? !defaultOrientationVertical : defaultOrientationVertical;
     if (orientationVertical) {
         global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, -1, 1);
+        if (shellVersion >= 40) {
+            appButtonSigHandlerId = Main.overview.dash.showAppsButton.connect('notify::checked', (w) => {
+                if (w.checked) {
+                    global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, 1, -1);
+                } else {
+                    global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, -1, 1);
+                }
+            });
+        }
     } else { // horizontal
         global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, 1, -1);
+        if (appButtonSigHandlerId) {
+            Main.overview.dash.showAppsButton.disconnect(appButtonSigHandlerId);
+            appButtonSigHandlerId = 0;
+        }
     }
 }
 
@@ -282,6 +332,122 @@ function getNeighbor(direction) {
     }
     return global.workspace_manager.get_workspace_by_index(index);
 }
+
+// ------ WorkspacesView -----------------------------------------------
+
+function _getFirstFitSingleWorkspaceBox(box, spacing, vertical) {
+    let [width, height] = box.get_size();
+
+    let scale = 1;
+    if (!Main.overview.dash.visible) {
+        //scale = 0.94;
+        //height = Math.floor(height * 0.94);
+        //width = Math.floor(width * 0.94);
+    }
+
+    const [workspace] = this._workspaces;
+
+    const rtl = this.text_direction === Clutter.TextDirection.RTL;
+    const adj = this._scrollAdjustment;
+    const currentWorkspace = vertical || !rtl
+        ? adj.value : adj.upper - adj.value - 1;
+
+    // Single fit mode implies centered too
+    let [x1, y1] = box.get_origin();
+    let [, workspaceWidth] = workspace.get_preferred_width(height);
+    workspaceWidth = Math.floor(workspaceWidth * scale);
+    const [, workspaceHeight] = workspace.get_preferred_height(workspaceWidth);
+
+    if (vertical) {
+        //y1 += (height - workspaceHeight) / 2;
+        x1 += (width - workspaceWidth) / 2;
+        y1 -= currentWorkspace * (workspaceHeight + spacing);
+    } else {
+        x1 += (width - workspaceWidth) / 2;
+        x1 -= currentWorkspace * (workspaceWidth + spacing);
+    }
+
+    const fitSingleBox = new Clutter.ActorBox({x1, y1});
+
+    fitSingleBox.set_size(workspaceWidth, workspaceHeight);
+
+    return fitSingleBox;
+}
+
+function _getSpacing(box, fitMode, vertical) {
+    const [width, height] = box.get_size();
+    const [workspace] = this._workspaces;
+
+    let availableSpace;
+    let workspaceSize;
+    if (vertical) {
+        [, workspaceSize] = workspace.get_preferred_height(width);
+        availableSpace = height;
+    } else {
+        [, workspaceSize] = workspace.get_preferred_width(height);
+        availableSpace = (width - workspaceSize) / 2;
+    }
+
+    const spacing = (availableSpace - workspaceSize * 0.4) * (1 - fitMode);
+    const { scaleFactor } = St.ThemeContext.get_for_stage(global.stage);
+
+    return Math.clamp(spacing, WORKSPACE_MIN_SPACING * scaleFactor,
+        WORKSPACE_MAX_SPACING * scaleFactor);
+}
+
+// ------ Workspace -----------------------------------------------------------------
+
+function _adjustSpacingAndPadding(rowSpacing, colSpacing, containerBox) {
+    if (this._sortedWindows.length === 0)
+        return [rowSpacing, colSpacing, containerBox];
+
+    // All of the overlays have the same chrome sizes,
+    // so just pick the first one.
+    const window = this._sortedWindows[0];
+
+    const [topOversize, bottomOversize] = window.chromeHeights();
+    const [leftOversize, rightOversize] = window.chromeWidths();
+
+    const oversize = Math.max(topOversize, bottomOversize, leftOversize, rightOversize);
+
+    if (rowSpacing !== null)
+        rowSpacing += oversize;
+    if (colSpacing !== null)
+        colSpacing += oversize;
+
+    if (containerBox) {
+        const vertical = global.workspaceManager.layout_rows === -1;
+
+        const monitor = Main.layoutManager.monitors[this._monitorIndex];
+
+        const bottomPoint = new Graphene.Point3D();
+        if (vertical) {
+            bottomPoint.x = containerBox.x2;
+        } else {
+            bottomPoint.y = containerBox.y2;
+        }
+
+        const transformedBottomPoint =
+            this._container.apply_transform_to_point(bottomPoint);
+        const bottomFreeSpace = vertical
+            ? (monitor.x + monitor.height) - transformedBottomPoint.x
+            : (monitor.y + monitor.height) - transformedBottomPoint.y;
+
+        const [, bottomOverlap] = window.overlapHeights();
+
+        if ((bottomOverlap + oversize) > bottomFreeSpace && !vertical) {
+            containerBox.y2 -= (bottomOverlap + oversize) - bottomFreeSpace;
+        }
+    }
+
+    return [rowSpacing, colSpacing, containerBox];
+}
+
+function _injectWindowPreview() {
+    windowPreviewInjections['showOverlay'] = injectToFunction(WindowPreview.WindowPreview.prototype, 'showOverlay', function() { this._title.get_constraints()[1].offset = - 1.5 * WindowPreview.ICON_SIZE; });
+}
+
+// ----------------------------------------------------------------------------------
 
 function _getWindowApp(metaWindow) {
     let tracker = Shell.WindowTracker.get_default();
@@ -921,6 +1087,23 @@ class WorkspaceSwitcherPopupList extends St.Widget {
         }
     }
 });
+
+function injectToFunction(parent, name, func) {
+    let origin = parent[name];
+    parent[name] = function() {
+        let ret;
+        ret = origin.apply(this, arguments);
+        if (ret === undefined)
+            ret = func.apply(this, arguments);
+        return ret;
+    }
+
+    return origin;
+}
+
+function removeInjection(object, injection, name) {
+    object[name] = injection[name];
+}
 
 function debug(message) {
     const stack = new Error().stack.split('\n');

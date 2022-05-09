@@ -710,7 +710,7 @@ Static - number of workspaces is fixed to the number you can set below.`),
     optionList.push(
         _optionsItem(
             _('Reverse Workspace Orientation'),
-            _('Changes the axis (horizontal / vertical) in which workspaces are organized, depending on the default state that is recorded during the start of this extension. The switcher pop-up reflects this option automatically.\nThis option breaks overview (visually) in GS 40+, but is usable in 3.36/3.38.'),
+            _('Changes the axis (horizontal / vertical) in which workspaces are organized, depending on the default state that is recorded during start of the extension. The switcher pop-up reflects this option automatically.'),
             _newSwitch(),
             'reverseWsOrientation'
         )
@@ -734,7 +734,7 @@ Static - number of workspaces is fixed to the number you can set below.`),
     optionList.push(
         _optionsItem(
             _('Ignore Last (empty) Workspace'),
-            _('In Dynamic workspace mode, there is always one empty workspace at the end. Switcher can ignore this last workspace.'),
+            _('In Dynamic workspaces mode, there is always one empty workspace at the end. Switcher can ignore this last workspace.'),
             _newSwitch(),
             'wsSwitchIgnoreLast'
         )
