@@ -7,22 +7,24 @@ const Main = imports.ui.main;
 const WorkspaceSwitcherPopup = imports.ui.workspaceSwitcherPopup;
 const AltTab = imports.ui.altTab;
 const WorkspaceThumbnail = imports.ui.workspaceThumbnail.WorkspaceThumbnail;
-const WorkspacesView = imports.ui.workspacesView;
-const Workspace = imports.ui.workspace;
-const WindowPreview = imports.ui.windowPreview;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Settings = Me.imports.settings;
 const shellVersion = Settings.shellVersion;
 
+let WorkspacesView;
+let Workspace;
+let WindowPreview;
+
 let originalWsPopup;
 let originalWsPopupList;
-let origNeighbor;
-let originalWorkspacesView;
+let original_getNeighbor;
+
 let original_getFirstFitSingleWorkspaceBox;
 let original_getSpacing;
 let original_adjustSpacingAndPadding;
+
 let defaultOrientationVertical;
 let enableTimeoutId = 0;
 let prefsDemoTimeoutId = 0;
@@ -31,8 +33,8 @@ let windowPreviewInjections;
 
 let gOptions;
 
-var DISPLAY_TIMEOUT = 300;
-var ANIMATION_TIME = 100;
+const DISPLAY_TIMEOUT = 300;
+const ANIMATION_TIME = 100;
 const WORKSPACE_MIN_SPACING = 24;
 const WORKSPACE_MAX_SPACING = 400;
 
@@ -46,12 +48,21 @@ const ws_popup_mode = {
 
 function init() {
     ExtensionUtils.initTranslations();
+
     originalWsPopup = WorkspaceSwitcherPopup.WorkspaceSwitcherPopup;
     originalWsPopupList = WorkspaceSwitcherPopup.WorkspaceSwitcherPopupList;
-    origNeighbor = Meta.Workspace.prototype.get_neighbor;
-    original_getFirstFitSingleWorkspaceBox = WorkspacesView.WorkspacesView.prototype._getFirstFitSingleWorkspaceBox;
-    original_getSpacing = WorkspacesView.WorkspacesView.prototype._getSpacing;
-    original_adjustSpacingAndPadding = Workspace.WorkspaceLayout.prototype._adjustSpacingAndPadding;
+    original_getNeighbor = Meta.Workspace.prototype.get_neighbor;
+
+    if (shellVersion >= 40) {
+        WorkspacesView = imports.ui.workspacesView;
+        Workspace = imports.ui.workspace;
+        WindowPreview = imports.ui.windowPreview;
+
+        original_getFirstFitSingleWorkspaceBox = WorkspacesView.WorkspacesView.prototype._getFirstFitSingleWorkspaceBox;
+        original_getSpacing = WorkspacesView.WorkspacesView.prototype._getSpacing;
+        original_adjustSpacingAndPadding = Workspace.WorkspaceLayout.prototype._adjustSpacingAndPadding;
+    }
+
     defaultOrientationVertical = global.workspace_manager.layout_rows == -1;
 }
 
@@ -83,7 +94,6 @@ function enable() {
 
             enableTimeoutId = 0;
 
-
             return GLib.SOURCE_REMOVE;
         }
     );
@@ -109,8 +119,10 @@ function disable() {
         gOptions.destroy();
         gOptions = null;
     }
+
     _setDefaultWsPopup();
-    Meta.Workspace.prototype.get_neighbor = origNeighbor;
+    Meta.Workspace.prototype.get_neighbor = original_getNeighbor;
+
     if (original_getFirstFitSingleWorkspaceBox) {
         WorkspacesView.WorkspacesView.prototype._getFirstFitSingleWorkspaceBox = original_getFirstFitSingleWorkspaceBox;
     }
@@ -120,11 +132,13 @@ function disable() {
     if (original_adjustSpacingAndPadding) {
         Workspace.WorkspaceLayout.prototype._adjustSpacingAndPadding = original_adjustSpacingAndPadding;
     }
-    _reverseWsOrientation(false);
 
     for (let name in windowPreviewInjections) {
         removeInjection(WindowPreview.WindowPreview.prototype, windowPreviewInjections, name);
     }
+
+    _reverseWsOrientation(false);
+
     windowPreviewInjections = {};
 }
 
@@ -179,7 +193,7 @@ function _updateNeighbor() {
     if (gOptions.get('wsSwitchWrap') || gOptions.get('wsSwitchIgnoreLast') || gOptions.get('reverseWsOrientation')) {
         Meta.Workspace.prototype.get_neighbor = getNeighbor;
     } else {
-        Meta.Workspace.prototype.get_neighbor = origNeighbor;
+        Meta.Workspace.prototype.get_neighbor = original_getNeighbor;
     }
 }
 
@@ -235,10 +249,6 @@ function _storeDefaultColors() {
         _setCustomWsPopup();
     }
 
-    /*const dynamicWorkspaces = gOptions.get('dynamicWorkspaces');
-    gOptions.set(dynamicWorkspaces, false); // set workspace mode to static
-    const numWS = gOptions.get('numWorkspaces');
-    gOptions.set('numWorkspaces', 2); // ... and set 2 workspaces to get colors of inactive ws*/
     const popupMode = gOptions.get('popupMode');
     gOptions.set('popupMode', 0); // ... set popup mode to Show all workspaces
 
@@ -249,13 +259,9 @@ function _storeDefaultColors() {
         _setDefaultWsPopup();
     }
 
-    //const activeIndex = global.workspaceManager.get_active_workspace_index();
-
     popup.display(Meta.MotionDirection.UP, 0);
     popup.opacity = 0;
 
-    /*gOptions.set('dynamicWorkspaces', dynamicWorkspaces);
-    gOptions.set('numWorkspaces', numWS);*/
     gOptions.set('popupMode', popupMode);
 
     const containerNode = popup._container.get_theme_node();
@@ -280,11 +286,6 @@ function _storeDefaultColors() {
         inactiveFgColor = inactiveNode.get_foreground_color();
         inactiveBgColor = inactiveNode.get_background_color();
     }
-    // workaround - at session start there is only one workspace usually, and following colors are usually the same in default themes
-    //const inactiveFgColor = activeNode.get_foreground_color();
-    //const inactiveBgColor = popupBgColor;
-
-    //popup = null;
 
     const defaultColors = [
          `rgba(${popupBgColor.red},${popupBgColor.green},${popupBgColor.blue},${popupBgColor.alpha})`,
@@ -294,6 +295,7 @@ function _storeDefaultColors() {
          `rgba(${inactiveFgColor.red || activeFgColor.red},${inactiveFgColor.green || activeFgColor.green},${inactiveFgColor.blue || activeFgColor.blue},${inactiveFgColor.alpha || activeFgColor.alpha})`,
          `rgba(${inactiveBgColor.red || popupBgColor.red},${inactiveBgColor.green || popupBgColor.green},${inactiveBgColor.blue || popupBgColor.blue},${inactiveBgColor.alpha || activeBgColor.alpha})`,
     ];
+
     gOptions.set('defaultColors', defaultColors);
 
     if (!gOptions.get('popupBgColor'))
@@ -359,7 +361,6 @@ function _getFirstFitSingleWorkspaceBox(box, spacing, vertical) {
     const [, workspaceHeight] = workspace.get_preferred_height(workspaceWidth);
 
     if (vertical) {
-        //y1 += (height - workspaceHeight) / 2;
         x1 += (width - workspaceWidth) / 2;
         y1 -= currentWorkspace * (workspaceHeight + spacing);
     } else {
