@@ -33,7 +33,7 @@ let windowPreviewInjections;
 
 let gOptions;
 
-const DISPLAY_TIMEOUT = 300;
+let DISPLAY_TIMEOUT = 300;
 const ANIMATION_TIME = 100;
 const WORKSPACE_MIN_SPACING = 24;
 const WORKSPACE_MAX_SPACING = 400;
