@@ -12,7 +12,7 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Settings = Me.imports.settings;
 const Util = Me.imports.util;
-const VerticalWorkspaces = Me.imports.verticalWorkspaces;
+let VerticalWorkspaces = null;
 
 const shellVersion = Settings.shellVersion;
 
@@ -23,13 +23,9 @@ let originalWsPopup;
 let originalWsPopupList;
 let original_getNeighbor;
 
-let prevDash;
-
 let defaultOrientationVertical;
 let enableTimeoutId = 0;
 let prefsDemoTimeoutId = 0;
-let appButtonSigHandlerId = 0;
-let vertActivationSigId = 0;
 let windowPreviewInjections;
 
 let gOptions;
@@ -54,9 +50,10 @@ function init() {
 
     if (shellVersion >= 40) {
         WindowPreview = imports.ui.windowPreview;
+        VerticalWorkspaces = Me.imports.verticalWorkspaces;
     }
 
-    defaultOrientationVertical = global.workspace_manager.layout_rows === -1;
+    defaultOrientationVertical = shellVersion < 40;
 }
 
 function enable() {
@@ -116,10 +113,9 @@ function disable() {
     for (let name in windowPreviewInjections) {
         removeInjection(WindowPreview.WindowPreview.prototype, windowPreviewInjections, name);
     }
+    windowPreviewInjections = {};
 
     _reverseWsOrientation(false);
-
-    windowPreviewInjections = {};
 }
 
 function _setCustomWsPopup() {
@@ -178,43 +174,20 @@ function _updateNeighbor() {
 }
 
 function _reverseWsOrientation(reverse = false) {
+    // reverse == false means reset, dafault values for GS < 40 == true; GS >= 40 == false;
     const orientationVertical = reverse ? !defaultOrientationVertical : defaultOrientationVertical;
+
     if (orientationVertical) {
         global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, -1, 1);
         if (shellVersion >= 40) {
-            appButtonSigHandlerId = Main.overview.dash.showAppsButton.connect('notify::checked', (w) => {
-                if (w.checked) {
-                    global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, 1, -1);
-                } else {
-                    global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, -1, 1);
-                }
-            });
-            vertActivationSigId = Main.overview.connect('showing', () => {
-                if (Main.overview.dash !== prevDash) {
-                    VerticalWorkspaces.activate();
-                    prevDash = Main.overview.dash;
-                }
-            });
             VerticalWorkspaces.activate();
         }
 
-
     } else { // horizontal
+        global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, 1, -1);
         if (shellVersion >= 40) {
             VerticalWorkspaces.reset();
         }
-
-        if (appButtonSigHandlerId) {
-            Main.overview.dash.showAppsButton.disconnect(appButtonSigHandlerId);
-            appButtonSigHandlerId = 0;
-        }
-
-        if (vertActivationSigId) {
-            Main.overview.disconnect(vertActivationSigId);
-            vertActivationSigId = 0;
-        }
-
-        global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, 1, -1);
     }
 }
 
@@ -339,7 +312,7 @@ function getNeighbor(direction) {
 function _injectWindowPreview() {
     windowPreviewInjections['showOverlay'] = injectToFunction(
         WindowPreview.WindowPreview.prototype, 'showOverlay', function() {
-            this._title.get_constraints()[1].offset = - 1.5 * WindowPreview.ICON_SIZE;
+            this._title.get_constraints()[1].offset = - 1.3 * WindowPreview.ICON_SIZE;
         }
     );
 }

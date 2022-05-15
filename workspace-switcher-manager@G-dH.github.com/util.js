@@ -5,6 +5,7 @@ function hookVfunc(proto, symbol, func) {
 }
 
 function overrideProto(proto, overrides) {
+    if (overrides == undefined) return;
     const backup = {};
 
     for (let symbol in overrides) {
