@@ -24,7 +24,7 @@ const Me = ExtensionUtils.getCurrentExtension();
 const shellVersion = Me.imports.settings.shellVersion;
 
 const _Util = Me.imports.util;
-const _Dash = Me.imports.dash;
+//const _Dash = Me.imports.dash;
 
 // for some reason touching the SecondaryMonitorDisplay for the first time returns undefined in GS 42, so we touch it bere we use it
 WorkspacesView.SecondaryMonitorDisplay;
