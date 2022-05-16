@@ -8,7 +8,7 @@ The `Workspace Switcher Manager` offers all workspaces related options in one pl
 - GNOME Shell 3.36 - 42 compatibility.
 - All workspace related options available in GNOME Shell.
 - Adds options `Wraparound` and `Ignore last (empty) workspace` to the workspace switcher.
-- Adds option to change workspace orientation. This option is usable in GS 3.36, 3.38, in 40+ brakes the overview (no crashes just miscalculations of size and behavior of some objects).
+- Adds option to change workspace orientation (horizontal/vertical). For GNOME 42 is now available redesigned layout of Activities overview to better serve to vertical workspaces orientation and minimize mouse movements needed to reach Dash and workspace switcher.
 - On-Screen and Fade Out time adjustmens.
 - **Allows to add workspace index, workspace name or the most recently used application name or window title to the active and/or inactive workspace boxes in the workspace switcher popup**.
 - Allows to enter/edit a name for up to 10 workspaces. This option uses official GNOME gsettings key, which can be used by other applications too.
@@ -16,7 +16,7 @@ The `Workspace Switcher Manager` offers all workspaces related options in one pl
 - Option to show the popup with only the box representing the currently active workspace. If you set all popup background colors transparent, you can have just text with information about the active workspace as the ws switcher popup.
 - Option to keep the popup on screen until you release modifier keys of your workspace switcher shortcut.
 - Any adjustments applyed to the ws switcher popup in the extension Preferences window automatically shows the popup to see the changes.
-- Example adjustment profiles are included to show you the possibilities
+- Example profiles are included to show you the possibilities of the pop-up customization.
 
 ## Installation
 
@@ -60,6 +60,7 @@ If you like my work and want to keep me motivated, give me some feedback. You ca
 ## Screenshots
 
 ![](WSM0.jpg)
+![](WSM-vertical-overview.png)
 ![](WSM1.png)
 ![](WSM2.png)
 ![](WSM3.png)
