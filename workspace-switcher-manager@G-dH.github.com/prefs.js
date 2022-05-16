@@ -710,11 +710,25 @@ Static - number of workspaces is fixed to the number you can set below.`),
     optionList.push(
         _optionsItem(
             _('Reverse Workspace Orientation'),
-            _('Changes the axis (horizontal / vertical) in which workspaces are organized, depending on the default state that is recorded during start of the extension. The switcher pop-up reflects this option automatically.'),
+            _('Changes the axis in which workspaces are organized, for GNOME 3 from vertical to horizontal and for GNOME 40+ from horizontal to vertical. The switcher pop-up reflects this option automatically and also default keyboard shortcuts for switching workspaces will be affected (left/right <-> up/down arrow keys).'),
             _newSwitch(),
             'reverseWsOrientation'
         )
     );
+    //-----------------------------------------------------
+    if (shellVersion >= 42) {
+        const verticalSwitch = _newSwitch();
+        optionList.push(
+            _optionsItem(
+                _('Adapt Activities Overview to Vertical Layout'),
+                _('Layout of the Overview will be changed to better serve the vertical workspace orientation and to minimize mouse pointer travel. So far, only GNOME 42 is supported.'),
+                verticalSwitch,
+                'verticalOverview'
+            )
+        );
+
+        gOptions._gsettings.bind('reverse-ws-orientation', verticalSwitch, 'sensitive', Gio.SettingsBindFlags.DEFAULT);
+    }
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(

@@ -37,8 +37,6 @@ var WORKSPACE_CUT_SIZE = 15;
 const WORKSPACE_MAX_SPACING = 400;
 const WORKSPACE_MIN_SPACING = 24;
 
-// just for testing
-const VERTICAL_DASH = !true;
 const DASH_MAX_WIDTH_RATIO = 0.15;
 var DASH_ITEM_LABEL_SHOW_TIME = 150;
 
@@ -49,18 +47,22 @@ var ControlsState = {
 };
 
 let verticalOverrides = {};
-let wsDisplayVisibleSignalId;
-let stateAdjustmentValueSignalId;
+let _wsDisplayVisibleSignalId;
+let _stateAdjustmentValueSignalId;
 
-let appButtonSigHandlerId = 0;
-let vertActivationSigId = 0;
-let searchControllerSignalId = 0;
-let prevDash;
+let _appButtonSigHandlerId;
+let _vertActivationSigId;
+let _searchControllerSignalId;
+let _verticalOverview;
+let _prevDash;
 
-function activate() {
+function activate(verticalOverview = false) {
+    _verticalOverview = verticalOverview;
+    if (Object.keys(verticalOverrides).length != 0)
+        reset();
     verticalOverrides['WorkspaceLayout'] = _Util.overrideProto(Workspace.WorkspaceLayout.prototype, WorkspaceLayoutOverride);
     verticalOverrides['WorkspacesView'] = _Util.overrideProto(WorkspacesView.WorkspacesView.prototype, WorkspacesViewOverride);
-    if (shellVersion >= 42) {
+    if (_verticalOverview) {
         verticalOverrides['ThumbnailsBox'] = _Util.overrideProto(WorkspaceThumbnail.ThumbnailsBox.prototype, ThumbnailsBoxOverride);
         verticalOverrides['WorkspaceThumbnail'] = _Util.overrideProto(WorkspaceThumbnail.WorkspaceThumbnail.prototype, WorkspaceThumbnailOverride);
         verticalOverrides['ControlsManager'] = _Util.overrideProto(OverviewControls.ControlsManager.prototype, ControlsManagerOverride);
@@ -71,42 +73,65 @@ function activate() {
         verticalOverrides['DashItemContainer'] = _Util.overrideProto(Dash.DashItemContainer.prototype, DashItemContainerOverride);
 
         const controlsManager = Main.overview._overview._controls;
-        stateAdjustmentValueSignalId = controlsManager._stateAdjustment.connect("notify::value", _updateWorkspacesDisplay.bind(controlsManager));
-        wsDisplayVisibleSignalId = controlsManager._workspacesDisplay.connect("notify::visible", controlsManager._workspacesDisplay._updateWorkspacesViews.bind(controlsManager._workspacesDisplay));
+        _stateAdjustmentValueSignalId = controlsManager._stateAdjustment.connect("notify::value", _updateWorkspacesDisplay.bind(controlsManager));
+        _wsDisplayVisibleSignalId = controlsManager._workspacesDisplay.connect("notify::visible", controlsManager._workspacesDisplay._updateWorkspacesViews.bind(controlsManager._workspacesDisplay));
 
-        vertActivationSigId = Main.overview.connect('showing', () => {
+        _vertActivationSigId = Main.overview.connect('showing', () => {
             // this update collapsed ws thumbnails (workaroud for now, collapsing when only 1 ws should be disabled)
             Main.overview._overview._controls._thumbnailsBox.expandFraction = 1;
             // when user changes Dash to Dock / Ubuntu dock position on the screen, the dock will be recreated and overview layout code injected.
             Main.overview._overview._controls._thumbnailsBox.show();
-            if (Main.overview.dash !== prevDash) {
+            if (Main.overview.dash !== _prevDash && _prevDash !== undefined) {
                 reset();
-                activate();
+                activate(_verticalOverview);
                 //_connectAppButton();
-                prevDash = Main.overview.dash;
+                _prevDash = Main.overview.dash;
                 Main.overview.dash._background.opacity = 0;
-                _moveDashAppGridIconFront();
+                _moveDashAppGridIconLeft();
                 return true;
             }
         });
         Main.overview.dash._background.opacity = 0;
         Main.overview.searchEntry.visible = false;
+        _moveDashAppGridIconLeft();
 
-        if (shellVersion >= 40 && shellVersion < 42)
-            appButtonSigHandlerId = _connectAppButton();
-
-        /*Main.overview._overview._controls._thumbnailsBox.connect('notify::expand-fraction', (wt) => {
-            if (wt.expandFraction === 0)
-                wt.expandFraction = 1;
-            //Main.overview._overview._controls._updateThumbnailsBox();
-        });*/
-        searchControllerSignalId =  Main.overview._overview.controls._searchController.connect('notify::search-active', (w) => {
+        _searchControllerSignalId =  Main.overview._overview.controls._searchController.connect('notify::search-active', (w) => {
             Main.overview.searchEntry.visible = Main.overview._overview.controls._searchController._searchActive;
         });
+    } else {
+        _connectAppButton();
     }
 }
 
 function reset() {
+    if (original_MAX_THUMBNAIL_SCALE)
+        WorkspaceThumbnail.MAX_THUMBNAIL_SCALE = original_MAX_THUMBNAIL_SCALE;
+
+    const controlsManager = Main.overview._overview._controls;
+    if (_stateAdjustmentValueSignalId) {
+        controlsManager._stateAdjustment.disconnect(_stateAdjustmentValueSignalId);
+        _stateAdjustmentValueSignalId = 0;
+    }
+    if (_wsDisplayVisibleSignalId) {
+        controlsManager._workspacesDisplay.disconnect(_wsDisplayVisibleSignalId);
+        _wsDisplayVisibleSignalId = 0;
+    }
+
+    if (_vertActivationSigId) {
+        Main.overview.disconnect(_vertActivationSigId);
+        _vertActivationSigId = 0;
+    }
+
+    if (_searchControllerSignalId) {
+        Main.overview._overview.controls._searchController.disconnect(_searchControllerSignalId);
+        _searchControllerSignalId = 0;
+    }
+
+    if (_appButtonSigHandlerId) {
+        Main.overview.dash.showAppsButton.disconnect(_appButtonSigHandlerId);
+        _appButtonSigHandlerId = 0;
+    }
+
     _Util.overrideProto(WorkspacesView.WorkspacesView.prototype, verticalOverrides['WorkspacesView']);
     _Util.overrideProto(WorkspacesView.SecondaryMonitorDisplay.prototype, verticalOverrides['SecondaryMonitorDisplay']);
     if (shellVersion >= 42) {
@@ -120,41 +145,15 @@ function reset() {
 
     verticalOverrides = {}
 
-    if (original_MAX_THUMBNAIL_SCALE)
-        WorkspaceThumbnail.MAX_THUMBNAIL_SCALE = original_MAX_THUMBNAIL_SCALE;
-
-    const controlsManager = Main.overview._overview._controls;
-    if (stateAdjustmentValueSignalId) {
-        controlsManager._stateAdjustment.disconnect(stateAdjustmentValueSignalId);
-        stateAdjustmentValueSignalId = 0;
-    }
-    if (wsDisplayVisibleSignalId) {
-        controlsManager._workspacesDisplay.disconnect(wsDisplayVisibleSignalId);
-        wsDisplayVisibleSignalId = 0;
-    }
-
-    if (vertActivationSigId) {
-        Main.overview.disconnect(vertActivationSigId);
-        vertActivationSigId = 0;
-    }
-
-    if (searchControllerSignalId) {
-        Main.overview._overview.controls._searchController.disconnect(searchControllerSignalId);
-    }
-
-    if (appButtonSigHandlerId) {
-        Main,overview.dash.showAppsButton.disconnect(appButtonSigHandlerId);
-        appButtonSigHandlerId = 0;
-    }
-
     Main.overview.searchEntry.visible = true;
 
     Main.overview.dash._background.opacity = 255;
     const reset = true;
-    _moveDashAppGridIconFront(reset);
+    _moveDashAppGridIconLeft(reset);
+    _prevDash = null;
 }
 
-function _moveDashAppGridIconFront(reset = false) {
+function _moveDashAppGridIconLeft(reset = false) {
     // move dash app grid icon to the front
     const dash = Main.overview.dash;
     let target;
@@ -168,9 +167,9 @@ function _moveDashAppGridIconFront(reset = false) {
 }
 
 function _connectAppButton() {
-    if (appButtonSigHandlerId)
-        Main,overview.dash.showAppsButton.disconnect(appButtonSigHandlerId);
-    appButtonSigHandlerId = Main.overview.dash.showAppsButton.connect('notify::checked', (w) => {
+    if (_appButtonSigHandlerId)
+        Main,overview.dash.showAppsButton.disconnect(_appButtonSigHandlerId);
+    _appButtonSigHandlerId = Main.overview.dash.showAppsButton.connect('notify::checked', (w) => {
         if (w.checked) {
             global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, 1, -1);
         } else {
@@ -744,7 +743,7 @@ var ControlsManagerOverride = {
     },
 
     _getThumbnailsBoxParams: function() {
-        const { initialState, finalState, progress } =
+        /*const { initialState, finalState, progress } =
             this._stateAdjustment.getStateTransitionParams();
 
         const paramsForState = s => {
@@ -760,7 +759,10 @@ var ControlsManagerOverride = {
         return [
             Util.lerp(initialParams.opacity, finalParams.opacity, progress),
             Util.lerp(initialParams.scale, finalParams.scale, progress),
-        ];
+        ];*/
+        opacity = 255;
+        scale = 1;
+        return [ opacity, scale];
     },
 
     _updateThumbnailsBox: function() {
@@ -964,7 +966,7 @@ var ControlsManagerLayoutOverride = {
         const maxDashWidth = Math.round(box.get_width() * DASH_MAX_WIDTH_RATIO);
         let dashHeight;
         let dashWidth;
-        if (VERTICAL_DASH) {
+        /*if (VERTICAL_DASH) { // just for testing
             this._dash.setMaxSize(maxDashWidth, height);
             [dashWidth] = this._dash.get_preferred_height(width);
             dashWidth = Math.min(dashWidth, maxDashWidth);
@@ -972,7 +974,7 @@ var ControlsManagerLayoutOverride = {
             childBox.set_origin(startX + spacing, startY);
             childBox.set_size(dashWidth, height);
 
-        } else {
+        } else {*/
             this._dash.setMaxSize(width, maxDashHeight);
             [, dashHeight] = this._dash.get_preferred_height(width);
             [, dashWidth] = this._dash.get_preferred_width(dashHeight);
@@ -991,25 +993,14 @@ var ControlsManagerLayoutOverride = {
             let dashX = Math.min(spacing, (width - dashWidth) / 2)
             childBox.set_origin(dashX, startY);
             childBox.set_size(dashWidth, dashHeight);
-        }
+        //}
 
         this._dash.allocate(childBox);
+        // dash cloud be other than the default, could be Dash to Dock
+        // btw Dash to Dock has property _isHorizontal
+        const dashVertical = Main.overview.dash.width < Main.overview.dash.height;
 
-        availableHeight -= dashHeight + spacing;
-
-        // Search entry
-        let [searchHeight] = this._searchEntry.get_preferred_height(width);
-
-        // Y possition on top
-        //childBox.set_origin(0, startY);
-        // Y possition under top Dash
-        childBox.set_origin(0, startY + dashHeight - spacing);
-        // Y possition at bottom
-        //childBox.set_origin(0, startY + height - searchHeight);
-        childBox.set_size(width, searchHeight);
-        this._searchEntry.allocate(childBox);
-
-        availableHeight -= searchHeight + spacing;
+        availableHeight -= dashVertical ? Main.overview.dash.width : dashHeight + spacing;
 
         // Workspace Thumbnails
         let thumbnailsWidth = 0;
@@ -1026,7 +1017,7 @@ var ControlsManagerLayoutOverride = {
             let dockOffset = 0;
             const dash = Main.overview.dash;
             // Ubuntu Dash / Dash to Dock property only
-            if (dash._isHorizontal === false) {
+            if (dashVertical) {
                 dockOffset = dash.width;
             }
 
@@ -1042,6 +1033,21 @@ var ControlsManagerLayoutOverride = {
             childBox.set_size(thumbnailsWidth, thumbnailsHeight);
             this._workspacesThumbnails.allocate(childBox);
         }
+
+        const searchXoffset = spacing + thumbnailsWidth + spacing;
+        // Search entry
+        let [searchHeight] = this._searchEntry.get_preferred_height(width - thumbnailsWidth - dashVertical ? dashWidth : 0);
+
+        // Y possition on top
+        //childBox.set_origin(0, startY);
+        // Y possition under top Dash
+        childBox.set_origin(searchXoffset, startY + (dashVertical ? spacing : dashHeight - spacing));
+        // Y possition at bottom
+        //childBox.set_origin(0, startY + height - searchHeight);
+        childBox.set_size(width - searchXoffset, searchHeight);
+        this._searchEntry.allocate(childBox);
+
+        availableHeight -= searchHeight + spacing;
 
         // Workspaces
         let params = [box, workAreaBox, searchHeight, dashHeight, thumbnailsWidth];
@@ -1087,8 +1093,8 @@ var ControlsManagerLayoutOverride = {
         }
 
         // Search
-        childBox.set_origin(0, startY + dashHeight + spacing + searchHeight + spacing);
-        childBox.set_size(width, availableHeight);
+        childBox.set_origin(searchXoffset, startY + dashHeight + spacing + searchHeight + spacing);
+        childBox.set_size(width - searchXoffset, availableHeight);
 
         this._searchController.allocate(childBox);
 
@@ -1214,11 +1220,11 @@ function _updateWorkspacesDisplay() {
         opacity: opacity,
         //scale: scale,
         duration: 0,
-        mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+        mode: Clutter.AnimationMode.EASE_LINEAR,
         onComplete: () => {
             this._workspacesDisplay.visible = !(progress == 1 && finalState == ControlsState.APP_GRID);
             this._workspacesDisplay.setPrimaryWorkspaceVisible(workspacesDisplayVisible);
-            this._workspacesDisplay.reactive = workspacesDisplayVisible;
+            //this._workspacesDisplay.reactive = workspacesDisplayVisible;
         }
     }
 

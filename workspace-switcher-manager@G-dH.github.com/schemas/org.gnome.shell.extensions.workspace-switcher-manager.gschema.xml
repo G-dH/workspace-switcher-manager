@@ -118,6 +118,9 @@
     <key type="b" name="reverse-popup-orientation">
       <default>false</default>
     </key>
+    <key type="b" name="vertical-overview">
+      <default>false</default>
+    </key>
     <key type="b" name="reverse-ws-orientation">
       <default>false</default>
     </key>

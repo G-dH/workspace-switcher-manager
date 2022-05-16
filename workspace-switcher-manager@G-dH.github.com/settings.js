@@ -78,6 +78,7 @@ var MscOptions = class MscOptions {
             reverseWsOrientation: ['boolean', 'reverse-ws-orientation'],
             modifiersHidePopup: ['boolean', 'modifiers-hide-popup'],
             reversePopupOrientation: ['boolean', 'reverse-popup-orientation'],
+            verticalOverview: ['boolean', 'vertical-overview'],
 
             wsNames: ['strv', 'workspace-names', this._getDesktopWmSettings],
             dynamicWorkspaces: ['boolean', 'dynamic-workspaces', this._getMutterSettings],
