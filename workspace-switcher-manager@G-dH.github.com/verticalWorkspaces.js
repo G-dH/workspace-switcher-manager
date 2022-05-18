@@ -10,9 +10,7 @@ const AppDisplay = imports.ui.appDisplay;
 const Dash = imports.ui.dash;
 const Layout = imports.ui.layout;
 const Overview = imports.ui.overview;
-const SearchController = imports.ui.searchController;
 const Util = imports.misc.util;
-const WindowManager = imports.ui.windowManager;
 const WorkspaceThumbnail = imports.ui.workspaceThumbnail;
 const Background = imports.ui.background;
 const WorkspacesView = imports.ui.workspacesView;
@@ -24,14 +22,13 @@ const Me = ExtensionUtils.getCurrentExtension();
 const shellVersion = Me.imports.settings.shellVersion;
 
 const _Util = Me.imports.util;
-//const _Dash = Me.imports.dash;
 
 // for some reason touching the SecondaryMonitorDisplay for the first time returns undefined in GS 42, so we touch it bere we use it
 WorkspacesView.SecondaryMonitorDisplay;
 
 let original_MAX_THUMBNAIL_SCALE;
 
-var WORKSPACE_CUT_SIZE = 15;
+var WORKSPACE_CUT_SIZE = 10;
 
 // keep other workspaces out of the screen
 const WORKSPACE_MAX_SPACING = 400;
@@ -68,6 +65,7 @@ function activate(verticalOverview = false) {
         verticalOverrides['ControlsManager'] = _Util.overrideProto(OverviewControls.ControlsManager.prototype, ControlsManagerOverride);
         verticalOverrides['ControlsManagerLayout'] = _Util.overrideProto(OverviewControls.ControlsManagerLayout.prototype, ControlsManagerLayoutOverride);
         verticalOverrides['SecondaryMonitorDisplay'] = _Util.overrideProto(WorkspacesView.SecondaryMonitorDisplay.prototype, SecondaryMonitorDisplayOverride);
+        verticalOverrides['BaseAppView'] = _Util.overrideProto(AppDisplay.BaseAppView.prototype, AppDisplayOverride);
         original_MAX_THUMBNAIL_SCALE = WorkspaceThumbnail.MAX_THUMBNAIL_SCALE;
         WorkspaceThumbnail.MAX_THUMBNAIL_SCALE *= 2;
         verticalOverrides['DashItemContainer'] = _Util.overrideProto(Dash.DashItemContainer.prototype, DashItemContainerOverride);
@@ -140,6 +138,7 @@ function reset() {
         _Util.overrideProto(OverviewControls.ControlsManagerLayout.prototype, verticalOverrides['ControlsManagerLayout']);
         _Util.overrideProto(OverviewControls.ControlsManager.prototype, verticalOverrides['ControlsManager']);
         _Util.overrideProto(Workspace.WorkspaceLayout.prototype, verticalOverrides['WorkspaceLayout']);
+        _Util.overrideProto(AppDisplay.BaseAppView.prototype, verticalOverrides['BaseAppView']);
         _Util.overrideProto(Dash.DashItemContainer.prototype, verticalOverrides['DashItemContainer']);
     }
 
@@ -182,7 +181,6 @@ function _connectAppButton() {
 var WorkspacesViewOverride = {
     _getFirstFitSingleWorkspaceBox: function(box, spacing, vertical) {
         let [width, height] = box.get_size();
-
         const [workspace] = this._workspaces;
 
         const rtl = this.text_direction === Clutter.TextDirection.RTL;
@@ -210,6 +208,7 @@ var WorkspacesViewOverride = {
         return fitSingleBox;
     },
 
+    // avoid overlapping of adjacent workspaces with the current view
     _getSpacing: function(box, fitMode, vertical) {
         const [width, height] = box.get_size();
         const [workspace] = this._workspaces;
@@ -231,6 +230,7 @@ var WorkspacesViewOverride = {
             WORKSPACE_MAX_SPACING * scaleFactor);
     },
 
+    // spread windows during entering appDisplay page to add some action (looks more natural)
     _getWorkspaceModeForOverviewState: function(state) {
         const { ControlsState } = OverviewControls;
 
@@ -260,10 +260,6 @@ var SecondaryMonitorDisplayOverride = {
             opacity = 255;
             scale = 1;
             break;
-        /*case ControlsState.APP_GRID:
-            opacity = 0;
-            scale = 0.5;
-            break;*/
         default:
             opacity = 255;
             scale = 1;
@@ -295,19 +291,11 @@ var SecondaryMonitorDisplayOverride = {
             break;
         case ControlsState.WINDOW_PICKER:
             case ControlsState.APP_GRID:
-            //workspaceBox.set_origin(0, padding);
             workspaceBox.set_origin(thumbnailsWidth + spacing, padding);
             workspaceBox.set_size(
                 width - thumbnailsWidth - spacing,
-                //height - 2 * padding);
                 height - 1.7 * padding);
             break;
-        /*case ControlsState.APP_GRID:
-            workspaceBox.set_origin(0, padding);
-            workspaceBox.set_size(
-                width,
-                height - 2 * padding);
-            break;*/
         }
 
         return workspaceBox;
@@ -318,7 +306,7 @@ var SecondaryMonitorDisplayOverride = {
 
         const themeNode = this.get_theme_node();
         const contentBox = themeNode.get_content_box(box);
-        const [width, height] = contentBox.get_size();
+        const [, height] = contentBox.get_size();
         const { expandFraction } = this._thumbnails;
         const spacing = themeNode.get_length('spacing') * expandFraction;
         const padding =
@@ -329,9 +317,8 @@ var SecondaryMonitorDisplayOverride = {
 
         if (this._thumbnails.visible) {
             const childBox = new Clutter.ActorBox();
-            childBox.set_size(thumbnailsWidth, thumbnailsHeight);
-            //childBox.set_origin(width - thumbnailsWidth - spacing, Math.max(0, (height - thumbnailsHeight) / 4));
             childBox.set_origin(spacing, Math.max(0, (height - thumbnailsHeight) / 4));
+            childBox.set_size(thumbnailsWidth, thumbnailsHeight);
             this._thumbnails.allocate(childBox);
         }
 
@@ -352,24 +339,6 @@ var SecondaryMonitorDisplayOverride = {
             workspacesBox = initialBox.interpolate(finalBox, progress);
         }
         this._workspacesView.allocate(workspacesBox);
-    },
-
-    _updateThumbnailVisibility: function() {
-        const visible = true;
-            /*this._thumbnails.should_show &&
-            !this._settings.get_boolean('workspaces-only-on-primary');*/
-
-        if (this._thumbnails.visible === visible)
-            return;
-
-        this._thumbnails.show();
-        this._thumbnails.expandFraction = 1;
-        this._updateThumbnailParams();
-        this._thumbnails.ease_property('expand-fraction', visible ? 1 : 0, {
-            duration: OverviewControls.SIDE_CONTROLS_ANIMATION_TIME,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-            onComplete: () => (this._thumbnails.visible = visible),
-        });
     }
 }
 
@@ -391,7 +360,6 @@ var WorkspaceThumbnailOverride = {
         }).bind(this));
     }
 }
-
 
 //--- ThumbnailsBox
 
@@ -547,18 +515,6 @@ var ThumbnailsBoxOverride = {
         return themeNode.adjust_preferred_width(totalSpacing, naturalheight);
     },
 
-    _updatePorthole: function() {
-        if (!Main.layoutManager.monitors[this._monitorIndex]) {
-            const { x, y, width, height } = global.stage;
-            this._porthole = { x, y, width, height };
-        } else {
-            this._porthole =
-                Main.layoutManager.getWorkAreaForMonitor(this._monitorIndex);
-        }
-
-        this.queue_relayout();
-    },
-
     vfunc_allocate: function(box) {
         this.set_allocation(box);
 
@@ -650,8 +606,7 @@ var ThumbnailsBoxOverride = {
             const x2 = x1 + thumbnailWidth;
 
             if (i === this._dropPlaceholderPos) {
-                //const placeholderHeight = this._dropPlaceholder.get_preferred_height(-1);
-                const placeholderHeight = this._thumbnails[0].height / 3;
+                let [, placeholderHeight] = this._dropPlaceholder.get_preferred_height(-1);
                 childBox.x1 = x1;
                 childBox.x2 = x2;
 
@@ -722,12 +677,20 @@ var ThumbnailsBoxOverride = {
         childBox.x1 -= indicatorLeftFullBorder;
         childBox.x2 += indicatorRightFullBorder;
         this._indicator.allocate(childBox);
+    },
+
+    _updateShouldShow: function() {
+        if (this._shouldShow === true)
+            return;
+
+        this._shouldShow = true;
+        this.notify('should-show');
     }
 }
 
 //------- overviewControls --------------------------------
 
-// ------ControlsManager ----------------------------------
+// ------ ControlsManager ----------------------------------
 
 var ControlsManagerOverride = {
     _getFitModeForState: function(state) {
@@ -743,135 +706,22 @@ var ControlsManagerOverride = {
     },
 
     _getThumbnailsBoxParams: function() {
-        /*const { initialState, finalState, progress } =
-            this._stateAdjustment.getStateTransitionParams();
-
-        const paramsForState = s => {
-            let opacity, scale;
-            opacity = 255;
-            scale = 1;
-            return { opacity, scale } ;
-        };
-
-        const initialParams = paramsForState(initialState);
-        const finalParams = paramsForState(finalState);
-
-        return [
-            Util.lerp(initialParams.opacity, finalParams.opacity, progress),
-            Util.lerp(initialParams.scale, finalParams.scale, progress),
-        ];*/
-        opacity = 255;
-        scale = 1;
+        const opacity = 255;
+        const scale = 1;
         return [ opacity, scale];
-    },
-
-    _updateThumbnailsBox: function() {
-        const { shouldShow } = this._thumbnailsBox;
-
-        const thumbnailsBoxVisible = shouldShow;
-        if (thumbnailsBoxVisible) {
-            this._thumbnailsBox.opacity = 255;
-            this._thumbnailsBox.visible = thumbnailsBoxVisible;
-        }
-    },
-
-    _updateShouldShow: function() {
-        if (this._shouldShow === true)
-            return;
-
-        this._shouldShow = true;
-        this.notify('should-show');
-    },
-
-    /*animateToOverview: function(state, callback) {
-        this._ignoreShowAppsButtonToggle = true;
-
-        this._searchController.prepareToEnterOverview();
-        this._workspacesDisplay.prepareToEnterOverview();
-        this._stateAdjustment.value = ControlsState.HIDDEN;
-
-        this._workspacesDisplay.opacity = 255;
-        this._workspacesDisplay.setPrimaryWorkspaceVisible(!this.dash.showAppsButton.checked);
-        this._workspacesDisplay.reactive = !this.dash.showAppsButton.checked;
-
-        this._stateAdjustment.ease(state, {
-            duration: Overview.ANIMATION_TIME,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-            onStopped: () => {
-                if (callback)
-                    callback();
-            },
-        });
-
-        this.dash.showAppsButton.checked =
-            state === ControlsState.APP_GRID;
-
-        this._ignoreShowAppsButtonToggle = false;
-
-        /*if (global.vertical_overview.scaling_workspaces_hidden) {
-            enterOverviewAnimation();
-        }*/
-    //},*/
-
-    /*animateFromOverview: function(callback) {
-        this._ignoreShowAppsButtonToggle = true;
-
-        this._workspacesDisplay.prepareToLeaveOverview();
-        this._stateAdjustment.ease(ControlsState.HIDDEN, {
-            duration: Overview.ANIMATION_TIME,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-            onStopped: () => {
-                this.dash.showAppsButton.checked = false;
-                this._ignoreShowAppsButtonToggle = false;
-
-                if (callback)
-                    callback();
-            },
-        });
-
-        /*if (global.vertical_overview.scaling_workspaces_hidden) {
-            exitOverviewAnimation();
-        }*/
-    //}
+    }
 }
-
 
 //-------ControlsManagerLayout-----------------------------
 
 var ControlsManagerLayoutOverride = {
-    _getAppDisplayBoxForState: function(state, box, workAreaBox, searchHeight, dashHeight, appGridBox, thumbnailsWidth) {
-        const [width, height] = box.get_size();
-        const { y1: startY } = workAreaBox;
-        const { x1: startX } = workAreaBox;
-        const appDisplayBox = new Clutter.ActorBox();
-        const { spacing } = this;
-
-        switch (state) {
-        case ControlsState.HIDDEN:
-        case ControlsState.WINDOW_PICKER:
-            // left switcher control of the app grid will be under the ws switcher, that prevents app grid page switching when dragging app icon from the grid to workspace
-            appDisplayBox.set_origin(spacing + thumbnailsWidth, box.y2);
-            //appDisplayBox.set_origin(thumbnailsWidth + spacing, box.y2 + dashHeight + spacing);
-            break;
-        case ControlsState.APP_GRID:
-            appDisplayBox.set_origin(spacing + thumbnailsWidth, startY + dashHeight + spacing);
-            //appDisplayBox.set_size(width - thumbnailsWidth - spacing, width - thumbnailsWidth - 2 * spacing);
-            /*appDisplayBox.set_origin(0,
-                startY + searchHeight + spacing + dashHeight + appGridBox.get_height());*/
-            break;
-        }
-
-        appDisplayBox.set_size(width - spacing - thumbnailsWidth, height - dashHeight - 2 * spacing - thumbnailsWidth);
-        /*appDisplayBox.set_size(width,
-            height -
-            searchHeight - spacing -
-            appGridBox.get_height() - spacing -
-            dashHeight);*/
-
-        return appDisplayBox;
-    },
-
     _computeWorkspacesBoxForState: function(state, box, workAreaBox, searchHeight, dashHeight, thumbnailsWidth) {
+        if (shellVersion < 42) {
+            thumbnailsWidth = dashHeight;
+            dashHeight = thumbnailsWidth;
+            searchHeight = dashHeight;
+            workAreaBox = box;
+        }
         const workspaceBox = box.copy();
         const [width, height] = workspaceBox.get_size();
         const { y1: startY } = workAreaBox;
@@ -897,7 +747,6 @@ var ControlsManagerLayoutOverride = {
                          - (dashVertical ? dash.width + spacing : spacing)
                          - thumbnailsWidth - spacing;
             wHeight = height -
-                          //- searchHeight - spacing -
                           (dashVertical ? spacing : dashHeight + 2 * spacing);
             const ratio = width / height;
             scale = wWidth / (ratio * wHeight) * 0.94;
@@ -927,22 +776,31 @@ var ControlsManagerLayoutOverride = {
             workspaceBox.set_size(wWidth, wHeight);
             workspaceBox.set_origin(wsBoxX, wsBoxY);
 
-            // store workspace box properties to calculate dash possition
-            //dash._wsBoxX = wsBoxX;
-            //dash._wsBoxWidth = wWidth;
-
             break;
-        /*case OverviewControls.ControlsState.APP_GRID:
-            workspaceBox.set_origin(width, wsBoxY);
-            /*const yOffsetG = dashHeight ? 0 : (wHeight - (wHeight * scale)) / 4;
-            workspaceBox.set_origin(0, startY + yOffsetG + dashHeight + spacing);
-            workspaceBox.set_size(
-                width,
-                Math.round(height * OverviewControls.SMALL_WORKSPACE_RATIO));
-            break;*/
         }
 
         return workspaceBox;
+    },
+
+    _getAppDisplayBoxForState: function(state, box, workAreaBox, searchHeight, dashHeight, appGridBox, thumbnailsWidth) {
+        const [width, height] = box.get_size();
+        const { y1: startY } = workAreaBox;
+        const { x1: startX } = workAreaBox;
+        const appDisplayBox = new Clutter.ActorBox();
+        const { spacing } = this;
+
+        switch (state) {
+        case ControlsState.HIDDEN:
+        case ControlsState.WINDOW_PICKER:
+            appDisplayBox.set_origin(spacing + thumbnailsWidth, box.y2);
+            break;
+        case ControlsState.APP_GRID:
+            appDisplayBox.set_origin(spacing + thumbnailsWidth, startY + dashHeight);
+            break;
+        }
+
+        appDisplayBox.set_size(width - spacing - thumbnailsWidth, height - dashHeight - 2 * spacing);
+        return appDisplayBox;
     },
 
     vfunc_allocate: function(container, box) {
@@ -980,16 +838,7 @@ var ControlsManagerLayoutOverride = {
             [, dashWidth] = this._dash.get_preferred_width(dashHeight);
             dashHeight = Math.min(dashHeight, maxDashHeight);
 
-            //childBox.set_origin(0, startY + height - dashHeight);
-            // the _dash._wsBoxX property was defined in the _computeWorkspacesBoxForState function
-            //const boxOffset = (this._dash._wsBoxWidth - dashWidth) / 2;
-            // center dash on workspace box if possible
-            //childBox.set_origin(this._dash._wsBoxX + spacing + boxOffset > 0 ? boxOffset : 0, startY);
-            //childBox.set_origin(this._dash._wsBoxX + 2 * spacing, startY);
-            //childBox.set_origin(0, startY);
-            //childBox.set_size(width, dashHeight);
             dashWidth = Math.min(dashWidth, width);
-            //let dashX = Math.min(width / 10, (width - dashWidth) / 2)
             let dashX = Math.min(spacing, (width - dashWidth) / 2)
             childBox.set_origin(dashX, startY);
             childBox.set_size(dashWidth, dashHeight);
@@ -1005,16 +854,20 @@ var ControlsManagerLayoutOverride = {
         // Workspace Thumbnails
         let thumbnailsWidth = 0;
         let thumbnailsHeight = 0;
-        if (true) { //just for test...
-        //if (this._workspacesThumbnails.visible) {
+
+        // should be always visible in this layout
+        if (this._workspacesThumbnails.visible) {
             const { expandFraction } = this._workspacesThumbnails;
             thumbnailsHeight = height - spacing - dashHeight;
-            thumbnailsWidth =
-                this._workspacesThumbnails.get_preferred_width(thumbnailsHeight)[0];
+
+            thumbnailsWidth = this._workspacesThumbnails.get_preferred_width(thumbnailsHeight)[0];
+
             thumbnailsWidth = Math.round(Math.min(
                 thumbnailsWidth * expandFraction,
                 width * WorkspaceThumbnail.MAX_THUMBNAIL_SCALE));
-            let dockOffset = 0;
+
+                let dockOffset = 0;
+
             const dash = Main.overview.dash;
             // Ubuntu Dash / Dash to Dock property only
             if (dashVertical) {
@@ -1023,12 +876,7 @@ var ControlsManagerLayoutOverride = {
 
             // move the thumbnails to the left
             childBox.set_origin(startX + spacing,
-
-            // move the thumbnails to the right
-            //childBox.set_origin(startX + width - thumbnailsWidth - spacing - dockOffset,
-                // Math.round(Math.max(startY, startY + (height - thumbnailsHeight) / 4))
-                // startY + searchHeight + 2 * spacing
-                startY + dashHeight + spacing
+                                startY + dashHeight + spacing
             );
             childBox.set_size(thumbnailsWidth, thumbnailsHeight);
             this._workspacesThumbnails.allocate(childBox);
@@ -1038,13 +886,10 @@ var ControlsManagerLayoutOverride = {
         // Search entry
         let [searchHeight] = this._searchEntry.get_preferred_height(width - thumbnailsWidth - dashVertical ? dashWidth : 0);
 
-        // Y possition on top
-        //childBox.set_origin(0, startY);
         // Y possition under top Dash
         childBox.set_origin(searchXoffset, startY + (dashVertical ? spacing : dashHeight - spacing));
-        // Y possition at bottom
-        //childBox.set_origin(0, startY + height - searchHeight);
         childBox.set_size(width - searchXoffset, searchHeight);
+
         this._searchEntry.allocate(childBox);
 
         availableHeight -= searchHeight + spacing;
@@ -1104,6 +949,7 @@ var ControlsManagerLayoutOverride = {
 
 // ------ Workspace -----------------------------------------------------------------
 var WorkspaceLayoutOverride = {
+    // this fixes wrong size and position calculation of window clones while moving overview to the next (+1) workspace if vertical ws orintation is set
     _adjustSpacingAndPadding: function(rowSpacing, colSpacing, containerBox) {
         if (this._sortedWindows.length === 0)
             return [rowSpacing, colSpacing, containerBox];
@@ -1152,6 +998,7 @@ var WorkspaceLayoutOverride = {
 }
 
 var DashItemContainerOverride = {
+    // move labels under the icons
     showLabel() {
         if (!this._labelText)
             return;
@@ -1184,47 +1031,67 @@ var DashItemContainerOverride = {
     }
 }
 
+// appDisplay
+var AppDisplayOverride  = {
+    // this fixes dnd from appDisplay to workspace switcher if appDisplay is on page 1. weird bug, weird solution..
+    _pageForCoords: function(x, y) {
+        if (this._dragMonitor != null)
+            return AppDisplay.SidePages.NONE;
+
+        const rtl = this.get_text_direction() === Clutter.TextDirection.RTL;
+        const { allocation } = this._grid;
+
+        const [success, pointerX] = this._scrollView.transform_stage_point(x, y);
+        if (!success)
+            return AppDisplay.SidePages.NONE;
+
+        if (pointerX < allocation.x1)
+            return rtl ? AppDisplay.SidePages.NEXT : AppDisplay.SidePages.PREVIOUS;
+        else if (pointerX > allocation.x2)
+            return rtl ? AppDisplay.SidePages.PREVIOUS : AppDisplay.SidePages.NEXT;
+
+        return AppDisplay.SidePages.NONE;
+    }
+}
+
 function _updateWorkspacesDisplay() {
     const { initialState, finalState, progress } = this._stateAdjustment.getStateTransitionParams();
     const { searchActive } = this._searchController;
 
-    //TODO: fix scaling (or just remove it)
     const paramsForState = s => {
-        let opacity, scale;
+        let opacity;
         switch (s) {
             case ControlsState.HIDDEN:
             case ControlsState.WINDOW_PICKER:
                 opacity = 255;
-                scale = 1;
                 break;
             case ControlsState.APP_GRID:
                 opacity = 0;
-                scale = 0.5;
                 break;
             default:
                 opacity = 255;
-                scale = 1;
                 break;
         }
-        return { opacity, scale };
+        return { opacity };
     };
 
     let initialParams = paramsForState(initialState);
     let finalParams = paramsForState(finalState);
 
     let opacity = Math.round(Util.lerp(initialParams.opacity, finalParams.opacity, progress));
-    let scale = Util.lerp(initialParams.scale, finalParams.scale, progress);
 
     let workspacesDisplayVisible = (opacity != 0) && !(searchActive);
     let params = {
         opacity: opacity,
-        //scale: scale,
         duration: 0,
-        mode: Clutter.AnimationMode.EASE_LINEAR,
+        mode: Clutter.AnimationMode.EASE_OUT_QUAD,
         onComplete: () => {
-            this._workspacesDisplay.visible = !(progress == 1 && finalState == ControlsState.APP_GRID);
+            this._workspacesDisplay.reactive = workspacesDisplayVisible;
             this._workspacesDisplay.setPrimaryWorkspaceVisible(workspacesDisplayVisible);
-            //this._workspacesDisplay.reactive = workspacesDisplayVisible;
+            // following changes in which axis will operate overshoot detection which switches appDisplay pages while dragging app icon to vertical
+            // overall orientation of the grid and its pages stays horizontal, global orientation switch is not built-in
+            if (finalState === ControlsState.APP_GRID)
+                Main.overview._overview.controls._appDisplay._orientation = Clutter.Orientation.VERTICAL;
         }
     }
 
