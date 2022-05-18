@@ -23,6 +23,7 @@ const shellVersion = Me.imports.settings.shellVersion;
 
 const _Util = Me.imports.util;
 
+
 // for some reason touching the SecondaryMonitorDisplay for the first time returns undefined in GS 42, so we touch it bere we use it
 WorkspacesView.SecondaryMonitorDisplay;
 
@@ -30,11 +31,11 @@ let original_MAX_THUMBNAIL_SCALE;
 
 var WORKSPACE_CUT_SIZE = 10;
 
-// keep other workspaces out of the screen
-const WORKSPACE_MAX_SPACING = 400;
+// keep adjacent workspaces out of the screen
+const WORKSPACE_MAX_SPACING = 200;
 const WORKSPACE_MIN_SPACING = 24;
 
-const DASH_MAX_WIDTH_RATIO = 0.15;
+var DASH_MAX_WIDTH_RATIO = 0.15;
 var DASH_ITEM_LABEL_SHOW_TIME = 150;
 
 var ControlsState = {
@@ -66,9 +67,10 @@ function activate(verticalOverview = false) {
         verticalOverrides['ControlsManagerLayout'] = _Util.overrideProto(OverviewControls.ControlsManagerLayout.prototype, ControlsManagerLayoutOverride);
         verticalOverrides['SecondaryMonitorDisplay'] = _Util.overrideProto(WorkspacesView.SecondaryMonitorDisplay.prototype, SecondaryMonitorDisplayOverride);
         verticalOverrides['BaseAppView'] = _Util.overrideProto(AppDisplay.BaseAppView.prototype, AppDisplayOverride);
+        verticalOverrides['DashItemContainer'] = _Util.overrideProto(Dash.DashItemContainer.prototype, DashItemContainerOverride);
+
         original_MAX_THUMBNAIL_SCALE = WorkspaceThumbnail.MAX_THUMBNAIL_SCALE;
         WorkspaceThumbnail.MAX_THUMBNAIL_SCALE *= 2;
-        verticalOverrides['DashItemContainer'] = _Util.overrideProto(Dash.DashItemContainer.prototype, DashItemContainerOverride);
 
         const controlsManager = Main.overview._overview._controls;
         _stateAdjustmentValueSignalId = controlsManager._stateAdjustment.connect("notify::value", _updateWorkspacesDisplay.bind(controlsManager));
@@ -226,6 +228,7 @@ var WorkspacesViewOverride = {
         const spacing = (availableSpace - workspaceSize * 0.4) * (1 - fitMode);
         const { scaleFactor } = St.ThemeContext.get_for_stage(global.stage);
 
+            WORKSPACE_MAX_SPACING * scaleFactor))
         return Math.clamp(spacing, WORKSPACE_MIN_SPACING * scaleFactor,
             WORKSPACE_MAX_SPACING * scaleFactor);
     },
@@ -709,7 +712,17 @@ var ControlsManagerOverride = {
         const opacity = 255;
         const scale = 1;
         return [ opacity, scale];
-    }
+    },
+
+    _updateThumbnailsBox: function() {
+        const { shouldShow } = this._thumbnailsBox;
+
+        const thumbnailsBoxVisible = shouldShow;
+        if (thumbnailsBoxVisible) {
+            this._thumbnailsBox.opacity = 255;
+            this._thumbnailsBox.visible = thumbnailsBoxVisible;
+        }
+    },
 }
 
 //-------ControlsManagerLayout-----------------------------
@@ -743,6 +756,7 @@ var ControlsManagerLayoutOverride = {
             break;
         case OverviewControls.ControlsState.WINDOW_PICKER:
         case OverviewControls.ControlsState.APP_GRID:
+            dashHeight = this._dash.visible ? dashHeight : 0;
             wWidth = width
                          - (dashVertical ? dash.width + spacing : spacing)
                          - thumbnailsWidth - spacing;
@@ -754,7 +768,8 @@ var ControlsManagerLayoutOverride = {
             let xOffset = 0;
             let yOffset = 0;
 
-            yOffset = dashHeight ? 0 : (wHeight - (wHeight * scale)) / 4;
+            yOffset = dashHeight ? 0 : ((wHeight - (wHeight * scale)) / 4) + (((height - wHeight - dashHeight - searchHeight) / 3));
+
             if (scale < 1) {
                 wHeight *= scale;
             }
@@ -769,7 +784,7 @@ var ControlsManagerLayoutOverride = {
                 xOffset = Math.max((xOffset - (dashVertical ? dash.width + spacing : spacing)) / 2 + (dashVertical ? dash.width + spacing : spacing), (dashVertical ? dash.width + spacing : spacing));
             }
 
-            const wsBoxX = Math.round(xOffset + thumbnailsWidth + spacing);
+            const wsBoxX = Math.round(xOffset + (thumbnailsWidth ? thumbnailsWidth + spacing : 0));
             //const wsBoxY = Math.round(startY + yOffset + (searchHeight ? searchHeight + spacing : spacing));
             const wsBoxY = Math.round(startY + yOffset + (dashHeight ? dashHeight : spacing) + (searchHeight ? searchHeight + spacing : 0));
 
@@ -851,6 +866,8 @@ var ControlsManagerLayoutOverride = {
 
         availableHeight -= dashVertical ? Main.overview.dash.width : dashHeight + spacing;
 
+        dashHeight = this._dash.visible ? dashHeight : 0;
+
         // Workspace Thumbnails
         let thumbnailsWidth = 0;
         let thumbnailsHeight = 0;
@@ -869,14 +886,14 @@ var ControlsManagerLayoutOverride = {
                 let dockOffset = 0;
 
             const dash = Main.overview.dash;
-            // Ubuntu Dash / Dash to Dock property only
+            // Ubuntu Dash / Dash to Dock property only - is_horizontal
             if (dashVertical) {
                 dockOffset = dash.width;
             }
 
             // move the thumbnails to the left
             childBox.set_origin(startX + spacing,
-                                startY + dashHeight + spacing
+                                startY + (dashHeight ? dashHeight : (3 * spacing))
             );
             childBox.set_size(thumbnailsWidth, thumbnailsHeight);
             this._workspacesThumbnails.allocate(childBox);
