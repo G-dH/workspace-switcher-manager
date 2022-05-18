@@ -228,7 +228,6 @@ var WorkspacesViewOverride = {
         const spacing = (availableSpace - workspaceSize * 0.4) * (1 - fitMode);
         const { scaleFactor } = St.ThemeContext.get_for_stage(global.stage);
 
-            WORKSPACE_MAX_SPACING * scaleFactor))
         return Math.clamp(spacing, WORKSPACE_MIN_SPACING * scaleFactor,
             WORKSPACE_MAX_SPACING * scaleFactor);
     },
