@@ -60,6 +60,7 @@ function activate(verticalOverview = false) {
         reset();
     verticalOverrides['WorkspaceLayout'] = _Util.overrideProto(Workspace.WorkspaceLayout.prototype, WorkspaceLayoutOverride);
     verticalOverrides['WorkspacesView'] = _Util.overrideProto(WorkspacesView.WorkspacesView.prototype, WorkspacesViewOverride);
+    verticalOverrides['WorkspacesDisplay'] = _Util.overrideProto(WorkspacesView.WorkspacesDisplay.prototype, WorkspacesDisplayOverride);
     if (_verticalOverview) {
         verticalOverrides['ThumbnailsBox'] = _Util.overrideProto(WorkspaceThumbnail.ThumbnailsBox.prototype, ThumbnailsBoxOverride);
         verticalOverrides['WorkspaceThumbnail'] = _Util.overrideProto(WorkspaceThumbnail.WorkspaceThumbnail.prototype, WorkspaceThumbnailOverride);
@@ -133,6 +134,7 @@ function reset() {
     }
 
     _Util.overrideProto(WorkspacesView.WorkspacesView.prototype, verticalOverrides['WorkspacesView']);
+    _Util.overrideProto(WorkspacesView.WorkspacesDisplay.prototype, verticalOverrides['WorkspacesDisplay']);
     _Util.overrideProto(WorkspacesView.SecondaryMonitorDisplay.prototype, verticalOverrides['SecondaryMonitorDisplay']);
     if (shellVersion >= 42) {
         _Util.overrideProto(WorkspaceThumbnail.ThumbnailsBox.prototype, verticalOverrides['ThumbnailsBox']);
@@ -341,6 +343,107 @@ var SecondaryMonitorDisplayOverride = {
             workspacesBox = initialBox.interpolate(finalBox, progress);
         }
         this._workspacesView.allocate(workspacesBox);
+    }
+}
+
+// -----WorkspacesDisplay------------------------------------------------------------------------
+
+var WorkspacesDisplayOverride = {
+    _onScrollEvent: function(actor, event) {
+        if (this._swipeTracker.canHandleScrollEvent(event))
+            return Clutter.EVENT_PROPAGATE;
+
+        if (!this.mapped)
+            return Clutter.EVENT_PROPAGATE;
+
+        if (this._workspacesOnlyOnPrimary &&
+            this._getMonitorIndexForEvent(event) != this._primaryIndex)
+            return Clutter.EVENT_PROPAGATE;
+
+        if (global.get_pointer()[2] & Clutter.ModifierType.SHIFT_MASK) {
+            let direction = event.get_scroll_direction();
+            if (direction === Clutter.ScrollDirection.UP) {
+                direction = -1;
+            }
+            else if (direction === Clutter.ScrollDirection.DOWN) {
+                direction = 1;
+            } else {
+                direction = 0;
+            }
+
+            if (direction) {
+                _reorderWorkspace(direction);
+                return Clutter.EVENT_STOP;
+            }
+        }
+
+        return Main.wm.handleWorkspaceScroll(event);
+    },
+
+    _onKeyPressEvent: function(actor, event) {
+        const { ControlsState } = OverviewControls;
+        if (this._overviewAdjustment.value !== ControlsState.WINDOW_PICKER)
+            return Clutter.EVENT_PROPAGATE;
+
+        if (!this.reactive)
+            return Clutter.EVENT_PROPAGATE;
+
+        const { workspaceManager } = global;
+        const vertical = workspaceManager.layout_rows === -1;
+        const rtl = this.get_text_direction() === Clutter.TextDirection.RTL;
+
+        let which;
+        switch (event.get_key_symbol()) {
+        case Clutter.KEY_Page_Up:
+            if (vertical)
+                which = Meta.MotionDirection.UP;
+            else if (rtl)
+                which = Meta.MotionDirection.RIGHT;
+            else
+                which = Meta.MotionDirection.LEFT;
+            break;
+        case Clutter.KEY_Page_Down:
+            if (vertical)
+                which = Meta.MotionDirection.DOWN;
+            else if (rtl)
+                which = Meta.MotionDirection.LEFT;
+            else
+                which = Meta.MotionDirection.RIGHT;
+            break;
+        case Clutter.KEY_Home:
+            which = 0;
+            break;
+        case Clutter.KEY_End:
+            which = workspaceManager.n_workspaces - 1;
+            break;
+        default:
+            return Clutter.EVENT_PROPAGATE;
+        }
+
+        let ws;
+        if (which < 0)
+            // Negative workspace numbers are directions
+            // with respect to the current workspace
+            ws = workspaceManager.get_active_workspace().get_neighbor(which);
+        else
+            // Otherwise it is a workspace index
+            ws = workspaceManager.get_workspace_by_index(which);
+
+        if (global.get_pointer()[2] & Clutter.ModifierType.SHIFT_MASK) {
+            let direction;
+            if (which === Meta.MotionDirection.UP || which === Meta.MotionDirection.LEFT)
+                direction = -1;
+            else if (which === Meta.MotionDirection.DOWN || which === Meta.MotionDirection.RIGHT)
+                direction = 1;
+            if (direction)
+                _reorderWorkspace(direction);
+                return Clutter.EVENT_STOP;
+        }
+
+        if (ws)
+            Main.wm.actionMoveWorkspace(ws);
+
+        return Clutter.EVENT_STOP;
     }
 }
 
@@ -853,9 +956,15 @@ var ControlsManagerLayoutOverride = {
             dashHeight = Math.min(dashHeight, maxDashHeight);
 
             dashWidth = Math.min(dashWidth, width);
+            const DASH_CENTERED = false; // for testing, before option will be added
             let dashX = Math.min(spacing, (width - dashWidth) / 2)
-            childBox.set_origin(dashX, startY);
-            childBox.set_size(dashWidth, dashHeight);
+            if (DASH_CENTERED) {
+                childBox.set_origin(0, startY);
+                childBox.set_size(width, dashHeight);
+            } else {
+                childBox.set_origin(dashX, startY);
+                childBox.set_size(dashWidth, dashHeight);
+            }
         //}
 
         this._dash.allocate(childBox);
@@ -903,8 +1012,8 @@ var ControlsManagerLayoutOverride = {
         let [searchHeight] = this._searchEntry.get_preferred_height(width - thumbnailsWidth - dashVertical ? dashWidth : 0);
 
         // Y possition under top Dash
-        childBox.set_origin(searchXoffset, startY + (dashVertical ? spacing : dashHeight - spacing));
-        childBox.set_size(width - searchXoffset, searchHeight);
+        childBox.set_origin(/*searchXoffset*/0, startY + (dashVertical ? spacing : dashHeight - spacing));
+        childBox.set_size(width /*- searchXoffset*/, searchHeight);
 
         this._searchEntry.allocate(childBox);
 
@@ -955,6 +1064,7 @@ var ControlsManagerLayoutOverride = {
 
         // Search
         childBox.set_origin(searchXoffset, startY + dashHeight + spacing + searchHeight + spacing);
+        //childBox.set_size(width - 2 * searchXoffset, availableHeight);
         childBox.set_size(width - searchXoffset, availableHeight);
 
         this._searchController.allocate(childBox);
@@ -1112,4 +1222,13 @@ function _updateWorkspacesDisplay() {
     }
 
     this._workspacesDisplay.ease(params);
+}
+
+function _reorderWorkspace(direction = 0) {
+    let activeWs = global.workspace_manager.get_active_workspace();
+    let activeWsIdx = activeWs.index();
+    let targetIdx = activeWsIdx + direction;
+    if (targetIdx > -1 && targetIdx < (global.workspace_manager.get_n_workspaces())) {
+        global.workspace_manager.reorder_workspace(activeWs, targetIdx);
+    }
 }
