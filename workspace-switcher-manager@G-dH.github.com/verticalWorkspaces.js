@@ -1197,14 +1197,15 @@ var AppIconOverride = {
         let isMiddleButton = button && button == Clutter.BUTTON_MIDDLE;
         let isCtrlPressed = (modifiers & Clutter.ModifierType.CONTROL_MASK) != 0;
         let isShiftPressed = (modifiers & Clutter.ModifierType.SHIFT_MASK) != 0;
-
-        const currentWS = global.workspace_manager.get_active_workspace();
-        let appOnCurrentWS = false;
-        this.app.get_windows().forEach(w => appOnCurrentWS = appOnCurrentWS || (w.get_workspace() === currentWS));
-
         let openNewWindow = this.app.can_open_new_window() &&
                             this.app.state == Shell.AppState.RUNNING &&
                             (isCtrlPressed || isMiddleButton);
+
+        const currentWS = global.workspace_manager.get_active_workspace();
+        let appOnCurrentWS = false;
+        this.app.get_windows().forEach(
+            w => appOnCurrentWS = appOnCurrentWS || (w.get_workspace() === currentWS)
+        );
 
         if ((this.app.state == Shell.AppState.STOPPED || openNewWindow) && !isShiftPressed)
             this.animateLaunch();
@@ -1216,6 +1217,7 @@ var AppIconOverride = {
         } else if (this.app.get_n_windows() > 1 && !appOnCurrentWS) {
             const appWS = this.app.get_windows()[0].get_workspace();
             Main.wm.actionMoveWorkspace(appWS);
+            Main.overview.dash.showAppsButton.checked = false;
             return;
         } else if (isShiftPressed && this.app.get_windows().length) {
             this.app.get_windows().forEach(w => w.change_workspace(global.workspace_manager.get_active_workspace()));
@@ -1265,6 +1267,10 @@ function _updateWorkspacesDisplay() {
         duration: 0,
         mode: Clutter.AnimationMode.EASE_OUT_QUAD,
         onComplete: () => {
+            // workspacesDisplay needs to go from screen, otherwise it blocks DND operations within the App Display
+            // but the 'visibile' property ruins transition animation and breakes workspace control
+            // scale_y = 0 works same as visibile = 0 but without collateral damage
+            this._workspacesDisplay.scale_y = (progress == 1 && finalState == ControlsState.APP_GRID) ? 0 : 1;
             this._workspacesDisplay.reactive = workspacesDisplayVisible;
             this._workspacesDisplay.setPrimaryWorkspaceVisible(workspacesDisplayVisible);
             // following changes in which axis will operate overshoot detection which switches appDisplay pages while dragging app icon to vertical
@@ -1272,6 +1278,11 @@ function _updateWorkspacesDisplay() {
             if (finalState === ControlsState.APP_GRID)
                 Main.overview._overview.controls._appDisplay._orientation = Clutter.Orientation.VERTICAL;
         }
+    }
+
+    // scale workspaces back to normal size before transition from AppGrid view
+    if (progress < 1 && !this._workspacesDisplay.scale_y) {
+        this._workspacesDisplay.scale_y = 1;
     }
 
     this._workspacesDisplay.ease(params);
