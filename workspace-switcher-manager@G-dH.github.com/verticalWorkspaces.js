@@ -184,6 +184,7 @@ function _connectAppButton() {
 }
 
 // ---- workspacesView ----------------------------------------
+// WorkspacesView
 var WorkspacesViewOverride = {
     _getFirstFitSingleWorkspaceBox: function(box, spacing, vertical) {
         let [width, height] = box.get_size();
@@ -348,7 +349,8 @@ var SecondaryMonitorDisplayOverride = {
     }
 }
 
-// -----WorkspacesDisplay------------------------------------------------------------------------
+// WorkspacesDisplay
+// add reorder workspace using Shift + (mouse wheel / PageUP/PageDown)
 
 var WorkspacesDisplayOverride = {
     _onScrollEvent: function(actor, event) {
@@ -418,6 +420,7 @@ var WorkspacesDisplayOverride = {
         case Clutter.KEY_End:
             which = workspaceManager.n_workspaces - 1;
             break;
+        case Clutter.KEY_Tab:
         case Clutter.KEY_space:
             Main.ctrlAltTabManager._items.forEach(i => {if (i.sortGroup === 1 && i.name === 'Dash') Main.ctrlAltTabManager.focusGroup(i)});
             return Clutter.EVENT_STOP;
@@ -434,7 +437,7 @@ var WorkspacesDisplayOverride = {
             // Otherwise it is a workspace index
             ws = workspaceManager.get_workspace_by_index(which);
 
-        if (global.get_pointer()[2] & Clutter.ModifierType.SHIFT_MASK) {
+        if (event.get_state() & Clutter.ModifierType.SHIFT_MASK) {
             let direction;
             if (which === Meta.MotionDirection.UP || which === Meta.MotionDirection.LEFT)
                 direction = -1;
@@ -454,6 +457,7 @@ var WorkspacesDisplayOverride = {
 
 //------workspaceThumbnail------------------------------------------------------------------------
 
+// WorkspaceThumbnail
 var WorkspaceThumbnailOverride = {
     after__init: function () {
         this._bgManager = new Background.BackgroundManager({
@@ -471,8 +475,7 @@ var WorkspaceThumbnailOverride = {
     }
 }
 
-//--- ThumbnailsBox
-
+// ThumbnailsBox
 var ThumbnailsBoxOverride = {
     _activateThumbnailAtPoint: function(stageX, stageY, time) {
         const [r_, x, y] = this.transform_stage_point(stageX, stageY);
@@ -800,7 +803,7 @@ var ThumbnailsBoxOverride = {
 
 //------- overviewControls --------------------------------
 
-// ------ ControlsManager ----------------------------------
+// ControlsManager
 
 var ControlsManagerOverride = {
     _getFitModeForState: function(state) {
@@ -1162,7 +1165,8 @@ var DashItemContainerOverride = {
     }
 }
 
-// appDisplay
+//------ appDisplay --------------------------------------------------------------------------------
+// appdisplay
 var AppDisplayOverride  = {
     // this fixes dnd from appDisplay to workspace switcher if appDisplay is on page 1. weird bug, weird solution..
     _pageForCoords: function(x, y) {
@@ -1185,7 +1189,7 @@ var AppDisplayOverride  = {
     }
 }
 
-//AppIcon
+// AppIcon
 var AppIconOverride = {
     activate(button) {
         let event = Clutter.get_current_event();
@@ -1193,15 +1197,26 @@ var AppIconOverride = {
         let isMiddleButton = button && button == Clutter.BUTTON_MIDDLE;
         let isCtrlPressed = (modifiers & Clutter.ModifierType.CONTROL_MASK) != 0;
         let isShiftPressed = (modifiers & Clutter.ModifierType.SHIFT_MASK) != 0;
+
+        const currentWS = global.workspace_manager.get_active_workspace();
+        let appOnCurrentWS = false;
+        this.app.get_windows().forEach(w => appOnCurrentWS = appOnCurrentWS || (w.get_workspace() === currentWS));
+
         let openNewWindow = this.app.can_open_new_window() &&
                             this.app.state == Shell.AppState.RUNNING &&
                             (isCtrlPressed || isMiddleButton);
 
-        if (this.app.state == Shell.AppState.STOPPED || openNewWindow)
+        if ((this.app.state == Shell.AppState.STOPPED || openNewWindow) && !isShiftPressed)
             this.animateLaunch();
 
         if (openNewWindow) {
             this.app.open_new_window(-1);
+        // if the app has more than one window and has no window on the current workspace,
+        // don't activate the app, only move the overview to the workspace with the app's recent window
+        } else if (this.app.get_n_windows() > 1 && !appOnCurrentWS) {
+            const appWS = this.app.get_windows()[0].get_workspace();
+            Main.wm.actionMoveWorkspace(appWS);
+            return;
         } else if (isShiftPressed && this.app.get_windows().length) {
             this.app.get_windows().forEach(w => w.change_workspace(global.workspace_manager.get_active_workspace()));
             return;
@@ -1214,6 +1229,9 @@ var AppIconOverride = {
         Main.overview.hide();
     }
 }
+
+// --------------------------------------------------------------------------------------------------------------------
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 function _updateWorkspacesDisplay() {
     const { initialState, finalState, progress } = this._stateAdjustment.getStateTransitionParams();
