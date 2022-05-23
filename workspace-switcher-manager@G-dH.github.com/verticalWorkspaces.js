@@ -61,6 +61,7 @@ function activate(verticalOverview = false) {
     verticalOverrides['WorkspaceLayout'] = _Util.overrideProto(Workspace.WorkspaceLayout.prototype, WorkspaceLayoutOverride);
     verticalOverrides['WorkspacesView'] = _Util.overrideProto(WorkspacesView.WorkspacesView.prototype, WorkspacesViewOverride);
     verticalOverrides['WorkspacesDisplay'] = _Util.overrideProto(WorkspacesView.WorkspacesDisplay.prototype, WorkspacesDisplayOverride);
+    verticalOverrides['AppIcon'] = _Util.overrideProto(AppDisplay.AppIcon.prototype, AppIconOverride);
     if (_verticalOverview) {
         verticalOverrides['ThumbnailsBox'] = _Util.overrideProto(WorkspaceThumbnail.ThumbnailsBox.prototype, ThumbnailsBoxOverride);
         verticalOverrides['WorkspaceThumbnail'] = _Util.overrideProto(WorkspaceThumbnail.WorkspaceThumbnail.prototype, WorkspaceThumbnailOverride);
@@ -136,6 +137,7 @@ function reset() {
     _Util.overrideProto(WorkspacesView.WorkspacesView.prototype, verticalOverrides['WorkspacesView']);
     _Util.overrideProto(WorkspacesView.WorkspacesDisplay.prototype, verticalOverrides['WorkspacesDisplay']);
     _Util.overrideProto(WorkspacesView.SecondaryMonitorDisplay.prototype, verticalOverrides['SecondaryMonitorDisplay']);
+    _Util.overrideProto(AppDisplay.AppIcon.prototype, verticalOverrides['AppIcon']);
     if (shellVersion >= 42) {
         _Util.overrideProto(WorkspaceThumbnail.ThumbnailsBox.prototype, verticalOverrides['ThumbnailsBox']);
         _Util.overrideProto(WorkspaceThumbnail.WorkspaceThumbnail.prototype, verticalOverrides['WorkspaceThumbnail']);
@@ -416,6 +418,9 @@ var WorkspacesDisplayOverride = {
         case Clutter.KEY_End:
             which = workspaceManager.n_workspaces - 1;
             break;
+        case Clutter.KEY_space:
+            Main.ctrlAltTabManager._items.forEach(i => {if (i.sortGroup === 1 && i.name === 'Dash') Main.ctrlAltTabManager.focusGroup(i)});
+            return Clutter.EVENT_STOP;
         default:
             return Clutter.EVENT_PROPAGATE;
         }
@@ -1177,6 +1182,36 @@ var AppDisplayOverride  = {
             return rtl ? AppDisplay.SidePages.PREVIOUS : AppDisplay.SidePages.NEXT;
 
         return AppDisplay.SidePages.NONE;
+    }
+}
+
+//AppIcon
+var AppIconOverride = {
+    activate(button) {
+        let event = Clutter.get_current_event();
+        let modifiers = event ? event.get_state() : 0;
+        let isMiddleButton = button && button == Clutter.BUTTON_MIDDLE;
+        let isCtrlPressed = (modifiers & Clutter.ModifierType.CONTROL_MASK) != 0;
+        let isShiftPressed = (modifiers & Clutter.ModifierType.SHIFT_MASK) != 0;
+        let openNewWindow = this.app.can_open_new_window() &&
+                            this.app.state == Shell.AppState.RUNNING &&
+                            (isCtrlPressed || isMiddleButton);
+
+        if (this.app.state == Shell.AppState.STOPPED || openNewWindow)
+            this.animateLaunch();
+
+        if (openNewWindow) {
+            this.app.open_new_window(-1);
+        } else if (isShiftPressed && this.app.get_windows().length) {
+            this.app.get_windows().forEach(w => w.change_workspace(global.workspace_manager.get_active_workspace()));
+            return;
+        } else if (isShiftPressed) {
+            return;
+        } else {
+            this.app.activate();
+        }
+
+        Main.overview.hide();
     }
 }
 
