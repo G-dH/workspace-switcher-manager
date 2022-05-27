@@ -16,6 +16,7 @@ const Background = imports.ui.background;
 const WorkspacesView = imports.ui.workspacesView;
 const Workspace = imports.ui.workspace;
 const OverviewControls = imports.ui.overviewControls;
+const WindowPreview = imports.ui.windowPreview;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
@@ -35,7 +36,7 @@ var WORKSPACE_CUT_SIZE = 10;
 const WORKSPACE_MAX_SPACING = 200;
 const WORKSPACE_MIN_SPACING = 24;
 
-var DASH_MAX_WIDTH_RATIO = 0.15;
+var DASH_MAX_HEIGHT_RATIO = 0.15;
 var DASH_ITEM_LABEL_SHOW_TIME = 150;
 
 var ControlsState = {
@@ -45,11 +46,14 @@ var ControlsState = {
 };
 
 let verticalOverrides = {};
+let _appIconInjections = {};
+let _windowPreviewInjections = {};
 let _wsDisplayVisibleSignalId;
 let _stateAdjustmentValueSignalId;
 
 let _appButtonSigHandlerId;
-let _vertActivationSigId;
+let _shownOverviewSigId;
+let _hidingOverviewSigId;
 let _searchControllerSignalId;
 let _verticalOverview;
 let _prevDash;
@@ -60,8 +64,8 @@ function activate(verticalOverview = false) {
         reset();
     verticalOverrides['WorkspaceLayout'] = _Util.overrideProto(Workspace.WorkspaceLayout.prototype, WorkspaceLayoutOverride);
     verticalOverrides['WorkspacesView'] = _Util.overrideProto(WorkspacesView.WorkspacesView.prototype, WorkspacesViewOverride);
-    verticalOverrides['WorkspacesDisplay'] = _Util.overrideProto(WorkspacesView.WorkspacesDisplay.prototype, WorkspacesDisplayOverride);
-    verticalOverrides['AppIcon'] = _Util.overrideProto(AppDisplay.AppIcon.prototype, AppIconOverride);
+    _injectWindowPreview();
+
     if (_verticalOverview) {
         verticalOverrides['ThumbnailsBox'] = _Util.overrideProto(WorkspaceThumbnail.ThumbnailsBox.prototype, ThumbnailsBoxOverride);
         verticalOverrides['WorkspaceThumbnail'] = _Util.overrideProto(WorkspaceThumbnail.WorkspaceThumbnail.prototype, WorkspaceThumbnailOverride);
@@ -78,21 +82,30 @@ function activate(verticalOverview = false) {
         _stateAdjustmentValueSignalId = controlsManager._stateAdjustment.connect("notify::value", _updateWorkspacesDisplay.bind(controlsManager));
         _wsDisplayVisibleSignalId = controlsManager._workspacesDisplay.connect("notify::visible", controlsManager._workspacesDisplay._updateWorkspacesViews.bind(controlsManager._workspacesDisplay));
 
-        _vertActivationSigId = Main.overview.connect('showing', () => {
-            // this update collapsed ws thumbnails (workaroud for now, collapsing when only 1 ws should be disabled)
-            Main.overview._overview._controls._thumbnailsBox.expandFraction = 1;
-            // when user changes Dash to Dock / Ubuntu dock position on the screen, the dock will be recreated and overview layout code injected.
-            Main.overview._overview._controls._thumbnailsBox.show();
-            if (Main.overview.dash !== _prevDash && _prevDash !== undefined) {
+        _prevDash = Main.overview.dash;
+        _shownOverviewSigId = Main.overview.connect('shown', () => {
+            const dash = Main.overview.dash;
+            if (dash !== _prevDash) {
                 reset();
                 activate(_verticalOverview);
                 //_connectAppButton();
-                _prevDash = Main.overview.dash;
-                Main.overview.dash._background.opacity = 0;
+                _prevDash = dash;
+                dash._background.opacity = 0;
                 _moveDashAppGridIconLeft();
                 return true;
             }
+
+             // Move dash above workspaces
+            dash.get_parent().set_child_above_sibling(dash, null);
         });
+
+        _hidingOverviewSigId = Main.overview.connect('hiding', () => {
+            // Move dash below workspaces
+            const appDisplay = Main.overview._overview.controls._workspacesDisplay;
+            const parent = appDisplay.get_parent();
+            parent.set_child_above_sibling(appDisplay, null);
+        });
+
         Main.overview.dash._background.opacity = 0;
         Main.overview.searchEntry.visible = false;
         _moveDashAppGridIconLeft();
@@ -119,9 +132,14 @@ function reset() {
         _wsDisplayVisibleSignalId = 0;
     }
 
-    if (_vertActivationSigId) {
-        Main.overview.disconnect(_vertActivationSigId);
-        _vertActivationSigId = 0;
+    if (_shownOverviewSigId) {
+        Main.overview.disconnect(_shownOverviewSigId);
+        _shownOverviewSigId = 0;
+    }
+
+    if (_hidingOverviewSigId) {
+        Main.overview.disconnect(_hidingOverviewSigId);
+        _hidingOverviewSigId = 0;
     }
 
     if (_searchControllerSignalId) {
@@ -134,10 +152,20 @@ function reset() {
         _appButtonSigHandlerId = 0;
     }
 
+    /*for (let name in _appIconInjections) {
+        _Util.removeInjection(AppDisplay.AppIcon.prototype, _appIconInjections, name);
+    }
+    _appIconInjections = {};*/
+
+    for (let name in _windowPreviewInjections) {
+        _Util.removeInjection(WindowPreview.WindowPreview.prototype, _windowPreviewInjections, name);
+    }
+    _windowPreviewInjections = {};
+
     _Util.overrideProto(WorkspacesView.WorkspacesView.prototype, verticalOverrides['WorkspacesView']);
-    _Util.overrideProto(WorkspacesView.WorkspacesDisplay.prototype, verticalOverrides['WorkspacesDisplay']);
     _Util.overrideProto(WorkspacesView.SecondaryMonitorDisplay.prototype, verticalOverrides['SecondaryMonitorDisplay']);
-    _Util.overrideProto(AppDisplay.AppIcon.prototype, verticalOverrides['AppIcon']);
+    //_Util.overrideProto(WorkspacesView.WorkspacesDisplay.prototype, verticalOverrides['WorkspacesDisplay']);
+    //_Util.overrideProto(AppDisplay.AppIcon.prototype, verticalOverrides['AppIcon']);
     if (shellVersion >= 42) {
         _Util.overrideProto(WorkspaceThumbnail.ThumbnailsBox.prototype, verticalOverrides['ThumbnailsBox']);
         _Util.overrideProto(WorkspaceThumbnail.WorkspaceThumbnail.prototype, verticalOverrides['WorkspaceThumbnail']);
@@ -156,6 +184,26 @@ function reset() {
     const reset = true;
     _moveDashAppGridIconLeft(reset);
     _prevDash = null;
+}
+
+function _injectAppIcon() {
+    _appIconInjections['_init'] = _Util.injectToFunction(
+        AppDisplay.AppIcon.prototype, '_init', _connectAppIconScroll
+    );
+}
+
+//----- WindowPreview ------------------------------------------------------------------
+
+function _injectWindowPreview() {
+    _windowPreviewInjections['_init'] = _Util.injectToFunction(
+        WindowPreview.WindowPreview.prototype, '_init', function() {
+            this._title.get_constraints()[1].offset = - 1.3 * WindowPreview.ICON_SIZE;
+            /*const tracker = Shell.WindowTracker.get_default();
+            const app = tracker.get_window_app(this.metaWindow);
+            this._enterConnectionID = this.connect_after('enter-event', () => _highlightMyWindows(this, app));
+            this._leaveConnectionID = this.connect_after('leave-event', () => _highlightMyWindows(this, app, 255));*/
+        }
+    );
 }
 
 function _moveDashAppGridIconLeft(reset = false) {
@@ -346,112 +394,6 @@ var SecondaryMonitorDisplayOverride = {
             workspacesBox = initialBox.interpolate(finalBox, progress);
         }
         this._workspacesView.allocate(workspacesBox);
-    }
-}
-
-// WorkspacesDisplay
-// add reorder workspace using Shift + (mouse wheel / PageUP/PageDown)
-
-var WorkspacesDisplayOverride = {
-    _onScrollEvent: function(actor, event) {
-        if (this._swipeTracker.canHandleScrollEvent(event))
-            return Clutter.EVENT_PROPAGATE;
-
-        if (!this.mapped)
-            return Clutter.EVENT_PROPAGATE;
-
-        if (this._workspacesOnlyOnPrimary &&
-            this._getMonitorIndexForEvent(event) != this._primaryIndex)
-            return Clutter.EVENT_PROPAGATE;
-
-        if (global.get_pointer()[2] & Clutter.ModifierType.SHIFT_MASK) {
-            let direction = event.get_scroll_direction();
-            if (direction === Clutter.ScrollDirection.UP) {
-                direction = -1;
-            }
-            else if (direction === Clutter.ScrollDirection.DOWN) {
-                direction = 1;
-            } else {
-                direction = 0;
-            }
-
-            if (direction) {
-                _reorderWorkspace(direction);
-                return Clutter.EVENT_STOP;
-            }
-        }
-
-        return Main.wm.handleWorkspaceScroll(event);
-    },
-
-    _onKeyPressEvent: function(actor, event) {
-        const { ControlsState } = OverviewControls;
-        if (this._overviewAdjustment.value !== ControlsState.WINDOW_PICKER)
-            return Clutter.EVENT_PROPAGATE;
-
-        if (!this.reactive)
-            return Clutter.EVENT_PROPAGATE;
-
-        const { workspaceManager } = global;
-        const vertical = workspaceManager.layout_rows === -1;
-        const rtl = this.get_text_direction() === Clutter.TextDirection.RTL;
-
-        let which;
-        switch (event.get_key_symbol()) {
-        case Clutter.KEY_Page_Up:
-            if (vertical)
-                which = Meta.MotionDirection.UP;
-            else if (rtl)
-                which = Meta.MotionDirection.RIGHT;
-            else
-                which = Meta.MotionDirection.LEFT;
-            break;
-        case Clutter.KEY_Page_Down:
-            if (vertical)
-                which = Meta.MotionDirection.DOWN;
-            else if (rtl)
-                which = Meta.MotionDirection.LEFT;
-            else
-                which = Meta.MotionDirection.RIGHT;
-            break;
-        case Clutter.KEY_Home:
-            which = 0;
-            break;
-        case Clutter.KEY_End:
-            which = workspaceManager.n_workspaces - 1;
-            break;
-        case Clutter.KEY_Tab:
-        case Clutter.KEY_space:
-            Main.ctrlAltTabManager._items.forEach(i => {if (i.sortGroup === 1 && i.name === 'Dash') Main.ctrlAltTabManager.focusGroup(i)});
-            return Clutter.EVENT_STOP;
-        default:
-            return Clutter.EVENT_PROPAGATE;
-        }
-
-        let ws;
-        if (which < 0)
-            // Negative workspace numbers are directions
-            // with respect to the current workspace
-            ws = workspaceManager.get_active_workspace().get_neighbor(which);
-        else
-            // Otherwise it is a workspace index
-            ws = workspaceManager.get_workspace_by_index(which);
-
-        if (event.get_state() & Clutter.ModifierType.SHIFT_MASK) {
-            let direction;
-            if (which === Meta.MotionDirection.UP || which === Meta.MotionDirection.LEFT)
-                direction = -1;
-            else if (which === Meta.MotionDirection.DOWN || which === Meta.MotionDirection.RIGHT)
-                direction = 1;
-            if (direction)
-                _reorderWorkspace(direction);
-                return Clutter.EVENT_STOP;
-        }
-
-        if (ws)
-            Main.wm.actionMoveWorkspace(ws);
-
-        return Clutter.EVENT_STOP;
     }
 }
 
@@ -945,35 +887,25 @@ var ControlsManagerLayoutOverride = {
         let availableHeight = height;
 
         // Dash
-        const maxDashHeight = Math.round(box.get_height() * OverviewControls.DASH_MAX_HEIGHT_RATIO);
-        const maxDashWidth = Math.round(box.get_width() * DASH_MAX_WIDTH_RATIO);
+        const maxDashHeight = Math.round(box.get_height() * DASH_MAX_HEIGHT_RATIO);
         let dashHeight;
         let dashWidth;
-        /*if (VERTICAL_DASH) { // just for testing
-            this._dash.setMaxSize(maxDashWidth, height);
-            [dashWidth] = this._dash.get_preferred_height(width);
-            dashWidth = Math.min(dashWidth, maxDashWidth);
 
-            childBox.set_origin(startX + spacing, startY);
-            childBox.set_size(dashWidth, height);
+        this._dash.setMaxSize(width, maxDashHeight);
+        [, dashHeight] = this._dash.get_preferred_height(width);
+        [, dashWidth] = this._dash.get_preferred_width(dashHeight);
+        dashHeight = Math.min(dashHeight, maxDashHeight);
+        dashWidth = Math.min(dashWidth, width);
+        const DASH_CENTERED = false; // for testing, before option will be added
+        let dashX = Math.min(spacing, (width - dashWidth) / 2)
+        if (DASH_CENTERED) {
+            childBox.set_origin(0, startY);
+            childBox.set_size(width, dashHeight);
+        } else {
+            childBox.set_origin(dashX, startY);
+            childBox.set_size(dashWidth, dashHeight);
+        }
 
-        } else {*/
-            this._dash.setMaxSize(width, maxDashHeight);
-            [, dashHeight] = this._dash.get_preferred_height(width);
-            [, dashWidth] = this._dash.get_preferred_width(dashHeight);
-            dashHeight = Math.min(dashHeight, maxDashHeight);
-
-            dashWidth = Math.min(dashWidth, width);
-            const DASH_CENTERED = false; // for testing, before option will be added
-            let dashX = Math.min(spacing, (width - dashWidth) / 2)
-            if (DASH_CENTERED) {
-                childBox.set_origin(0, startY);
-                childBox.set_size(width, dashHeight);
-            } else {
-                childBox.set_origin(dashX, startY);
-                childBox.set_size(dashWidth, dashHeight);
-            }
-        //}
 
         this._dash.allocate(childBox);
         // dash cloud be other than the default, could be Dash to Dock
@@ -994,11 +926,9 @@ var ControlsManagerLayoutOverride = {
             thumbnailsHeight = height - spacing - dashHeight;
 
             thumbnailsWidth = this._workspacesThumbnails.get_preferred_width(thumbnailsHeight)[0];
-
             thumbnailsWidth = Math.round(Math.min(
                 thumbnailsWidth * expandFraction,
                 width * WorkspaceThumbnail.MAX_THUMBNAIL_SCALE));
-
                 let dockOffset = 0;
 
             const dash = Main.overview.dash;
@@ -1166,7 +1096,8 @@ var DashItemContainerOverride = {
 }
 
 //------ appDisplay --------------------------------------------------------------------------------
-// appdisplay
+
+// Appdisplay
 var AppDisplayOverride  = {
     // this fixes dnd from appDisplay to workspace switcher if appDisplay is on page 1. weird bug, weird solution..
     _pageForCoords: function(x, y) {
@@ -1186,49 +1117,6 @@ var AppDisplayOverride  = {
             return rtl ? AppDisplay.SidePages.PREVIOUS : AppDisplay.SidePages.NEXT;
 
         return AppDisplay.SidePages.NONE;
-    }
-}
-
-// AppIcon
-var AppIconOverride = {
-    activate(button) {
-        let event = Clutter.get_current_event();
-        let modifiers = event ? event.get_state() : 0;
-        let isMiddleButton = button && button == Clutter.BUTTON_MIDDLE;
-        let isCtrlPressed = (modifiers & Clutter.ModifierType.CONTROL_MASK) != 0;
-        let isShiftPressed = (modifiers & Clutter.ModifierType.SHIFT_MASK) != 0;
-        let openNewWindow = this.app.can_open_new_window() &&
-                            this.app.state == Shell.AppState.RUNNING &&
-                            (isCtrlPressed || isMiddleButton);
-
-        const currentWS = global.workspace_manager.get_active_workspace();
-        let appOnCurrentWS = false;
-        this.app.get_windows().forEach(
-            w => appOnCurrentWS = appOnCurrentWS || (w.get_workspace() === currentWS)
-        );
-
-        if ((this.app.state == Shell.AppState.STOPPED || openNewWindow) && !isShiftPressed)
-            this.animateLaunch();
-
-        if (openNewWindow) {
-            this.app.open_new_window(-1);
-        // if the app has more than one window and has no window on the current workspace,
-        // don't activate the app, only move the overview to the workspace with the app's recent window
-        } else if (this.app.get_n_windows() > 1 && !appOnCurrentWS) {
-            const appWS = this.app.get_windows()[0].get_workspace();
-            Main.wm.actionMoveWorkspace(appWS);
-            Main.overview.dash.showAppsButton.checked = false;
-            return;
-        } else if (isShiftPressed && this.app.get_windows().length) {
-            this.app.get_windows().forEach(w => w.change_workspace(global.workspace_manager.get_active_workspace()));
-            return;
-        } else if (isShiftPressed) {
-            return;
-        } else {
-            this.app.activate();
-        }
-
-        Main.overview.hide();
     }
 }
 
@@ -1286,13 +1174,4 @@ function _updateWorkspacesDisplay() {
     }
 
     this._workspacesDisplay.ease(params);
-}
-
-function _reorderWorkspace(direction = 0) {
-    let activeWs = global.workspace_manager.get_active_workspace();
-    let activeWsIdx = activeWs.index();
-    let targetIdx = activeWsIdx + direction;
-    if (targetIdx > -1 && targetIdx < (global.workspace_manager.get_n_workspaces())) {
-        global.workspace_manager.reorder_workspace(activeWs, targetIdx);
-    }
 }

@@ -7,17 +7,15 @@ const Main = imports.ui.main;
 const WorkspaceSwitcherPopup = imports.ui.workspaceSwitcherPopup;
 const AltTab = imports.ui.altTab;
 const WorkspaceThumbnail = imports.ui.workspaceThumbnail;
+const WindowManager = imports.ui.windowManager;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Settings = Me.imports.settings;
-const Util = Me.imports.util;
+const _Util = Me.imports.util;
 let VerticalWorkspaces = null;
 
 const shellVersion = Settings.shellVersion;
-
-
-let WindowPreview;
 
 let originalWsPopup;
 let originalWsPopupList;
@@ -26,7 +24,6 @@ let original_getNeighbor;
 let defaultOrientationVertical;
 let enableTimeoutId = 0;
 let prefsDemoTimeoutId = 0;
-let windowPreviewInjections;
 
 let gOptions;
 
@@ -49,7 +46,6 @@ function init() {
     original_getNeighbor = Meta.Workspace.prototype.get_neighbor;
 
     if (shellVersion >= 40) {
-        WindowPreview = imports.ui.windowPreview;
         VerticalWorkspaces = Me.imports.verticalWorkspaces;
     }
 
@@ -57,12 +53,10 @@ function init() {
 }
 
 function enable() {
-    windowPreviewInjections = {};
     enableTimeoutId = GLib.timeout_add(
         GLib.PRIORITY_DEFAULT,
         700,
         () => {
-
             gOptions = new Settings.MscOptions();
 
             _storeDefaultColors();
@@ -74,10 +68,6 @@ function enable() {
                 _setCustomWsPopup();
             _reverseWsOrientation(gOptions.get('reverseWsOrientation'));
             _updateNeighbor();
-
-            if (shellVersion >= 40) {
-                _injectWindowPreview();
-            }
 
             enableTimeoutId = 0;
 
@@ -109,11 +99,6 @@ function disable() {
 
     _setDefaultWsPopup();
     Meta.Workspace.prototype.get_neighbor = original_getNeighbor;
-
-    for (let name in windowPreviewInjections) {
-        removeInjection(WindowPreview.WindowPreview.prototype, windowPreviewInjections, name);
-    }
-    windowPreviewInjections = {};
 
     _reverseWsOrientation(false);
 }
@@ -309,17 +294,7 @@ function getNeighbor(direction) {
     return global.workspace_manager.get_workspace_by_index(index);
 }
 
-//----- WindowPreview ------------------------------------------------------------------
-
-function _injectWindowPreview() {
-    windowPreviewInjections['showOverlay'] = injectToFunction(
-        WindowPreview.WindowPreview.prototype, 'showOverlay', function() {
-            this._title.get_constraints()[1].offset = - 1.3 * WindowPreview.ICON_SIZE;
-        }
-    );
-}
-
-// ----------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
 
 function _getWindowApp(metaWindow) {
     let tracker = Shell.WindowTracker.get_default();
@@ -959,23 +934,6 @@ class WorkspaceSwitcherPopupList extends St.Widget {
         }
     }
 });
-
-function injectToFunction(parent, name, func) {
-    let origin = parent[name];
-    parent[name] = function() {
-        let ret;
-        ret = origin.apply(this, arguments);
-        if (ret === undefined)
-            ret = func.apply(this, arguments);
-        return ret;
-    }
-
-    return origin;
-}
-
-function removeInjection(object, injection, name) {
-    object[name] = injection[name];
-}
 
 function debug(message) {
     const stack = new Error().stack.split('\n');
