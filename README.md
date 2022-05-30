@@ -60,7 +60,6 @@ If you like my work and want to keep me motivated, give me some feedback. You ca
 ## Screenshots
 
 ![](WSM0.jpg)
-![](WSM-vertical-overview.png)
 ![](WSM1.png)
 ![](WSM2.png)
 ![](WSM3.png)

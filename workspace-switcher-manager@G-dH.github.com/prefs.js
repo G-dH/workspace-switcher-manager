@@ -716,20 +716,6 @@ Static - number of workspaces is fixed to the number you can set below.`),
         )
     );
     //-----------------------------------------------------
-    if (shellVersion >= 42) {
-        const verticalSwitch = _newSwitch();
-        optionList.push(
-            _optionsItem(
-                _('Adapt Activities Overview to Vertical Layout'),
-                _('Layout of the Overview will be changed to better serve the vertical workspace orientation and to minimize mouse pointer travel. So far, only GNOME 42 is supported.'),
-                verticalSwitch,
-                'verticalOverview'
-            )
-        );
-
-        gOptions._gsettings.bind('reverse-ws-orientation', verticalSwitch, 'sensitive', Gio.SettingsBindFlags.DEFAULT);
-    }
-    //-----------------------------------------------------
     optionList.push(
         _optionsItem(
             _makeTitle(_('Workspace Switcher')),

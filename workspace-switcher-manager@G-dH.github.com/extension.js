@@ -166,8 +166,7 @@ function _reverseWsOrientation(reverse = false) {
     if (orientationVertical) {
         global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, -1, 1);
         if (shellVersion >= 40) {
-            const adaptOverview = gOptions.get('verticalOverview') && shellVersion >= 42;
-            VerticalWorkspaces.activate(adaptOverview);
+            VerticalWorkspaces.patch();
         }
 
     } else { // horizontal
