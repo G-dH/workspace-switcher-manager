@@ -55,7 +55,7 @@ function init() {
 function enable() {
     enableTimeoutId = GLib.timeout_add(
         GLib.PRIORITY_DEFAULT,
-        700,
+        500,
         () => {
             gOptions = new Settings.MscOptions();
 
@@ -69,8 +69,8 @@ function enable() {
             _reverseWsOrientation(gOptions.get('reverseWsOrientation'));
             _updateNeighbor();
 
+            log(`${Me.metadata.name}: enabled`);
             enableTimeoutId = 0;
-
             return GLib.SOURCE_REMOVE;
         }
     );
@@ -101,6 +101,7 @@ function disable() {
     Meta.Workspace.prototype.get_neighbor = original_getNeighbor;
 
     _reverseWsOrientation(false);
+    log(`${Me.metadata.name}: disabled`);
 }
 
 function _setCustomWsPopup() {
@@ -276,21 +277,46 @@ function getNeighbor(direction) {
     const wraparound = gOptions.get('wsSwitchWrap');
     const nWorkspaces = global.workspace_manager.n_workspaces - (ignoreLast ? 1 : 0);
     const lastIndex = nWorkspaces - 1;
+    const rows = global.workspace_manager.layout_rows > -1 ? global.workspace_manager.layout_rows : nWorkspaces;
+    const columns = global.workspace_manager.layout_columns > -1 ? global.workspace_manager.layout_columns : nWorkspaces;
 
-    let index;
+    let index = activeIndex;
 
-    if(direction === Meta.MotionDirection.UP || direction === Meta.MotionDirection.LEFT) {
-        index = (activeIndex + lastIndex) % nWorkspaces;
-        if (!wraparound && index > activeIndex) {
-            index = 0;
+    let neigborExists;
+    if (direction === Meta.MotionDirection.LEFT) {
+        index -= 1;
+        const currentRow = Math.floor(activeIndex / columns);
+        const indexRow = Math.floor(index / columns);
+        neigborExists = index > -1 && indexRow === currentRow;
+        if (wraparound && !neigborExists) {
+            index = currentRow * columns + columns - 1;
+            const maxIndexOnLastRow = lastIndex % columns;
+            index = index < lastIndex ? index : currentRow * columns + maxIndexOnLastRow;
         }
-    } else {
-        index = (activeIndex + 1) % nWorkspaces;
-        if (!wraparound && index < activeIndex) {
-            index = lastIndex;
+    } else if (direction === Meta.MotionDirection.RIGHT) {
+        index += 1;
+        const currentRow = Math.floor(activeIndex / columns);
+        const indexRow = Math.floor(index / columns);
+        neigborExists = index <= lastIndex && indexRow === currentRow;
+        if (wraparound && !neigborExists) {
+            index = currentRow * columns;
+        }
+    } else if (direction === Meta.MotionDirection.UP) {
+        index -= columns;
+        neigborExists = index > -1;
+        if (wraparound && !neigborExists) {
+            index = rows * columns + index;
+            index = index < nWorkspaces ? index : index - columns;
+        }
+    } else if (direction === Meta.MotionDirection.DOWN) {
+        index += columns;
+        neigborExists = index <= lastIndex;
+        if (wraparound && !neigborExists) {
+            index = index % columns;
         }
     }
-    return global.workspace_manager.get_workspace_by_index(index);
+
+    return global.workspace_manager.get_workspace_by_index(neigborExists || wraparound ? index : activeIndex);
 }
 
 // -------------------------------------------------------------------------------------
