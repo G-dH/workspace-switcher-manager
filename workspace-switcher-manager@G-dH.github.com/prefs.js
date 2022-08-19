@@ -43,6 +43,8 @@ const WS_TITLE = _('Workspaces');
 const WS_ICON = 'text-editor-symbolic';
 const PRESETS_TITLE = _('Examples');
 const PRESET_ICON = 'view-list-bullet-symbolic';
+const ABOUT_TITLE = _('About');
+const ABOUT_ICON = 'preferences-system-details-symbolic';
 
 function _newImageFromIconName(name, size = null) {
     const args = shellVersion >= 40 ? [name] : [name, size];
@@ -59,9 +61,14 @@ function init() {
 
 // this function is called by GS42 if available and returns libadwaita prefes window
 function fillPreferencesWindow(window) {
-    const generalOptionsPage   = getAdwPage(_getGeneralOptionList(), {
+    const generalOptionsPage = getAdwPage(_getGeneralOptionList(), {
         title: GENERAL_TITLE,
         icon_name: GENERAL_ICON,
+    });
+
+    const aboutPage = getAboutPage({
+        title: ABOUT_TITLE,
+        icon_name: ABOUT_ICON
     });
 
     window.add(generalOptionsPage);
@@ -84,7 +91,8 @@ function fillPreferencesWindow(window) {
             icon_name: WS_ICON }),
         getAdwPage(_getPresetsOptionList(), {
             title: PRESETS_TITLE,
-            icon_name: PRESET_ICON })
+            icon_name: PRESET_ICON }),
+        aboutPage
     ];
 
     window.set_search_enabled(true);
@@ -113,13 +121,16 @@ function _onDestroy() {
 function _updateAdwActivePages() {
     const mode = gOptions.get('popupMode');
     if (_shouldUpdatePages(mode)) {
-        for (let page of customPages) {
+        if (prevPopupMode != -1)
+            windowWidget.remove(customPages[customPages.length - 1]);
+        for (let i = 0; i < customPages.length - 1; i++) {
             if (mode < 2) {
-                windowWidget.add(page);
-            } else {
-                windowWidget.remove(page);
+                windowWidget.add(customPages[i]);
+            } else if (prevPopupMode != -1) {
+                windowWidget.remove(customPages[i]);
             }
         }
+        windowWidget.add(customPages[customPages.length - 1]);
     }
     prevPopupMode = mode;
 }
@@ -208,7 +219,6 @@ function buildPrefsWidget() {
         const height = 800;
         window.set_default_size(width, height);
 
-        
         const headerbar = window.get_titlebar();
         if (shellVersion >= 40) {
             headerbar.title_widget = stackSwitcher;
@@ -1521,4 +1531,116 @@ function _getPresetsOptionList() {
     );
 
     return optionList;
+}
+
+///////////////////////////////////////////////////
+
+function getAboutPage(pageProperties) {
+    const page = new Adw.PreferencesPage(pageProperties);
+
+    const aboutGroup = new Adw.PreferencesGroup({
+        title: Me.metadata.name,
+        hexpand: true,
+    });
+
+    const linksGroup = new Adw.PreferencesGroup({
+        title: _('Links'),
+        hexpand: true,
+    });
+
+    page.add(aboutGroup);
+    page.add(linksGroup);
+
+
+    aboutGroup.add(_newAdwLabelRow({
+        title: _('Version'),
+        subtitle: _(''),
+        label: Me.metadata.version.toString()
+    }));
+
+    aboutGroup.add(_newResetRow({
+        title: _('Reset all options'),
+        subtitle: _('Set all options to default values.'),
+    }));
+
+    linksGroup.add(_newAdwLinkRow({
+        title: _('Homepage'),
+        subtitle: _('Source code and more info about this extension'),
+        uri: 'https://github.com/G-dH/overview-feature-pack'
+    }));
+
+    linksGroup.add(_newAdwLinkRow({
+        title: _('Gome Extensions'),
+        subtitle: _('Rate and comment the extension on GNOME Extensions site.'),
+        uri: 'https://extensions.gnome.org/extension/5192',
+    }));
+
+    linksGroup.add(_newAdwLinkRow({
+        title: _('Report a bug or suggest new feature'),
+        subtitle: _(''),
+        uri: 'https://github.com/G-dH/overview-feature-pack/issues',
+    }));
+
+    linksGroup.add(_newAdwLinkRow({
+        title: _('Buy Me a Coffee'),
+        subtitle: _('If you like this extension, you can help me with coffee expenses.'),
+        uri: 'https://buymeacoffee.com/georgdh'
+    }));
+
+    return page;
+}
+
+function _newAdwLabelRow(params) {
+    const label = new Gtk.Label({
+        label: params.label
+    });
+
+    const actionRow = new Adw.ActionRow({
+        title: params.title,
+        subtitle: params.subtitle,
+    });
+
+    actionRow.add_suffix(label);
+
+    return actionRow;
+}
+
+function _newAdwLinkRow(params) {
+    const linkBtn = new Gtk.LinkButton({
+        uri: params.uri,
+        halign: Gtk.Align.END,
+        valign: Gtk.Align.CENTER,
+    });
+
+    const actionRow = new Adw.ActionRow({
+        title: params.title,
+        subtitle: params.subtitle,
+        activatable_widget: linkBtn
+    });
+
+    actionRow.add_suffix(linkBtn);
+
+    return actionRow;
+}
+
+function _newResetRow(params) {
+    const btn = new Gtk.Button({
+        icon_name: 'view-refresh-symbolic',
+        halign: Gtk.Align.END,
+        valign: Gtk.Align.CENTER,
+    });
+    btn.connect('clicked', () => {
+        Object.keys(gOptions.options).forEach(key => {
+            gOptions.set(key, gOptions.getDefault(key));
+        });
+    });
+
+    const actionRow = new Adw.ActionRow({
+        title: params.title,
+        subtitle: params.subtitle,
+    });
+
+    actionRow.add_suffix(btn);
+
+    return actionRow;
 }
