@@ -1630,9 +1630,10 @@ function _newResetRow(params) {
         valign: Gtk.Align.CENTER,
     });
     btn.connect('clicked', () => {
-        Object.keys(gOptions.options).forEach(key => {
-            gOptions.set(key, gOptions.getDefault(key));
-        });
+        const settings = gOptions._gsettings;
+        settings.list_keys().forEach(
+            key => settings.reset(key)
+        );
     });
 
     const actionRow = new Adw.ActionRow({
