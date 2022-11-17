@@ -55,7 +55,7 @@ function init() {
 function enable() {
     enableTimeoutId = GLib.timeout_add(
         GLib.PRIORITY_DEFAULT,
-        500,
+        300,
         () => {
             gOptions = new Settings.MscOptions();
 
@@ -66,7 +66,7 @@ function enable() {
             DISPLAY_TIMEOUT = gOptions.get('popupTimeout');
             if (gOptions.get('popupMode') !== ws_popup_mode.DEFAULT)
                 _setCustomWsPopup();
-            _reverseWsOrientation(gOptions.get('reverseWsOrientation'));
+            //_reverseWsOrientation(gOptions.get('reverseWsOrientation'));
             _updateNeighbor();
 
             log(`${Me.metadata.name}: enabled`);
@@ -100,7 +100,7 @@ function disable() {
     _setDefaultWsPopup();
     Meta.Workspace.prototype.get_neighbor = original_getNeighbor;
 
-    _reverseWsOrientation(false);
+    //_reverseWsOrientation(false);
     log(`${Me.metadata.name}: disabled`);
 }
 
@@ -129,14 +129,14 @@ function _updateSettings(settings, key) {
     case 'ws-ignore-last':
         _updateNeighbor();
         return;
-    case 'reverse-ws-orientation':
+    /*case 'reverse-ws-orientation':
     case 'vertical-overview':
         _reverseWsOrientation(gOptions.get('reverseWsOrientation'));
         _updateNeighbor();
-        return;
+        return;*/
     }
 
-    // avoid multiple pop-ups when more than one settings keys were chnged at once
+    // avoid multiple pop-ups when more than one settings keys were changed at once
     if (prefsDemoTimeoutId) {
         GLib.source_remove(prefsDemoTimeoutId);
     }
@@ -160,8 +160,8 @@ function _updateNeighbor() {
     }
 }
 
-function _reverseWsOrientation(reverse = false) {
-    // reverse == false means reset, dafault values for GS < 40 == true; GS >= 40 == false;
+/*function _reverseWsOrientation(reverse = false) {
+    // reverse == false means reset, default values for GS < 40 == true; GS >= 40 == false;
     const orientationVertical = reverse ? !defaultOrientationVertical : defaultOrientationVertical;
 
     if (orientationVertical) {
@@ -176,10 +176,10 @@ function _reverseWsOrientation(reverse = false) {
             VerticalWorkspaces.reset();
         }
     }
-}
+}*/
 
 function _showPopupForPrefs() {
-    // if user is currently customizing teir popup, show the popup on the screen
+    // if user is currently customizing the popup, show the popup on the screen
     const wsIndex = global.workspaceManager.get_active_workspace_index();
     const direction = Meta.MotionDirection.RIGHT;
     if (Main.wm._workspaceSwitcherPopup !== null) {
@@ -234,7 +234,7 @@ function _storeDefaultColors() {
     if (result) {
         borderColor = borderColor.to_string();
     } else {
-        borderColor = 'rgb(53,53,53)'; // average of default inactive box and container bordes 31/40
+        borderColor = 'rgb(53,53,53)'; // average of default inactive box and container borders 31/40
     }
     const activeFgColor = activeNode.get_foreground_color();
     const activeBgColor = activeNode.get_background_color();
@@ -281,14 +281,14 @@ function getNeighbor(direction) {
     const columns = global.workspace_manager.layout_columns > -1 ? global.workspace_manager.layout_columns : nWorkspaces;
 
     let index = activeIndex;
+    let neighborExists;
 
-    let neigborExists;
     if (direction === Meta.MotionDirection.LEFT) {
         index -= 1;
         const currentRow = Math.floor(activeIndex / columns);
         const indexRow = Math.floor(index / columns);
-        neigborExists = index > -1 && indexRow === currentRow;
-        if (wraparound && !neigborExists) {
+        neighborExists = index > -1 && indexRow === currentRow;
+        if (wraparound && !neighborExists) {
             index = currentRow * columns + columns - 1;
             const maxIndexOnLastRow = lastIndex % columns;
             index = index < lastIndex ? index : currentRow * columns + maxIndexOnLastRow;
@@ -297,26 +297,26 @@ function getNeighbor(direction) {
         index += 1;
         const currentRow = Math.floor(activeIndex / columns);
         const indexRow = Math.floor(index / columns);
-        neigborExists = index <= lastIndex && indexRow === currentRow;
-        if (wraparound && !neigborExists) {
+        neighborExists = index <= lastIndex && indexRow === currentRow;
+        if (wraparound && !neighborExists) {
             index = currentRow * columns;
         }
     } else if (direction === Meta.MotionDirection.UP) {
         index -= columns;
-        neigborExists = index > -1;
-        if (wraparound && !neigborExists) {
+        neighborExists = index > -1;
+        if (wraparound && !neighborExists) {
             index = rows * columns + index;
             index = index < nWorkspaces ? index : index - columns;
         }
     } else if (direction === Meta.MotionDirection.DOWN) {
         index += columns;
-        neigborExists = index <= lastIndex;
-        if (wraparound && !neigborExists) {
+        neighborExists = index <= lastIndex;
+        if (wraparound && !neighborExists) {
             index = index % columns;
         }
     }
 
-    return global.workspace_manager.get_workspace_by_index(neigborExists || wraparound ? index : activeIndex);
+    return global.workspace_manager.get_workspace_by_index(neighborExists || wraparound ? index : activeIndex);
 }
 
 // -------------------------------------------------------------------------------------
@@ -424,7 +424,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
             return;
         }
 
-        // GS 42+ doesn't use direction variable, threfore if activeWorkspaceIndex is undefined, direction variable holds the workspace index
+        // GS 42+ doesn't use direction variable, therefore if activeWorkspaceIndex is undefined, direction variable holds the workspace index
         this._direction = activeWorkspaceIndex === null ? null : direction;
         this._activeWorkspaceIndex = activeWorkspaceIndex === null ? direction : activeWorkspaceIndex;
 
@@ -498,7 +498,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
     }
 
     _onTimeout() {
-        // if user holds any modifier key dont hide the popup and wait until they release the keys
+        // if user holds any modifier key, don't hide the popup and wait until they release the keys
         if (this._modifiersCancelTimeout) {
             const mods = global.get_pointer()[2];
             if (mods & 77) {
@@ -729,7 +729,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
 
         let fontSize = this._popScale * this._fontScale * this._list._fitToScreenScale;
         // if text is ordered but not delivered (no app name, no ws name) but ws index will be shown,
-        // add an empty line to avoid index jumping during switching (at least when app name wprapping is disabled)
+        // add an empty line to avoid index jumping during switching (at least when app name wrapping is disabled)
         if (this._popupMode === ws_popup_mode.ACTIVE && (showName || showApp || showTitle) && showIndex && !text)
             text = ' ';
 
@@ -888,7 +888,7 @@ class WorkspaceSwitcherPopupList extends St.Widget {
         let spacing = this._itemSpacing * (this._popupMode != ws_popup_mode.ALL ? 0 : workspaceManager.n_workspaces - 1);
         size += spacing;
 
-        // note info about downsizing the popupup to calculate proper content size
+        // note info about downsizing the popup to calculate proper content size
         this._fitToScreenScale = size > availSize ? availSize / size : 1;
 
         size = Math.min(size, availSize);
@@ -972,4 +972,3 @@ function debug(message) {
 
     log('[' + stack[0].slice(extensionRoot) + '] ' + message);
 }
-

@@ -59,7 +59,7 @@ function init() {
     wsEntries = [];
 }
 
-// this function is called by GS42 if available and returns libadwaita prefes window
+// this function is called by GS42 if available and returns libadwaita prefs window
 function fillPreferencesWindow(window) {
     const generalOptionsPage = getAdwPage(_getGeneralOptionList(), {
         title: GENERAL_TITLE,
@@ -682,7 +682,7 @@ function _getGeneralOptionList() {
     optionList.push(
         _optionsItem(
             _('Dynamic Workspaces'),
-            _(`Dynamic - workspaces can be created on demand, and are automaticaly removed when empty.
+            _(`Dynamic - workspaces can be created on demand, and are automatically removed when empty.
 Static - number of workspaces is fixed to the number you can set below.`),
             _newSwitch(),
             'dynamicWorkspaces'
@@ -717,14 +717,14 @@ Static - number of workspaces is fixed to the number you can set below.`),
             )
             );
     //-----------------------------------------------------
-    optionList.push(
+    /*optionList.push(
         _optionsItem(
             _('Reverse Workspace Orientation'),
             _('Changes the axis in which workspaces are organized, for GNOME 3 from vertical to horizontal and for GNOME 40+ from horizontal to vertical. The switcher pop-up reflects this option automatically and also default keyboard shortcuts for switching workspaces will be affected (left/right <-> up/down arrow keys).'),
             _newSwitch(),
             'reverseWsOrientation'
         )
-    );
+    );*/
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(
@@ -808,7 +808,7 @@ function _getPopupOptionList() {
     optionList.push(
         _optionsItem(
             _('Fade Out Time (ms)'),
-            _('Durarion of fade out animation.'),
+            _('Duration of fade out animation.'),
             fadeScale,
             'fadeOutTime'
         )
@@ -875,7 +875,7 @@ function _getPopupOptionList() {
     optionList.push(
         _optionsItem(
             _('Reverse Orientation'),
-            _('Draw the switcher pop-up vertically instead of horizontaly and vice versa.'),
+            _('Draw the switcher pop-up vertically instead of horizontally and vice versa.'),
             _newSwitch(),
             'reversePopupOrientation'
         )
@@ -1104,7 +1104,7 @@ function _getSizeTextOptionList() {
     optionList.push(
         _optionsItem(
             _('Font Size Scale (%)'),
-            _('Size resizes acording to the pop-up sclae, use this scale to precisely adjust the text size.'),
+            _('Size resizes according to the pop-up scale, use this scale to precisely adjust the text size.'),
             fsScale,
             'fontScale',
         )
@@ -1263,7 +1263,7 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     optionList.push(
         _optionsItem(
             _('Active WS Foreground color / opacity'),
-            _('Text and other forground graphics.'),
+            _('Text and other foreground graphics.'),
             activeFgColorBox,
             'popupActiveFgColor',
         )
@@ -1299,7 +1299,7 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     optionList.push(
         _optionsItem(
             _('Inactive WS Foreground color / opacity'),
-            _('Text and other forground graphics.'),
+            _('Text and other foreground graphics.'),
             inactiveFgColorBox,
             'popupInactiveFgColor',
         )
@@ -1476,7 +1476,7 @@ function _getPresetsOptionList() {
     optionList.push(
         _optionsItem(
             _('Example 2'),
-            _('All workspaces mode, small popup with workspace boxes shaped to litle circle.'),
+            _('All workspaces mode, small popup with workspace boxes shaped to little circle.'),
             _newButton(),
             'preset',
             [
@@ -1570,7 +1570,7 @@ function getAboutPage(pageProperties) {
     }));
 
     linksGroup.add(_newAdwLinkRow({
-        title: _('Gome Extensions'),
+        title: _('Gnome Extensions'),
         subtitle: _('Rate and comment the extension on GNOME Extensions site.'),
         uri: 'https://extensions.gnome.org/extension/5192',
     }));
