@@ -1,5 +1,11 @@
-// Workspace Switcher Manager
-// GPL v3 ©G-dH@Github.com
+/**
+ * Workspaces Switcher Manager
+ * extension.js
+ *
+ * @author     GdH <G-dH@github.com>
+ * @copyright  2022
+ * @license    GPL-3.0
+ */
 'use strict';
 
 const { GLib, GObject, Clutter, St, Meta, Shell, Gio, Graphene } = imports.gi;
@@ -55,7 +61,8 @@ function init() {
 function enable() {
     enableTimeoutId = GLib.timeout_add(
         GLib.PRIORITY_DEFAULT,
-        300,
+        // WSM must start after Vertical Workspaces extension to be able detect it
+        1500,
         () => {
             gOptions = new Settings.MscOptions();
 
@@ -66,7 +73,7 @@ function enable() {
             DISPLAY_TIMEOUT = gOptions.get('popupTimeout');
             if (gOptions.get('popupMode') !== ws_popup_mode.DEFAULT)
                 _setCustomWsPopup();
-            //_reverseWsOrientation(gOptions.get('reverseWsOrientation'));
+            _reverseWsOrientation(gOptions.get('reverseWsOrientation'));
             _updateNeighbor();
 
             log(`${Me.metadata.name}: enabled`);
@@ -100,7 +107,7 @@ function disable() {
     _setDefaultWsPopup();
     Meta.Workspace.prototype.get_neighbor = original_getNeighbor;
 
-    //_reverseWsOrientation(false);
+    _reverseWsOrientation(false);
     log(`${Me.metadata.name}: disabled`);
 }
 
@@ -129,11 +136,11 @@ function _updateSettings(settings, key) {
     case 'ws-ignore-last':
         _updateNeighbor();
         return;
-    /*case 'reverse-ws-orientation':
+    case 'reverse-ws-orientation':
     case 'vertical-overview':
         _reverseWsOrientation(gOptions.get('reverseWsOrientation'));
         _updateNeighbor();
-        return;*/
+        return;
     }
 
     // avoid multiple pop-ups when more than one settings keys were changed at once
@@ -160,7 +167,10 @@ function _updateNeighbor() {
     }
 }
 
-/*function _reverseWsOrientation(reverse = false) {
+function _reverseWsOrientation(reverse = false) {
+    // this option is in conflict with Vertical Workspaces extension that includes the same patch
+    if (global.verticalWorkspacesEnabled)
+        return;
     // reverse == false means reset, default values for GS < 40 == true; GS >= 40 == false;
     const orientationVertical = reverse ? !defaultOrientationVertical : defaultOrientationVertical;
 
@@ -169,14 +179,13 @@ function _updateNeighbor() {
         if (shellVersion >= 40) {
             VerticalWorkspaces.patch();
         }
-
     } else { // horizontal
         global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, 1, -1);
         if (shellVersion >= 40) {
             VerticalWorkspaces.reset();
         }
     }
-}*/
+}
 
 function _showPopupForPrefs() {
     // if user is currently customizing the popup, show the popup on the screen
@@ -203,25 +212,24 @@ function _showPopupForPrefs() {
 }
 
 function _storeDefaultColors() {
-    // default popup in GS42 need to be replaced by the custom one in order to get its default colors
+    // default popup in GS42 needs to be replaced by the custom one in order to get its default colors
     if (shellVersion >= 42) {
         _setCustomWsPopup();
     }
 
     const popupMode = gOptions.get('popupMode');
-    gOptions.set('popupMode', 0); // ... set popup mode to Show all workspaces
 
     const popup = new WorkspaceSwitcherPopup.WorkspaceSwitcherPopup();
+    popup._popupMode = 0;
+    popup._list._popupMode = 0;
     popup._allowCustomColors = false;
-
-    if (shellVersion >= 42 && gOptions.get('popupMode') === ws_popup_mode.DEFAULT) {
-        _setDefaultWsPopup();
-    }
 
     popup.display(Meta.MotionDirection.UP, 0);
     popup.opacity = 0;
 
-    gOptions.set('popupMode', popupMode);
+    if (shellVersion >= 42 && popupMode === ws_popup_mode.DEFAULT) {
+        _setDefaultWsPopup();
+    }
 
     const containerNode = popup._container.get_theme_node();
     const listItems = popup._list.get_children();

@@ -1,5 +1,11 @@
-// Workspace Switcher Manager
-// GPL v3 ©G-dH@Github.com
+/**
+ * Workspaces Switcher Manager
+ * prefs.js
+ *
+ * @author     GdH <G-dH@github.com>
+ * @copyright  2022
+ * @license    GPL-3.0
+ */
 'use strict';
 
 const { Gtk, GLib, Gio, GObject } = imports.gi;
@@ -717,14 +723,14 @@ Static - number of workspaces is fixed to the number you can set below.`),
             )
             );
     //-----------------------------------------------------
-    /*optionList.push(
+    optionList.push(
         _optionsItem(
             _('Reverse Workspace Orientation'),
-            _('Changes the axis in which workspaces are organized, for GNOME 3 from vertical to horizontal and for GNOME 40+ from horizontal to vertical. The switcher pop-up reflects this option automatically and also default keyboard shortcuts for switching workspaces will be affected (left/right <-> up/down arrow keys).'),
+            _('Changes the axis in which workspaces are organized, for GNOME 3 from vertical to horizontal and for GNOME 40+ from horizontal to vertical. The switcher pop-up reflects this option automatically.'),
             _newSwitch(),
             'reverseWsOrientation'
         )
-    );*/
+    );
     //-----------------------------------------------------
     optionList.push(
         _optionsItem(

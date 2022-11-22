@@ -1,3 +1,12 @@
+/**
+ * Workspaces Switcher Manager
+ * utils.js
+ *
+ * @author     GdH <G-dH@github.com>
+ * @copyright  2022
+ * @license    GPL-3.0
+ * this file is based on https://github.com/RensAlthuis/vertical-overview extension module
+ */
 const Gi = imports._gi;
 
 function hookVfunc(proto, symbol, func) {
