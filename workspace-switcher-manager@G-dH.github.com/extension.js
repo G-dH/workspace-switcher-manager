@@ -62,19 +62,19 @@ function enable() {
     enableTimeoutId = GLib.timeout_add(
         GLib.PRIORITY_DEFAULT,
         // WSM must start after Vertical Workspaces extension to be able detect it
-        1500,
+        800,
         () => {
             gOptions = new Settings.MscOptions();
 
             _storeDefaultColors();
-
-            gOptions.connect('changed', _updateSettings);
 
             DISPLAY_TIMEOUT = gOptions.get('popupTimeout');
             if (gOptions.get('popupMode') !== ws_popup_mode.DEFAULT)
                 _setCustomWsPopup();
             _reverseWsOrientation(gOptions.get('reverseWsOrientation'));
             _updateNeighbor();
+
+            gOptions.connect('changed', _updateSettings);
 
             log(`${Me.metadata.name}: enabled`);
             enableTimeoutId = 0;
@@ -117,8 +117,12 @@ function _setCustomWsPopup() {
 }
 
 function _setDefaultWsPopup() {
-    WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = originalWsPopup;
-    WorkspaceSwitcherPopup.WorkspaceSwitcherPopupList = originalWsPopupList;
+    if (shellVersion < 42) {
+        WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = originalWsPopup;
+        WorkspaceSwitcherPopup.WorkspaceSwitcherPopupList = originalWsPopupList;
+    } else {
+        WorkspaceSwitcherPopup.WorkspaceSwitcherPopup = WorkspaceSwitcherPopup42;
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -138,7 +142,7 @@ function _updateSettings(settings, key) {
         return;
     case 'reverse-ws-orientation':
     case 'vertical-overview':
-        _reverseWsOrientation(gOptions.get('reverseWsOrientation'));
+        _reverseWsOrientation(gOptions.get('reverseWsOrientation'), true);
         _updateNeighbor();
         return;
     }
@@ -217,9 +221,8 @@ function _storeDefaultColors() {
         _setCustomWsPopup();
     }
 
-    const popupMode = gOptions.get('popupMode');
-
     const popup = new WorkspaceSwitcherPopup.WorkspaceSwitcherPopup();
+    // set 'all workspaces' mode to get 'inactive' box colors (if # of ws > 1)
     popup._popupMode = 0;
     popup._list._popupMode = 0;
     popup._allowCustomColors = false;
@@ -227,6 +230,7 @@ function _storeDefaultColors() {
     popup.display(Meta.MotionDirection.UP, 0);
     popup.opacity = 0;
 
+    const popupMode = gOptions.get('popupMode', true);
     if (shellVersion >= 42 && popupMode === ws_popup_mode.DEFAULT) {
         _setDefaultWsPopup();
     }
@@ -365,8 +369,8 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         this._monitorOption = gOptions.get('monitor');
         this._workspacesOnPrimaryOnly = gOptions.get('workspacesOnPrimaryOnly');
 
-        this._horizontalPosition = gOptions.get('popupHorizontal');
-        this._verticalPosition = gOptions.get('popupVertical');
+        this._horizontalPosition = gOptions.get('popupHorizontal') / 100;
+        this._verticalPosition = gOptions.get('popupVertical') / 100;
         this._modifiersCancelTimeout = gOptions.get('modifiersHidePopup');
         this._fadeOutTime = gOptions.get('fadeOutTime');
 
@@ -647,10 +651,10 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
         }
         let [, containerNatHeight] = this._container.get_preferred_height(global.screen_width);
         let [, containerNatWidth] = this._container.get_preferred_width(containerNatHeight);
-        let h_percent = this._horizontalPosition;
-        let v_percent = this._verticalPosition;
-        this._container.x = workArea.x + Math.floor((workArea.width - containerNatWidth) * (h_percent / 100));
-        this._container.y = workArea.y + Math.floor((workArea.height - containerNatHeight) * (v_percent / 100));
+        let h = this._horizontalPosition;
+        let v = this._verticalPosition;
+        this._container.x = workArea.x + Math.floor((workArea.width - containerNatWidth) * (h));
+        this._container.y = workArea.y + Math.floor((workArea.height - containerNatHeight) * (v));
     }
 
     _getWsNamesSettings() {
@@ -843,7 +847,7 @@ class WorkspaceSwitcherPopupCustom extends St.Widget {
     }
 });
 
-var WorkspaceSwitcherPopupList = GObject.registerClass(
+const WorkspaceSwitcherPopupList = GObject.registerClass(
 class WorkspaceSwitcherPopupList extends St.Widget {
     _init() {
         super._init({
@@ -964,6 +968,96 @@ class WorkspaceSwitcherPopupList extends St.Widget {
             }
             shellVersion >= 40 ? child.allocate(childBox)
                                : child.allocate(childBox, flags);
+        }
+    }
+});
+
+const WorkspaceSwitcherPopup42 = GObject.registerClass(
+class WorkspaceSwitcherPopup42 extends WorkspaceSwitcherPopup.WorkspaceSwitcherPopup {
+    _init() {
+        super._init();
+        this.remove_constraint(this.get_constraints()[0]);
+        this._monitorOption = gOptions.get('monitor');
+        this._workspacesOnPrimaryOnly = gOptions.get('workspacesOnPrimaryOnly');
+
+        this._horizontalPosition = gOptions.get('popupHorizontal') / 100;
+        this._verticalPosition = gOptions.get('popupVertical') / 100;
+        this._modifiersCancelTimeout = gOptions.get('modifiersHidePopup');
+        this._fadeOutTime = gOptions.get('fadeOutTime');
+        this._list.set_style('margin: 0;');
+        this._redisplay();
+
+        if (gOptions.get('reversePopupOrientation')) {
+            this._list.vertical = !this._list.vertical;
+        }
+    }
+
+    _setPopupPosition() {
+        let workArea;
+        if (this._monitorOption === 0) {
+            //workArea = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
+            workArea = global.display.get_monitor_geometry(Main.layoutManager.primaryIndex);
+        } else {
+            //workArea = Main.layoutManager.getWorkAreaForMonitor(global.display.get_current_monitor());
+            workArea = global.display.get_monitor_geometry(global.display.get_current_monitor());
+        }
+
+        let [, natHeight] = this.get_preferred_height(global.screen_width);
+        let [, natWidth] = this.get_preferred_width(natHeight);
+        let h = this._horizontalPosition;
+        let v = this._verticalPosition;
+        this.x = workArea.x + Math.floor((workArea.width - natWidth) * h);
+        this.y = workArea.y + Math.floor((workArea.height - natHeight) * v);
+    }
+
+    display(activeWorkspaceIndex) {
+        this._activeWorkspaceIndex = activeWorkspaceIndex;
+
+        this._redisplay();
+        if (this._timeoutId != 0)
+            GLib.source_remove(this._timeoutId);
+        this._timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, DISPLAY_TIMEOUT, this._onTimeout.bind(this));
+        GLib.Source.set_name_by_id(this._timeoutId, '[gnome-shell] this._onTimeout');
+
+        const duration = this.visible ? 0 : this._onTimeout;
+        this.show();
+        this.opacity = 0;
+        this.ease({
+            opacity: 255,
+            duration,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+        });
+        this._setPopupPosition()
+    }
+
+    _onTimeout() {
+        GLib.source_remove(this._timeoutId);
+        this._timeoutId = 0;
+        this.ease({
+            opacity: 0.0,
+            duration: this._fadeOutTime,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            onComplete: () => this.destroy(),
+        });
+        return GLib.SOURCE_REMOVE;
+    }
+
+    _resetTimeout() {
+        // if user holds any modifier key, don't hide the popup and wait until they release the keys
+        if (this._modifiersCancelTimeout) {
+            const mods = global.get_pointer()[2];
+            if (mods & 77) {
+                this._resetTimeout();
+                return;
+            }
+        }
+
+        if (this._timeoutId != 0) {
+            GLib.source_remove(this._timeoutId);
+            this._timeoutId = 0;
+        }
+        if (DISPLAY_TIMEOUT !== 0) {
+            this._timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, DISPLAY_TIMEOUT, this._onTimeout.bind(this));
         }
     }
 });

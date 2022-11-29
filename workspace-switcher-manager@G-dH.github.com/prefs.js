@@ -72,17 +72,20 @@ function fillPreferencesWindow(window) {
         icon_name: GENERAL_ICON,
     });
 
+    const popupOptionsPage = getAdwPage(_getPopupOptionList(), {
+        title: POPUP_TITLE,
+        icon_name: POPUP_ICON
+    });
+
     const aboutPage = getAboutPage({
         title: ABOUT_TITLE,
         icon_name: ABOUT_ICON
     });
 
     window.add(generalOptionsPage);
+    window.add(popupOptionsPage);
 
     customPages = [
-        getAdwPage(_getPopupOptionList(), {
-            title: POPUP_TITLE,
-            icon_name: POPUP_ICON }),
         getAdwPage(_getSizeTextOptionList(), {
             title: SIZE_TEXT_TITLE,
             icon_name: SIZE_TEXT_ICON }),
@@ -136,6 +139,7 @@ function _updateAdwActivePages() {
                 windowWidget.remove(customPages[i]);
             }
         }
+        // always add about page
         windowWidget.add(customPages[customPages.length - 1]);
     }
     prevPopupMode = mode;
@@ -245,9 +249,9 @@ function _updateLegacyActivePages() {
         let stBtn = stackSwitcher.get_first_child ? stackSwitcher.get_first_child() : null;
         for (let i = 0; i < 7; i++) {
                 if (stackSwitcher.get_children) {
-                    stackSwitcher.get_children()[i].visible = mode < 2 ? true : (i != 0 ? false : true);
+                    stackSwitcher.get_children()[i].visible = mode < 2 ? true : (i !== 0 ? false : true);
                 } else {
-                    stBtn.visible = mode < 2 ? true : (i != 0 ? false : true);
+                    stBtn.visible = mode < 2 ? true : (i !== 0 ? false : true);
                     stBtn = stBtn.get_next_sibling();
                 }
         }
@@ -1520,7 +1524,7 @@ function _getPresetsOptionList() {
     optionList.push(
         _optionsItem(
             _('Example 4'),
-            _('Active workspaces only mode, smaller circe with workspace index.'),
+            _('Active workspaces only mode, smaller circle with workspace index.'),
             _newButton(),
             'preset',
             [
