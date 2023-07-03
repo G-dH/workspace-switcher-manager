@@ -14,7 +14,7 @@ LOCALES_MO     = $(patsubst po/%.po,locale/%/LC_MESSAGES/$(NAME).mo,$(LOCALES_PO
 
 # These files will be included in the extension zip file.
 ZIP_CONTENT = $(JS_FILES) $(LOCALES_MO) \
-              schemas/ metadata.json stylesheet.css ../LICENSE
+              schemas/* schemas/gschemas.compiled metadata.json stylesheet.css ../LICENSE
 
 # These five recipes can be invoked by the user.
 .PHONY: all zip install uninstall pot clean
@@ -38,7 +38,7 @@ pot: $(JS_FILES) $(UI_FILES)
 	@echo "Generating '$(NAME).pot'..."
 	@xgettext --from-code=UTF-8 \
 	          --add-comments=Translators \
-	          --copyright-holder="G-dH" \
+	          --copyright-holder="GdH" \
 	          --package-name="$(NAME)" \
 	          --output=po/$(NAME).pot \
 	          $(JS_FILES) $(UI_FILES)
