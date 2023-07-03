@@ -47,7 +47,7 @@ const CONTENT_TITLE = _('Content');
 const CONTENT_ICON = 'view-reveal-symbolic';
 const WS_TITLE = _('Workspaces');
 const WS_ICON = 'text-editor-symbolic';
-const PRESETS_TITLE = _('Examples');
+const PRESETS_TITLE = _('Presets');
 const PRESET_ICON = 'view-list-bullet-symbolic';
 const ABOUT_TITLE = _('About');
 const ABOUT_ICON = 'preferences-system-details-symbolic';
@@ -730,7 +730,7 @@ Static - number of workspaces is fixed to the number you can set below.`),
     optionList.push(
         _optionsItem(
             _('Reverse Workspace Orientation'),
-            _('Changes the axis in which workspaces are organized, for GNOME 3 from vertical to horizontal and for GNOME 40+ from horizontal to vertical. The switcher pop-up reflects this option automatically.'),
+            _('Changes the axis in which workspaces are organized, for GNOME 3 from vertical to horizontal and for GNOME 40+ from horizontal to vertical.'),
             _newSwitch(),
             'reverseWsOrientation'
         )
@@ -799,21 +799,21 @@ function _getPopupOptionList() {
     optionList.push(
         _optionsItem(
             _('On-Screen Time (ms)'),
-            _("Time after which the pop-up fade out"),
+            _("Time after which the pop-up fades out"),
             tScale,
             'popupTimeout'
         )
     );
     //-----------------------------------------------------
     let fadeOutAdjustment = new Gtk.Adjustment({
-        upper: 1000,
+        upper: 500,
         lower: 10,
         step_increment: 1,
         page_increment: 1,
     });
 
     const fadeScale = _newScale(fadeOutAdjustment);
-    fadeScale.add_mark(500, Gtk.PositionType.TOP, null);
+    fadeScale.add_mark(100, Gtk.PositionType.TOP, null);
 
     optionList.push(
         _optionsItem(
@@ -1466,7 +1466,7 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Example 1'),
+            _('Preset 1'),
             _('All workspaces mode, with workspace index and current app info.'),
             _newButton(),
             'preset',
@@ -1485,7 +1485,7 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Example 2'),
+            _('Preset 2'),
             _('All workspaces mode, small popup with workspace boxes shaped to little circle.'),
             _newButton(),
             'preset',
@@ -1504,7 +1504,7 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Example 3'),
+            _('Preset 3'),
             _('Active workspaces only mode, transparent background, big semi-transparent font, with the workspace index and current app info.'),
             _newButton(),
             'preset',
@@ -1523,7 +1523,7 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Example 4'),
+            _('Preset 4'),
             _('Active workspaces only mode, smaller circle with workspace index.'),
             _newButton(),
             'preset',
@@ -1580,7 +1580,7 @@ function getAboutPage(pageProperties) {
     }));
 
     linksGroup.add(_newAdwLinkRow({
-        title: _('Gnome Extensions'),
+        title: _('GNOME Extensions'),
         subtitle: _('Rate and comment the extension on GNOME Extensions site.'),
         uri: 'https://extensions.gnome.org/extension/5192',
     }));
@@ -1635,6 +1635,7 @@ function _newAdwLinkRow(params) {
 
 function _newResetRow(params) {
     const btn = new Gtk.Button({
+        css_classes: ['destructive-action'],
         icon_name: 'view-refresh-symbolic',
         halign: Gtk.Align.END,
         valign: Gtk.Align.CENTER,

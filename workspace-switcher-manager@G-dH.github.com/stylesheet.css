@@ -36,6 +36,7 @@
   border: 1px solid;
   border-color: rgb(53, 53, 53);
   border-radius: 8px;
+  color: grey;
 }
 
 /* active workspace box */

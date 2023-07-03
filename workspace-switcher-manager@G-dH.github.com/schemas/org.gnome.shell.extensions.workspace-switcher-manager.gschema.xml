@@ -44,7 +44,7 @@
       <default>600</default>
     </key>
     <key type="i" name="fade-out-time">
-      <default>500</default>
+      <default>200</default>
     </key>
     <key type="i" name="popup-scale">
       <default>100</default>
