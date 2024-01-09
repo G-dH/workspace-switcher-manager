@@ -62,7 +62,9 @@ function enable() {
         500,
         () => {
             // if VW extension enabled, disable this option in WSM
-            _wsOrientationEnabled = !Main.extensionManager._enabledExtensions.filter(e => e.includes('vertical-workspaces')).length;
+            _wsOrientationEnabled = !(
+                Main.extensionManager._enabledExtensions.filter(e => e.includes('vertical-workspaces')).length ||
+                Main.extensionManager._enabledExtensions.filter(e => e.includes('vertical-overview')).length);
             if (shellVersion >= 40 && _wsOrientationEnabled)
                 VerticalWorkspaces = Me.imports.verticalWorkspaces;
 
