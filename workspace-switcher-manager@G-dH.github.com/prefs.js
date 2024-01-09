@@ -1562,10 +1562,14 @@ function getAboutPage(pageProperties) {
     page.add(linksGroup);
 
 
+    const versionName = Me.metadata['version-name'] ?? '';
+    let version = Me.metadata['version'] ?? '';
+    version = versionName && version ? `/${version}` : version;
+    const versionStr = `${versionName}${version}`;
     aboutGroup.add(_newAdwLabelRow({
         title: _('Version'),
         subtitle: _(''),
-        label: Me.metadata.version.toString()
+        label: versionStr
     }));
 
     aboutGroup.add(_newResetRow({
@@ -1576,19 +1580,19 @@ function getAboutPage(pageProperties) {
     linksGroup.add(_newAdwLinkRow({
         title: _('Homepage'),
         subtitle: _('Source code and more info about this extension'),
-        uri: 'https://github.com/G-dH/overview-feature-pack'
+        uri: 'https://github.com/G-dH/workspace-switcher-manager'
     }));
 
     linksGroup.add(_newAdwLinkRow({
         title: _('GNOME Extensions'),
         subtitle: _('Rate and comment the extension on GNOME Extensions site.'),
-        uri: 'https://extensions.gnome.org/extension/5192',
+        uri: 'https://extensions.gnome.org/extension/4788',
     }));
 
     linksGroup.add(_newAdwLinkRow({
         title: _('Report a bug or suggest new feature'),
         subtitle: _(''),
-        uri: 'https://github.com/G-dH/overview-feature-pack/issues',
+        uri: 'https://github.com/G-dH/workspace-switcher-manager/issues',
     }));
 
     linksGroup.add(_newAdwLinkRow({
