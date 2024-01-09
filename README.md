@@ -48,8 +48,8 @@ Run following commands in the terminal (`git` needs to be installed, navigate to
 #### GNOME 3.36 - 44 
 
     git clone https://github.com/G-dH/workspace-switcher-manager.git
-    git checkout legacy
     cd workspace-switcher-manager/workspace-switcher-manager@G-dH.github.com/
+    git checkout legacy
     make install
 
 ## Enabling the extension
