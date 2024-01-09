@@ -4,15 +4,9 @@
   "name": "Workspace Switcher Manager",
   "settings-schema": "org.gnome.shell.extensions.workspace-switcher-manager",
   "shell-version": [
-    "3.36",
-    "3.38",
-    "40",
-    "41",
-    "42",
-    "43",
-    "44"
+    "45"
   ],
   "url": "https://github.com/G-dH/workspace-switcher-manager",
   "uuid": "workspace-switcher-manager@G-dH.github.com",
-  "version":10
+  "version-name": "45.1"
 }
