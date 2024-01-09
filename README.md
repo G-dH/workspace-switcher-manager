@@ -5,7 +5,7 @@ The `Workspace Switcher Manager` offers all workspaces related options in one pl
 
 ## Features:
 
-- GNOME Shell 3.36 - 43 compatibility.
+- GNOME Shell 3.36 - 45 compatibility.
 - All workspace related options available in GNOME Shell.
 - Adds options `Wraparound` and `Ignore last (empty) workspace` to the workspace switcher.
 - On-Screen and Fade Out time adjustments.
@@ -39,7 +39,16 @@ Install the extension:
 The most recent version in the repository is the one I'm currently running on my own systems, problems may occur, but usually nothing serious.
 Run following commands in the terminal (`git` needs to be installed, navigate to the directory you want to download the source):
 
+#### GNOME 45
+
     git clone https://github.com/G-dH/workspace-switcher-manager.git
+    cd workspace-switcher-manager/workspace-switcher-manager@G-dH.github.com/
+    make install
+
+#### GNOME 3.36 - 44 
+
+    git clone https://github.com/G-dH/workspace-switcher-manager.git
+    git checkout legacy
     cd workspace-switcher-manager/workspace-switcher-manager@G-dH.github.com/
     make install
 
