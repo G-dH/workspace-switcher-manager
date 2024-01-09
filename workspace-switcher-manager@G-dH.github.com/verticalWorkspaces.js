@@ -8,19 +8,18 @@
  */
 'use strict';
 
-const { Clutter, Gio, GLib, GObject, Graphene, Meta, Shell, St } = imports.gi;
+import Gio from 'gi://Gio';
+import Clutter from 'gi://Clutter';
+import St from 'gi://St';
+import Meta from 'gi://Meta';
+import Graphene from 'gi://Graphene';
 
-const Main = imports.ui.main;
-const Layout = imports.ui.layout;
-const Overview = imports.ui.overview;
-const WorkspacesView = imports.ui.workspacesView;
-const Workspace = imports.ui.workspace;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const shellVersion = Me.imports.settings.shellVersion;
+import * as _Util from './util.js';
 
-const _Util = Me.imports.util;
+import * as Workspace from 'resource:///org/gnome/shell/ui/workspace.js';
+import * as WorkspacesView from 'resource:///org/gnome/shell/ui/workspacesView.js';
 
 
 // keep adjacent workspaces out of the screen
@@ -31,8 +30,8 @@ let verticalOverrides = {};
 
 let _appButtonSigHandlerId;
 
-function patch() {
-    if (Object.keys(verticalOverrides).length != 0)
+export function patch() {
+    if (Object.keys(verticalOverrides).length !== 0)
         reset();
     verticalOverrides['WorkspaceLayout'] = _Util.overrideProto(Workspace.WorkspaceLayout.prototype, WorkspaceLayoutOverride);
     verticalOverrides['WorkspacesView'] = _Util.overrideProto(WorkspacesView.WorkspacesView.prototype, WorkspacesViewOverride);
@@ -40,7 +39,7 @@ function patch() {
     _switchPageShortcuts();
 }
 
-function reset() {
+export function reset() {
     if (_appButtonSigHandlerId) {
         Main.overview.dash.showAppsButton.disconnect(_appButtonSigHandlerId);
         _appButtonSigHandlerId = 0;
@@ -48,27 +47,25 @@ function reset() {
 
     _Util.overrideProto(WorkspacesView.WorkspacesView.prototype, verticalOverrides['WorkspacesView']);
     _Util.overrideProto(Workspace.WorkspaceLayout.prototype, verticalOverrides['WorkspaceLayout']);
-    _switchPageShortcuts()
+    _switchPageShortcuts();
 
-    verticalOverrides = {}
+    verticalOverrides = {};
 }
 
 function _connectAppButton() {
     if (_appButtonSigHandlerId)
-        Main,overview.dash.showAppsButton.disconnect(_appButtonSigHandlerId);
-    _appButtonSigHandlerId = Main.overview.dash.showAppsButton.connect('notify::checked', (w) => {
-        if (w.checked) {
+        Main.overview.dash.showAppsButton.disconnect(_appButtonSigHandlerId);
+    _appButtonSigHandlerId = Main.overview.dash.showAppsButton.connect('notify::checked', w => {
+        if (w.checked)
             global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, 1, -1);
-        } else {
+        else
             global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, -1, 1);
-        }
     });
 }
 
 function _switchPageShortcuts() {
     const vertical = global.workspaceManager.layout_rows === -1;
-    const schema  = 'org.gnome.desktop.wm.keybindings';
-    const settings = ExtensionUtils.getSettings(schema);
+    const settings = new Gio.Settings({ schema_id: 'org.gnome.desktop.wm.keybindings' });
 
     const keyLeft = 'switch-to-workspace-left';
     const keyRight = 'switch-to-workspace-right';
@@ -96,25 +93,41 @@ function _switchPageShortcuts() {
     let moveDown = settings.get_strv(keyMoveDown);
 
     if (vertical) {
-        switchLeft.includes(switchPrevSc)  && switchLeft.splice(switchLeft.indexOf(switchPrevSc), 1);
-        switchRight.includes(switchNextSc) && switchRight.splice(switchRight.indexOf(switchNextSc), 1);
-        moveLeft.includes(movePrevSc)      && moveLeft.splice(moveLeft.indexOf(movePrevSc), 1);
-        moveRight.includes(moveNextSc)     && moveRight.splice(moveRight.indexOf(moveNextSc), 1);
+        if (switchLeft.includes(switchPrevSc))
+            switchLeft.splice(switchLeft.indexOf(switchPrevSc), 1);
+        if (switchRight.includes(switchNextSc))
+            switchRight.splice(switchRight.indexOf(switchNextSc), 1);
+        if (moveLeft.includes(movePrevSc))
+            moveLeft.splice(moveLeft.indexOf(movePrevSc), 1);
+        if (moveRight.includes(moveNextSc))
+            moveRight.splice(moveRight.indexOf(moveNextSc), 1);
 
-        switchUp.includes(switchPrevSc)    || switchUp.push(switchPrevSc);
-        switchDown.includes(switchNextSc)  || switchDown.push(switchNextSc);
-        moveUp.includes(movePrevSc)        || moveUp.push(movePrevSc);
-        moveDown.includes(moveNextSc)      || moveDown.push(moveNextSc);
+        if (!switchUp.includes(switchPrevSc))
+            switchUp.push(switchPrevSc);
+        if (!switchDown.includes(switchNextSc))
+            switchDown.push(switchNextSc);
+        if (!moveUp.includes(movePrevSc))
+            moveUp.push(movePrevSc);
+        if (!moveDown.includes(moveNextSc))
+            moveDown.push(moveNextSc);
     } else {
-        switchLeft.includes(switchPrevSc)  || switchLeft.push(switchPrevSc);
-        switchRight.includes(switchNextSc) || switchRight.push(switchNextSc);
-        moveLeft.includes(movePrevSc)      || moveLeft.push(movePrevSc);
-        moveRight.includes(moveNextSc)     || moveRight.push(moveNextSc);
+        if (!switchLeft.includes(switchPrevSc))
+            switchLeft.push(switchPrevSc);
+        if (!switchRight.includes(switchNextSc))
+            switchRight.push(switchNextSc);
+        if (!moveLeft.includes(movePrevSc))
+            moveLeft.push(movePrevSc);
+        if (!moveRight.includes(moveNextSc))
+            moveRight.push(moveNextSc);
 
-        switchUp.includes(switchPrevSc)    && switchUp.splice(switchUp.indexOf(switchPrevSc), 1);
-        switchDown.includes(switchNextSc)  && switchDown.splice(switchDown.indexOf(switchNextSc), 1);
-        moveUp.includes(movePrevSc)        && moveUp.splice(moveUp.indexOf(movePrevSc), 1);
-        moveDown.includes(moveNextSc)      && moveDown.splice(moveDown.indexOf(moveNextSc), 1);
+        if (switchUp.includes(switchPrevSc))
+            switchUp.splice(switchUp.indexOf(switchPrevSc), 1);
+        if (switchDown.includes(switchNextSc))
+            switchDown.splice(switchDown.indexOf(switchNextSc), 1);
+        if (moveUp.includes(movePrevSc))
+            moveUp.splice(moveUp.indexOf(movePrevSc), 1);
+        if (moveDown.includes(moveNextSc))
+            moveDown.splice(moveDown.indexOf(moveNextSc), 1);
     }
 
     settings.set_strv(keyLeft, switchLeft);
@@ -131,7 +144,7 @@ function _switchPageShortcuts() {
 // ---- workspacesView ----------------------------------------
 // WorkspacesView
 var WorkspacesViewOverride = {
-    _getFirstFitSingleWorkspaceBox: function(box, spacing, vertical) {
+    _getFirstFitSingleWorkspaceBox(box, spacing, vertical) {
         let [width, height] = box.get_size();
         const [workspace] = this._workspaces;
 
@@ -153,7 +166,7 @@ var WorkspacesViewOverride = {
             x1 -= currentWorkspace * (workspaceWidth + spacing);
         }
 
-        const fitSingleBox = new Clutter.ActorBox({x1, y1});
+        const fitSingleBox = new Clutter.ActorBox({ x1, y1 });
 
         fitSingleBox.set_size(workspaceWidth, workspaceHeight);
 
@@ -161,7 +174,7 @@ var WorkspacesViewOverride = {
     },
 
     // avoid overlapping of adjacent workspaces with the current view
-    _getSpacing: function(box, fitMode, vertical) {
+    _getSpacing(box, fitMode, vertical) {
         const [width, height] = box.get_size();
         const [workspace] = this._workspaces;
 
@@ -180,13 +193,13 @@ var WorkspacesViewOverride = {
 
         return Math.clamp(spacing, WORKSPACE_MIN_SPACING * scaleFactor,
             WORKSPACE_MAX_SPACING * scaleFactor);
-    }
-}
+    },
+};
 
 // ------ Workspace -----------------------------------------------------------------
 var WorkspaceLayoutOverride = {
     // this fixes wrong size and position calculation of window clones while moving overview to the next (+1) workspace if vertical ws orintation is enabled in GS
-    _adjustSpacingAndPadding: function(rowSpacing, colSpacing, containerBox) {
+    _adjustSpacingAndPadding(rowSpacing, colSpacing, containerBox) {
         if (this._sortedWindows.length === 0)
             return [rowSpacing, colSpacing, containerBox];
 
@@ -210,11 +223,11 @@ var WorkspaceLayoutOverride = {
             const monitor = Main.layoutManager.monitors[this._monitorIndex];
 
             const bottomPoint = new Graphene.Point3D();
-            if (vertical) {
+            if (vertical)
                 bottomPoint.x = containerBox.x2;
-            } else {
+            else
                 bottomPoint.y = containerBox.y2;
-            }
+
 
             const transformedBottomPoint =
                 this._container.apply_transform_to_point(bottomPoint);
@@ -224,11 +237,10 @@ var WorkspaceLayoutOverride = {
 
             const [, bottomOverlap] = window.overlapHeights();
 
-            if ((bottomOverlap + oversize) > bottomFreeSpace && !vertical) {
+            if ((bottomOverlap + oversize) > bottomFreeSpace && !vertical)
                 containerBox.y2 -= (bottomOverlap + oversize) - bottomFreeSpace;
-            }
         }
 
         return [rowSpacing, colSpacing, containerBox];
-    }
-}
+    },
+};
