@@ -1367,11 +1367,14 @@ function getAboutPage(pageProperties, metadata) {
     page.add(aboutGroup);
     page.add(linksGroup);
 
-
+    const versionName = metadata['version-name'] ?? '';
+    let version = metadata['version'] ?? '';
+    version = versionName && version ? `/${version}` : version;
+    const versionStr = `${versionName}${version}`;
     aboutGroup.add(_newAdwLabelRow({
         title: _('Version'),
         subtitle: _(''),
-        label: metadata.version.toString(),
+        label: versionStr,
     }));
 
     aboutGroup.add(_newResetRow({
