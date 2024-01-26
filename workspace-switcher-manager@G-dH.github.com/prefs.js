@@ -274,7 +274,7 @@ function _newColorButton() {
     return colorBtn;
 }
 
-function _newColorResetBtn(colIndex, colorBtn) {
+function _newColorResetBtn(gColor, colorBtn) {
     const colorReset = new Gtk.Button({
         hexpand: false,
         halign: Gtk.Align.END,
@@ -287,7 +287,7 @@ function _newColorResetBtn(colIndex, colorBtn) {
         colorReset.add(Gtk.Image.new_from_icon_name('edit-clear-symbolic', Gtk.IconSize.BUTTON));
 
     colorReset.connect('clicked', () => {
-        const color = gOptions.get('defaultColors')[colIndex];
+        const color = gOptions.getDefault(gColor);
         if (!color)
             return;
         const rgba = colorBtn.get_rgba();
@@ -1033,7 +1033,7 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     // -----------------------------------------------------
     const bgColorBox = _newColorButtonBox();
     const bgColorBtn = _newColorButton();
-    const bgColorReset = _newColorResetBtn(0, bgColorBtn);
+    const bgColorReset = _newColorResetBtn('popupBgColor', bgColorBtn);
     bgColorBox.colorBtn = bgColorBtn;
     bgColorBtn._gsettingsVar = 'popupBgColor';
 
@@ -1051,7 +1051,7 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     // -----------------------------------------------------
     const borderColorBox = _newColorButtonBox();
     const borderColorBtn = _newColorButton();
-    const borderColorReset = _newColorResetBtn(1, borderColorBtn);
+    const borderColorReset = _newColorResetBtn('popupBorderColor', borderColorBtn);
     borderColorBox.colorBtn = borderColorBtn;
     borderColorBtn._gsettingsVar = 'popupBorderColor';
 
@@ -1069,7 +1069,7 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     // -----------------------------------------------------
     const activeFgColorBox = _newColorButtonBox();
     const activeFgColorBtn = _newColorButton();
-    const activeFgColorReset = _newColorResetBtn(2, activeFgColorBtn);
+    const activeFgColorReset = _newColorResetBtn('popupActiveFgColor', activeFgColorBtn);
     activeFgColorBox.colorBtn = activeFgColorBtn;
     activeFgColorBtn._gsettingsVar = 'popupActiveFgColor';
 
@@ -1087,7 +1087,7 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     // -----------------------------------------------------
     const activeBgColorBox = _newColorButtonBox();
     const activeBgColorBtn = _newColorButton();
-    const activeBgColorReset = _newColorResetBtn(3, activeBgColorBtn);
+    const activeBgColorReset = _newColorResetBtn('popupActiveBgColor', activeBgColorBtn);
     activeBgColorBox.colorBtn = activeBgColorBtn;
     activeBgColorBtn._gsettingsVar = 'popupActiveBgColor';
 
@@ -1105,7 +1105,7 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     // -----------------------------------------------------
     const inactiveFgColorBox = _newColorButtonBox();
     const inactiveFgColorBtn = _newColorButton();
-    const inactiveFgColorReset = _newColorResetBtn(4, inactiveFgColorBtn);
+    const inactiveFgColorReset = _newColorResetBtn('popupInactiveFgColor', inactiveFgColorBtn);
     inactiveFgColorBox.colorBtn = inactiveFgColorBtn;
     inactiveFgColorBtn._gsettingsVar = 'popupInactiveFgColor';
 
@@ -1123,7 +1123,7 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     // -----------------------------------------------------
     const inactiveBgColorBox = _newColorButtonBox();
     const inactiveBgColorBtn = _newColorButton();
-    const inactiveBgColorReset = _newColorResetBtn(5, inactiveBgColorBtn);
+    const inactiveBgColorReset = _newColorResetBtn('popupInactiveBgColor', inactiveBgColorBtn);
     inactiveBgColorBox.colorBtn = inactiveBgColorBtn;
     inactiveBgColorBtn._gsettingsVar = 'popupInactiveBgColor';
 
@@ -1272,8 +1272,27 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Preset 1'),
-            _('All workspaces mode, with workspace index and current app info.'),
+            _('Default GNOME 3.38/40'),
+            _('Classic old popup with workspace indexes and app names'),
+            _newButton(),
+            'preset',
+            [
+                // popup mode,
+                0,
+                // scale, box width, padding, spacing, radius, font size, index size, wrap text, shadow, bold,
+                100, 100, 100, 100, 100, 100, 100, true, false, true,
+                // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg,
+                98, 'rgb(29,29,29)', 'rgb(53,53,53)', 'rgb(255,255,255)', 'rgb(0,110,255)', 'rgb(255,255,255)', 'rgb(29,29,29)',
+                // act show index, act show ws, act show app, act show title, inact show index, inact show ws, act show app, inact show title
+                true, false, true, false, true, false, true, false,
+            ]
+        )
+    );
+
+    optionList.push(
+        _optionsItem(
+            _('Dark red rounded classic'),
+            _('All workspaces mode, with workspace index and current app info'),
             _newButton(),
             'preset',
             [
@@ -1283,7 +1302,7 @@ function _getPresetsOptionList() {
                 66, 133, 130, 180, 180, 133, 300, true, false, true,
                 // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg
                 98, 'rgb(29,29,29)', 'rgb(53,53,53)', 'rgb(255,255,255)', 'rgb(105,0,0)', 'rgb(255,255,255)', 'rgb(53,53,53)',
-                // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
+                // act show index, act show ws, act show app, act show title, inact show index, inact show ws, act show app, inact show title
                 false, false, true, false, false, false, true, false,
             ]
         )
@@ -1291,7 +1310,7 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Preset 2'),
+            _('Blue ball simple'),
             _('All workspaces mode, small popup with workspace boxes shaped to little circle.'),
             _newButton(),
             'preset',
@@ -1302,7 +1321,7 @@ function _getPresetsOptionList() {
                 40, 55, 250, 250, 700, 100, 100, true, false, true,
                 // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg
                 98, 'rgb(29,29,29)', 'rgb(53,53,53)', 'rgb(255,255,255)', 'rgb(0,112,255)', 'rgb(255,255,255)', 'rgb(53,53,53)',
-                // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
+                // act show index, act show ws, act show app, act show title, inact show index, inact show ws, act show app, inact show title
                 false, false, false, false, false, false, false, false,
             ]
         )
@@ -1310,7 +1329,7 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Preset 3'),
+            _('Big grey text only'),
             _('Active workspaces only mode, transparent background, big semi-transparent font, with the workspace index and current app info.'),
             _newButton(),
             'preset',
@@ -1321,7 +1340,7 @@ function _getPresetsOptionList() {
                 527, 150, 100, 100, 100, 120, 230, false, true, true,
                 // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg,
                 98, 'rgba(53,53,53,0)', 'rgba(53,53,53,0)', 'rgba(0,0,0,0.564189)', 'rgba(53,53,53,0)', 'rgb(255,255,255)', 'rgb(535353)',
-                // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
+                // act show index, act show ws, act show app, act show title, inact show index, inact show ws, act show app, inact show title
                 true, false, true, true, false, false, false, false,
             ]
         )
@@ -1329,7 +1348,7 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Preset 4'),
+            _('Orange ball with index'),
             _('Active workspaces only mode, smaller circle with workspace index.'),
             _newButton(),
             'preset',
@@ -1340,7 +1359,7 @@ function _getPresetsOptionList() {
                 100, 57, 200, 100, 700, 150, 500, false, false, true,
                 // global opacity, bg col, border col, active fg, active bg, inactive fg, inactive bg,
                 98, 'rgba(29,29,29,0.689189)', 'rgba(53,53,53,0)', 'rgb(255,255,255)', 'rgb(233,84,32)', 'rgb(255,255,255)', 'rgb(53,53,53)',
-                // act show index, act show ws, act show app, inact show index, inact show ws, inact show app
+                // act show index, act show ws, act show app, act show title, inact show index, inact show ws, act show app, inact show title
                 true, false, false, false, false, false, false, false,
             ]
         )

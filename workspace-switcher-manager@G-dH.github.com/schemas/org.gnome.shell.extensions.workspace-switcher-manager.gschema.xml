@@ -68,22 +68,22 @@
       <default>90</default>
     </key>
     <key type="s" name="popup-bg-color">
-      <default>''</default>
+      <default>'rgb(29,29,29)'</default>
     </key>
     <key type="s" name="popup-border-color">
-      <default>''</default>
+      <default>'rgb(53,53,53)'</default>
     </key>
     <key type="s" name="popup-active-fg-color">
-      <default>''</default>
+      <default>'rgb(255,255,255)'</default>
     </key>
     <key type="s" name="popup-active-bg-color">
-      <default>''</default>
+      <default>'rgb(0,110,255)'</default>
     </key>
     <key type="s" name="popup-inactive-fg-color">
-      <default>''</default>
+      <default>'rgb(255,255,255)'</default>
     </key>
     <key type="s" name="popup-inactive-bg-color">
-      <default>''</default>
+      <default>'rgb(29,29,29)'</default>
     </key>
     <key type="as" name="default-colors">
       <default>[]</default>
