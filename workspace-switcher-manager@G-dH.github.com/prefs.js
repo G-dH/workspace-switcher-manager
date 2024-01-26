@@ -22,7 +22,7 @@ let _;
 
 // libadwaita is available starting with GNOME Shell 42.
 
-let gOptions;
+let opt;
 let _wsEntries;
 
 // conversion of Gtk3 / Gtk4 widgets add methods
@@ -30,7 +30,7 @@ let _wsEntries;
 export default class WSM extends ExtensionPreferences {
     constructor(metadata) {
         super(metadata);
-        gOptions = new Settings.MscOptions(this);
+        opt = new Settings.MscOptions(this);
         _ = this.gettext.bind(this);
         _wsEntries = [];
         this._prevPopupMode = -1;
@@ -101,7 +101,7 @@ export default class WSM extends ExtensionPreferences {
         this._windowWidget = window;
         this._updateAdwActivePages();
 
-        gOptions.connect('changed::popup-mode', this._updateAdwActivePages.bind(this));
+        opt.connect('changed::popup-mode', this._updateAdwActivePages.bind(this));
         window.connect('close-request', this._onDestroy.bind(this));
 
         const height = 800;
@@ -112,15 +112,15 @@ export default class WSM extends ExtensionPreferences {
 
     _onDestroy() {
         this._prevPopupMode = -1;
-        gOptions.destroy();
-        gOptions = null;
+        opt.destroy();
+        opt = null;
         this._customPages = null;
         _wsEntries = null;
         this._windowWidget = null;
     }
 
     _updateAdwActivePages() {
-        const mode = gOptions.get('popupMode');
+        const mode = opt.get('popupMode');
         if (this._shouldUpdatePages(mode)) {
             if (this._prevPopupMode !== -1)
                 this._windowWidget.remove(this._customPages[this._customPages.length - 1]);
@@ -287,14 +287,14 @@ function _newColorResetBtn(gColor, colorBtn) {
         colorReset.add(Gtk.Image.new_from_icon_name('edit-clear-symbolic', Gtk.IconSize.BUTTON));
 
     colorReset.connect('clicked', () => {
-        const color = gOptions.getDefault(gColor);
+        const color = opt.getDefault(gColor);
         if (!color)
             return;
         const rgba = colorBtn.get_rgba();
         const success = rgba.parse(color);
         if (success)
             colorBtn.set_rgba(rgba);
-        gOptions.set(colorBtn._gsettingsVar, rgba.to_string());
+        opt.set(colorBtn._gsettingsVar, rgba.to_string());
     });
 
     return colorReset;
@@ -324,7 +324,7 @@ function _newButton() {
 }
 
 function _optionsItem(text, tooltip, widget, variable, options = []) {
-    /* if (widget && gOptions.get(variable) === undefined && variable != 'preset') {
+    /* if (widget && opt.get(variable) === undefined && variable != 'preset') {
         throw new Error(
             `Settings variable ${variable} doesn't exist, check your code dude!`
         );
@@ -369,10 +369,10 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
     let settings;
     let key;
 
-    if (variable && gOptions.options[variable]) {
-        const opt = gOptions.options[variable];
-        key = opt[1];
-        settings = opt[2] ? opt[2]() : gOptions._gsettings;
+    if (variable && opt.options[variable]) {
+        const o = opt.options[variable];
+        key = o[1];
+        settings = o[2] ? o[2]() : opt._gsettings;
     }
     if (widget && widget.is_switch) {
         settings.bind(key, widget, 'active', Gio.SettingsBindFlags.DEFAULT);
@@ -385,7 +385,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
         settings.bind(key, widget, 'active', Gio.SettingsBindFlags.DEFAULT);
     } else if (widget && widget.is_entry) {
         if (options) {
-            const names = gOptions.get(variable);
+            const names = opt.get(variable);
             if (names[options - 1])
                 widget.set_text(names[options - 1]);
 
@@ -397,7 +397,7 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
                     if (e.get_text())
                         names.push(e.get_text());
                 });
-                gOptions.set('wsNames', names);
+                opt.set('wsNames', names);
             });
 
             _wsEntries.push(widget);
@@ -412,47 +412,47 @@ function _optionsItem(text, tooltip, widget, variable, options = []) {
             colorBtn = widget;
 
         const rgba = colorBtn.get_rgba();
-        rgba.parse(gOptions.get(variable));
+        rgba.parse(opt.get(variable));
         colorBtn.set_rgba(rgba);
 
         colorBtn.connect('color_set', () => {
-            gOptions.set(variable, `${colorBtn.get_rgba().to_string()}`);
+            opt.set(variable, `${colorBtn.get_rgba().to_string()}`);
         });
 
         settings.connect(`changed::${key}`, () => {
             const rgba = colorBtn.get_rgba();
-            rgba.parse(gOptions.get(variable));
+            rgba.parse(opt.get(variable));
             colorBtn.set_rgba(rgba);
         });
     } else if (widget && widget.is_button) {
         widget.connect('clicked', () => {
-            gOptions.set('popupMode', options[0]);
-            gOptions.set('popupScale', options[1]);
-            gOptions.set('popupWidthScale', options[2]);
-            gOptions.set('popupPaddingScale', options[3]);
-            gOptions.set('popupSpacingScale', options[4]);
-            gOptions.set('popupRadiusScale', options[5]);
-            gOptions.set('fontScale', options[6]);
-            gOptions.set('indexScale', options[7]);
-            gOptions.set('wrapAppNames', options[8]);
-            gOptions.set('textShadow', options[9]);
-            gOptions.set('textBold', options[10]);
-            gOptions.set('popupOpacity', options[11]);
-            gOptions.set('popupBgColor', options[12]);
-            gOptions.set('popupBorderColor', options[13]);
-            gOptions.set('popupActiveFgColor', options[14]);
-            gOptions.set('popupActiveBgColor', options[15]);
-            gOptions.set('popupInactiveFgColor', options[16]);
-            gOptions.set('popupInactiveBgColor', options[17]);
-            gOptions.set('activeShowWsIndex', options[18]);
-            gOptions.set('activeShowWsName', options[19]);
-            gOptions.set('activeShowAppName', options[20]);
-            gOptions.set('activeShowWinTitle', options[21]);
-            gOptions.set('inactiveShowWsIndex', options[22]);
-            gOptions.set('inactiveShowWsName', options[23]);
-            gOptions.set('inactiveShowAppName', options[24]);
-            gOptions.set('inactiveShowWinTitle', options[25]);
-            gOptions.set('allowCustomColors', true);
+            opt.set('popupMode', options[0]);
+            opt.set('popupScale', options[1]);
+            opt.set('popupWidthScale', options[2]);
+            opt.set('popupPaddingScale', options[3]);
+            opt.set('popupSpacingScale', options[4]);
+            opt.set('popupRadiusScale', options[5]);
+            opt.set('fontScale', options[6]);
+            opt.set('indexScale', options[7]);
+            opt.set('wrapAppNames', options[8]);
+            opt.set('textShadow', options[9]);
+            opt.set('textBold', options[10]);
+            opt.set('popupOpacity', options[11]);
+            opt.set('popupBgColor', options[12]);
+            opt.set('popupBorderColor', options[13]);
+            opt.set('popupActiveFgColor', options[14]);
+            opt.set('popupActiveBgColor', options[15]);
+            opt.set('popupInactiveFgColor', options[16]);
+            opt.set('popupInactiveBgColor', options[17]);
+            opt.set('activeShowWsIndex', options[18]);
+            opt.set('activeShowWsName', options[19]);
+            opt.set('activeShowAppName', options[20]);
+            opt.set('activeShowWinTitle', options[21]);
+            opt.set('inactiveShowWsIndex', options[22]);
+            opt.set('inactiveShowWsName', options[23]);
+            opt.set('inactiveShowAppName', options[24]);
+            opt.set('inactiveShowWinTitle', options[25]);
+            opt.set('allowCustomColors', true);
         });
     }
 
@@ -1469,7 +1469,7 @@ function _newResetRow(params) {
         valign: Gtk.Align.CENTER,
     });
     btn.connect('clicked', () => {
-        const settings = gOptions._gsettings;
+        const settings = opt._gsettings;
         settings.list_keys().forEach(
             key => settings.reset(key)
         );

@@ -27,7 +27,7 @@ import * as VerticalWorkspaces from './verticalWorkspaces.js';
 import * as WorkspaceSwitcherPopup from 'resource:///org/gnome/shell/ui/workspaceSwitcherPopup.js';
 import { WorkspaceThumbnail } from 'resource:///org/gnome/shell/ui/workspaceThumbnail.js';
 
-let gOptions;
+let opt;
 
 const ANIMATION_TIME = 100;
 
@@ -49,14 +49,14 @@ export default class WSM extends Extension {
             Main.extensionManager._enabledExtensions.filter(e => e.includes('vertical-workspaces')).length ||
             Main.extensionManager._enabledExtensions.filter(e => e.includes('vertical-overview')).length);
 
-        gOptions = new Settings.MscOptions(this);
+        opt = new Settings.MscOptions(this);
 
         this._updatePopupMode();
 
-        this._reverseWsOrientation(gOptions.get('reverseWsOrientation'));
+        this._reverseWsOrientation(opt.get('reverseWsOrientation'));
         this._updateNeighbor();
 
-        gOptions.connect('changed', this._updateSettings.bind(this));
+        opt.connect('changed', this._updateSettings.bind(this));
     }
 
     disable() {
@@ -70,9 +70,9 @@ export default class WSM extends Extension {
             Main.wm._workspaceSwitcherPopup = null;
         }
 
-        if (gOptions) {
-            gOptions.destroy();
-            gOptions = null;
+        if (opt) {
+            opt.destroy();
+            opt = null;
         }
 
         this._setDefaultWsPopup();
@@ -106,7 +106,7 @@ export default class WSM extends Extension {
             return;
         case 'reverse-ws-orientation':
         case 'vertical-overview':
-            this._reverseWsOrientation(gOptions.get('reverseWsOrientation'), true);
+            this._reverseWsOrientation(opt.get('reverseWsOrientation'), true);
             this._updateNeighbor();
             return;
         }
@@ -119,7 +119,7 @@ export default class WSM extends Extension {
     }
 
     _updatePopupMode() {
-        const popupMode = gOptions.get('popupMode');
+        const popupMode = opt.get('popupMode');
         if (popupMode === wsPopupMode.DEFAULT) {
             this._setDefaultWsPopup();
             // set modified default so we can set its position and timing
@@ -130,7 +130,7 @@ export default class WSM extends Extension {
     }
 
     _updateNeighbor() {
-        if (gOptions.get('wsSwitchWrap') || gOptions.get('wsSwitchIgnoreLast') || gOptions.get('reverseWsOrientation'))
+        if (opt.get('wsSwitchWrap') || opt.get('wsSwitchIgnoreLast') || opt.get('reverseWsOrientation'))
             Meta.Workspace.prototype.get_neighbor = this._getNeighbor;
         else
             Meta.Workspace.prototype.get_neighbor = this._original_getNeighbor;
@@ -169,7 +169,7 @@ export default class WSM extends Extension {
             Main.wm._workspaceSwitcherPopup = null;
         });
 
-        if (gOptions.get('popupMode') === wsPopupMode.DEFAULT)
+        if (opt.get('popupMode') === wsPopupMode.DEFAULT)
             Main.wm._workspaceSwitcherPopup.display(wsIndex);
         else
             Main.wm._workspaceSwitcherPopup.display(direction, wsIndex);
@@ -180,8 +180,8 @@ export default class WSM extends Extension {
 
     _getNeighbor(direction) {
         const activeIndex = this.index();
-        const ignoreLast = gOptions.get('wsSwitchIgnoreLast');
-        const wraparound = gOptions.get('wsSwitchWrap');
+        const ignoreLast = opt.get('wsSwitchIgnoreLast');
+        const wraparound = opt.get('wsSwitchWrap');
         const nWorkspaces = global.workspace_manager.n_workspaces - (ignoreLast ? 1 : 0);
         const lastIndex = nWorkspaces - 1;
         const rows = global.workspace_manager.layout_rows > -1 ? global.workspace_manager.layout_rows : nWorkspaces;
@@ -251,7 +251,7 @@ const WorkspaceSwitcherPopupCustom = {
 
         this._timeoutId = 0;
 
-        this._popupMode = gOptions.get('popupMode');
+        this._popupMode = opt.get('popupMode');
         // if popup disabled don't allocate more resources
         if (this._popupMode === wsPopupMode.DISABLE)
             return;
@@ -268,47 +268,47 @@ const WorkspaceSwitcherPopupCustom = {
         this._list._popupMode = this._popupMode;
         this._container.add_child(this._list);
 
-        this._monitorOption = gOptions.get('monitor');
-        this._workspacesOnPrimaryOnly = gOptions.get('workspacesOnPrimaryOnly');
+        this._monitorOption = opt.get('monitor');
+        this._workspacesOnPrimaryOnly = opt.get('workspacesOnPrimaryOnly');
 
-        this._horizontalPosition = gOptions.get('popupHorizontal') / 100;
-        this._verticalPosition = gOptions.get('popupVertical') / 100;
-        this._modifiersCancelTimeout = gOptions.get('modifiersHidePopup');
-        this._displayTimeout = gOptions.get('popupTimeout');
-        this._fadeOutTime = gOptions.get('fadeOutTime');
+        this._horizontalPosition = opt.get('popupHorizontal') / 100;
+        this._verticalPosition = opt.get('popupVertical') / 100;
+        this._modifiersCancelTimeout = opt.get('modifiersHidePopup');
+        this._displayTimeout = opt.get('popupTimeout');
+        this._fadeOutTime = opt.get('fadeOutTime');
 
-        this._popScale = gOptions.get('popupScale') / 100;
-        this._paddingScale = gOptions.get('popupPaddingScale') / 100;
-        this._spacingScale = gOptions.get('popupSpacingScale') / 100;
-        this._radiusScale = gOptions.get('popupRadiusScale') / 100;
+        this._popScale = opt.get('popupScale') / 100;
+        this._paddingScale = opt.get('popupPaddingScale') / 100;
+        this._spacingScale = opt.get('popupSpacingScale') / 100;
+        this._radiusScale = opt.get('popupRadiusScale') / 100;
         this._list._popScale = this._popScale;
 
-        this._indexScale = gOptions.get('indexScale') / 100;
-        this._fontScale = gOptions.get('fontScale') / 100;
-        this._textBold = gOptions.get('textBold');
-        this._textShadow = gOptions.get('textShadow');
-        this._wrapAppNames = gOptions.get('wrapAppNames');
+        this._indexScale = opt.get('indexScale') / 100;
+        this._fontScale = opt.get('fontScale') / 100;
+        this._textBold = opt.get('textBold');
+        this._textShadow = opt.get('textShadow');
+        this._wrapAppNames = opt.get('wrapAppNames');
 
-        this._popupOpacity = gOptions.get('popupOpacity');
-        this._allowCustomColors = gOptions.get('allowCustomColors');
+        this._popupOpacity = opt.get('popupOpacity');
+        this._allowCustomColors = opt.get('allowCustomColors');
         if (this._allowCustomColors) {
-            this._bgColor = gOptions.get('popupBgColor');
-            this._borderColor = gOptions.get('popupBorderColor');
-            this._activeFgColor = gOptions.get('popupActiveFgColor');
-            this._activeBgColor = gOptions.get('popupActiveBgColor');
-            this._inactiveFgColor = gOptions.get('popupInactiveFgColor');
-            this._inactiveBgColor = gOptions.get('popupInactiveBgColor');
-            this._borderColor = gOptions.get('popupBorderColor');
+            this._bgColor = opt.get('popupBgColor');
+            this._borderColor = opt.get('popupBorderColor');
+            this._activeFgColor = opt.get('popupActiveFgColor');
+            this._activeBgColor = opt.get('popupActiveBgColor');
+            this._inactiveFgColor = opt.get('popupInactiveFgColor');
+            this._inactiveBgColor = opt.get('popupInactiveBgColor');
+            this._borderColor = opt.get('popupBorderColor');
         }
 
-        this._activeShowWsIndex = gOptions.get('activeShowWsIndex');
-        this._activeShowWsName = gOptions.get('activeShowWsName');
-        this._activeShowAppName = gOptions.get('activeShowAppName');
-        this._activeShowWinTitle = gOptions.get('activeShowWinTitle');
-        this._inactiveShowWsIndex = gOptions.get('inactiveShowWsIndex');
-        this._inactiveShowWsName  = gOptions.get('inactiveShowWsName');
-        this._inactiveShowAppName = gOptions.get('inactiveShowAppName');
-        this._inactiveShowWinTitle = gOptions.get('inactiveShowWinTitle');
+        this._activeShowWsIndex = opt.get('activeShowWsIndex');
+        this._activeShowWsName = opt.get('activeShowWsName');
+        this._activeShowAppName = opt.get('activeShowAppName');
+        this._activeShowWinTitle = opt.get('activeShowWinTitle');
+        this._inactiveShowWsIndex = opt.get('inactiveShowWsIndex');
+        this._inactiveShowWsName  = opt.get('inactiveShowWsName');
+        this._inactiveShowAppName = opt.get('inactiveShowAppName');
+        this._inactiveShowWinTitle = opt.get('inactiveShowWinTitle');
 
         // this._redisplay();
 
@@ -328,7 +328,7 @@ const WorkspaceSwitcherPopupCustom = {
         this._list.set_style('margin: 0;');
         this._redisplay();
 
-        if (gOptions.get('reversePopupOrientation'))
+        if (opt.get('reversePopupOrientation'))
             this._list.vertical = !this._list.vertical;
     },
 
@@ -778,9 +778,9 @@ class WorkspaceSwitcherPopupList extends St.Widget {
         this._childHeight = 0;
         this._childWidth = 0;
         this._fitToScreenScale = 1;
-        this._customWidthScale = gOptions.get('popupWidthScale') / 100;
+        this._customWidthScale = opt.get('popupWidthScale') / 100;
         let orientation = global.workspace_manager.layout_rows === -1;
-        if (gOptions.get('reversePopupOrientation'))
+        if (opt.get('reversePopupOrientation'))
             orientation = !orientation;
         this._orientation = orientation
             ? Clutter.Orientation.VERTICAL
@@ -891,18 +891,18 @@ class WorkspaceSwitcherPopupList extends St.Widget {
 const WorkspaceSwitcherPopupDefault = {
     after__init() {
         this.remove_constraint(this.get_constraints()[0]);
-        this._monitorOption = gOptions.get('monitor');
-        this._workspacesOnPrimaryOnly = gOptions.get('workspacesOnPrimaryOnly');
+        this._monitorOption = opt.get('monitor');
+        this._workspacesOnPrimaryOnly = opt.get('workspacesOnPrimaryOnly');
 
-        this._horizontalPosition = gOptions.get('popupHorizontal') / 100;
-        this._verticalPosition = gOptions.get('popupVertical') / 100;
-        this._modifiersCancelTimeout = gOptions.get('modifiersHidePopup');
-        this._fadeOutTime = gOptions.get('fadeOutTime');
-        this._displayTimeout = gOptions.get('popupTimeout');
+        this._horizontalPosition = opt.get('popupHorizontal') / 100;
+        this._verticalPosition = opt.get('popupVertical') / 100;
+        this._modifiersCancelTimeout = opt.get('modifiersHidePopup');
+        this._fadeOutTime = opt.get('fadeOutTime');
+        this._displayTimeout = opt.get('popupTimeout');
         this._list.set_style('margin: 0;');
         this._redisplay();
 
-        if (gOptions.get('reversePopupOrientation'))
+        if (opt.get('reversePopupOrientation'))
             this._list.vertical = !this._list.vertical;
     },
 
