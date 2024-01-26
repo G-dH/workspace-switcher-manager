@@ -480,7 +480,7 @@ function _getGeneralOptionList() {
     optionList.push(
         _optionsItem(
             _('Mode'),
-            'Switcher can display untouched Default pop-up or customized one showing either boxes for all workspaces or the active one only.',
+            'Switcher can display untouched Default pop-up or customized one showing either boxes for all workspaces or the active one only',
             _newComboBox(),
             'popupMode',
             [[_('Custom: All Workspaces'), 0],
@@ -518,7 +518,7 @@ Static - number of workspaces is fixed to the number you can set below.`),
     optionList.push(
         _optionsItem(
             _('Number of Workspaces in Static Mode'),
-            _('Max number of 36 is given by GNOME.'),
+            _('Max number of 36 is given by GNOME'),
             numScale,
             'numWorkspaces'
         )
@@ -527,7 +527,7 @@ Static - number of workspaces is fixed to the number you can set below.`),
     optionList.push(
         _optionsItem(
             _('Workspaces on Primary Display Only'),
-            _('Additional displays are treated as independent workspaces or the current workspace includes additional displays.'),
+            _('Additional displays are treated as independent workspaces or the current workspace includes additional displays'),
             _newSwitch(),
             'workspacesOnPrimaryOnly'
         )
@@ -536,7 +536,7 @@ Static - number of workspaces is fixed to the number you can set below.`),
     optionList.push(
         _optionsItem(
             _('Reverse Workspace Orientation'),
-            _('Changes the axis in which workspaces are organized, for GNOME 3 from vertical to horizontal and for GNOME 40+ from horizontal to vertical.'),
+            _('Changes the axis in which workspaces are organized, from horizontal to vertical'),
             _newSwitch(),
             'reverseWsOrientation'
         )
@@ -551,7 +551,7 @@ Static - number of workspaces is fixed to the number you can set below.`),
     optionList.push(
         _optionsItem(
             _('Wraparound'),
-            _('Continue from the last workspace to the first and vice versa.'),
+            _('Continue from the last workspace to the first and vice versa'),
             _newSwitch(),
             'wsSwitchWrap'
         )
@@ -560,7 +560,7 @@ Static - number of workspaces is fixed to the number you can set below.`),
     optionList.push(
         _optionsItem(
             _('Ignore Last (empty) Workspace'),
-            _('In Dynamic workspaces mode, there is always one empty workspace at the end. Switcher can ignore this last workspace.'),
+            _('In Dynamic workspaces mode, there is always one empty workspace at the end. Switcher can ignore this last workspace'),
             _newSwitch(),
             'wsSwitchIgnoreLast'
         )
@@ -584,7 +584,7 @@ function _getPopupOptionList() {
     optionList.push(
         _optionsItem(
             _('Monitor'),
-            _('The monitor on which the workspace switcher pop-up should appear. The Current monitor is determined by the mouse pointer location.'),
+            _('The monitor on which the workspace switcher pop-up should appear. The Current monitor is determined by the mouse pointer location'),
             _newComboBox(),
             'monitor',
             [[_('Primary'), 0],
@@ -624,7 +624,7 @@ function _getPopupOptionList() {
     optionList.push(
         _optionsItem(
             _('Fade Out Time (ms)'),
-            _('Duration of fade out animation.'),
+            _('Duration of fade out animation'),
             fadeScale,
             'fadeOutTime'
         )
@@ -633,7 +633,7 @@ function _getPopupOptionList() {
     optionList.push(
         _optionsItem(
             _('Display Until Modifier Keys Released'),
-            _('Keeps the pop-up on the screen until modifier keys (Shift, Ctrl, Super, Alt) are released. Similar as Alt-Tab switcher works.'),
+            _('Keeps the pop-up on the screen until modifier keys (Shift, Ctrl, Super, Alt) are released. Similar as Alt-Tab switcher works'),
             _newSwitch(),
             'modifiersHidePopup'
         )
@@ -691,7 +691,7 @@ function _getPopupOptionList() {
     optionList.push(
         _optionsItem(
             _('Reverse Orientation'),
-            _('Draw the switcher pop-up vertically instead of horizontally and vice versa.'),
+            _('Draw the switcher pop-up vertically instead of horizontally and vice versa'),
             _newSwitch(),
             'reversePopupOrientation'
         )
@@ -714,7 +714,7 @@ function _getContentOptionList() {
     optionList.push(
         _optionsItem(
             _('Show Workspace Index'),
-            _('Active workspace box shows workspace index.'),
+            _('Active workspace box shows workspace index'),
             _newSwitch(),
             'activeShowWsIndex'
         )
@@ -723,7 +723,7 @@ function _getContentOptionList() {
     optionList.push(
         _optionsItem(
             _('Show Workspace Name'),
-            _('Active workspace box shows workspace name if the name is set.'),
+            _('Active workspace box shows workspace name if the name is set'),
             _newSwitch(),
             'activeShowWsName'
         )
@@ -732,7 +732,7 @@ function _getContentOptionList() {
     optionList.push(
         _optionsItem(
             _('Show Current App Name'),
-            _('Active workspace box shows the name of the most recently used application on the represented workspace.'),
+            _('Active workspace box shows the name of the most recently used application on the represented workspace'),
             _newSwitch(),
             'activeShowAppName'
         )
@@ -741,7 +741,7 @@ function _getContentOptionList() {
     optionList.push(
         _optionsItem(
             _('Show Current Window Title'),
-            _('Active workspace box shows the title of the most recently used window on the represented workspace.'),
+            _('Active workspace box shows the title of the most recently used window on the represented workspace'),
             _newSwitch(),
             'activeShowWinTitle'
         )
@@ -757,7 +757,7 @@ function _getContentOptionList() {
     optionList.push(
         _optionsItem(
             _('Show Workspace Index'),
-            _('Inactive workspace box shows workspace index.'),
+            _('Inactive workspace box shows workspace index'),
             _newSwitch(),
             'inactiveShowWsIndex'
         )
@@ -766,7 +766,7 @@ function _getContentOptionList() {
     optionList.push(
         _optionsItem(
             _('Show Workspace Name'),
-            _('Inactive workspace box shows workspace name if the name is set.'),
+            _('Inactive workspace box shows workspace name if the name is set'),
             _newSwitch(),
             'inactiveShowWsName'
         )
@@ -775,7 +775,7 @@ function _getContentOptionList() {
     optionList.push(
         _optionsItem(
             _('Show Current App Name'),
-            _('Inactive workspace box shows the name of the most recently used application on represented workspace.'),
+            _('Inactive workspace box shows the name of the most recently used application on represented workspace'),
             _newSwitch(),
             'inactiveShowAppName'
         )
@@ -784,7 +784,7 @@ function _getContentOptionList() {
     optionList.push(
         _optionsItem(
             _('Show Current Window Title'),
-            _('Inactive workspace box shows the title of the most recently used window on the represented workspace.'),
+            _('Inactive workspace box shows the title of the most recently used window on the represented workspace'),
             _newSwitch(),
             'inactiveShowWinTitle'
         )
@@ -800,7 +800,7 @@ function _getSizeTextOptionList() {
 
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Pop-up Proportions')),
+            _makeTitle(_('Pop-up Proportions (relative to the default WSM popup - the old GNOME 3 style')),
             null
         )
     );
@@ -818,7 +818,7 @@ function _getSizeTextOptionList() {
     optionList.push(
         _optionsItem(
             _('Global Scale (%)'),
-            _('Adjusts size of the pop-up relative to the original.'),
+            _('Adjusts size of the pop-up relative to the original'),
             dpSize,
             'popupScale'
         )
@@ -837,7 +837,7 @@ function _getSizeTextOptionList() {
     optionList.push(
         _optionsItem(
             _('WS Box Width Scale (%)'),
-            _('Allows to change workspace box ratio.'),
+            _('Allows to change workspace box ratio'),
             boxWidth,
             'popupWidthScale'
         )
@@ -856,7 +856,7 @@ function _getSizeTextOptionList() {
     optionList.push(
         _optionsItem(
             _('Padding (%)'),
-            _('Adjusts background padding.'),
+            _('Adjusts background padding'),
             padding,
             'popupPaddingScale'
         )
@@ -875,7 +875,7 @@ function _getSizeTextOptionList() {
     optionList.push(
         _optionsItem(
             _('Spacing (%)'),
-            _('Adjusts space between workspace boxes.'),
+            _('Adjusts space between workspace boxes'),
             spacing,
             'popupSpacingScale'
         )
@@ -894,7 +894,7 @@ function _getSizeTextOptionList() {
     optionList.push(
         _optionsItem(
             _('Corner Radius (%)'),
-            _('Adjusts radius of all corners.'),
+            _('Adjusts radius of all corners'),
             radius,
             'popupRadiusScale'
         )
@@ -920,7 +920,7 @@ function _getSizeTextOptionList() {
     optionList.push(
         _optionsItem(
             _('Font Size Scale (%)'),
-            _('Size resizes according to the pop-up scale, use this scale to precisely adjust the text size.'),
+            _('Size resizes according to the pop-up scale, use this scale to precisely adjust the text size'),
             fsScale,
             'fontScale'
         )
@@ -939,7 +939,7 @@ function _getSizeTextOptionList() {
     optionList.push(
         _optionsItem(
             _('WS Index Size Scale (%)'),
-            _('If only "Show Workspace Index" text (or "Show App Name" on workspace without app) content option is active this scale takes effect. Single digit always looks smaller then longer text with the same font size.'),
+            _('If only "Show Workspace Index" text (or "Show App Name" on workspace without app) content option is active this scale takes effect. Single digit always looks smaller then longer text with the same font size'),
             idxScale,
             'indexScale'
         )
@@ -955,7 +955,7 @@ function _getSizeTextOptionList() {
     optionList.push(
         _optionsItem(
             _('Wrap long App Names'),
-            _('Application names with more than one word will be wrapped after the first word.'),
+            _('Application names with more than one word will be wrapped after the first word'),
             _newSwitch(),
             'wrapAppNames'
         )
@@ -964,7 +964,7 @@ function _getSizeTextOptionList() {
     optionList.push(
         _optionsItem(
             _('Text Shadow'),
-            _('Shadow helps text visibility on the background with the similar color.'),
+            _('Shadow helps text visibility on the background with the similar color'),
             _newSwitch(),
             'textShadow'
         )
@@ -1007,7 +1007,7 @@ function _getColorOptionList() {
     optionList.push(
         _optionsItem(
             _('Global Opacity (%)'),
-            _('Sets transparency of the pop-up as a whole.'),
+            _('Sets transparency of the pop-up as a whole'),
             opacityScale,
             'popupOpacity'
         )
@@ -1079,7 +1079,7 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     optionList.push(
         _optionsItem(
             _('Active WS Foreground color / opacity'),
-            _('Text and other foreground graphics.'),
+            _('Text and other foreground graphics'),
             activeFgColorBox,
             'popupActiveFgColor'
         )
@@ -1115,7 +1115,7 @@ colors may be incorrect (more incorrect if other than default theme is used). Al
     optionList.push(
         _optionsItem(
             _('Inactive WS Foreground color / opacity'),
-            _('Text and other foreground graphics.'),
+            _('Text and other foreground graphics'),
             inactiveFgColorBox,
             'popupInactiveFgColor'
         )
@@ -1151,7 +1151,7 @@ function _getWorkspacesOptionList() {
     optionList.push(
         _optionsItem(
             _makeTitle(_('Names')),
-            _('Uses official GNOME gsettings key that can be read/modified by other applications.')
+            _('Uses official GNOME gsettings key that can be read/modified by other applications')
         )
     );
 
@@ -1265,14 +1265,13 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _makeTitle(_('Predefined examples of the pop-up customizations')),
-            _('Because pop-up adjustments are relative to the default popup (except for GNOME 42), results may vary depending on the shell theme.')
+            _makeTitle(_('Predefined examples of the pop-up customizations'))
         )
     );
 
     optionList.push(
         _optionsItem(
-            _('Default GNOME 3.38/40'),
+            _('WSM Default - GNOME 3.xx style'),
             _('Classic old popup with workspace indexes and app names'),
             _newButton(),
             'preset',
@@ -1310,8 +1309,8 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Blue ball simple'),
-            _('All workspaces mode, small popup with workspace boxes shaped to little circle.'),
+            _('Blue/grey circles on dark background'),
+            _('All workspaces mode, small popup with workspace boxes shaped to little circle'),
             _newButton(),
             'preset',
             [
@@ -1330,7 +1329,7 @@ function _getPresetsOptionList() {
     optionList.push(
         _optionsItem(
             _('Big grey text only'),
-            _('Active workspaces only mode, transparent background, big semi-transparent font, with the workspace index and current app info.'),
+            _('Active workspaces only mode, transparent background, big semi-transparent font, with the workspace index and current app info'),
             _newButton(),
             'preset',
             [
@@ -1348,8 +1347,8 @@ function _getPresetsOptionList() {
 
     optionList.push(
         _optionsItem(
-            _('Orange ball with index'),
-            _('Active workspaces only mode, smaller circle with workspace index.'),
+            _('Orange circle with semitransparent background'),
+            _('Active workspaces only mode, smaller circle with workspace index'),
             _newButton(),
             'preset',
             [
@@ -1398,7 +1397,7 @@ function getAboutPage(pageProperties, metadata) {
 
     aboutGroup.add(_newResetRow({
         title: _('Reset all options'),
-        subtitle: _('Set all options to default values.'),
+        subtitle: _('Set all options to default values'),
     }));
 
     linksGroup.add(_newAdwLinkRow({
@@ -1409,7 +1408,7 @@ function getAboutPage(pageProperties, metadata) {
 
     linksGroup.add(_newAdwLinkRow({
         title: _('GNOME Extensions'),
-        subtitle: _('Rate and comment the extension on GNOME Extensions site.'),
+        subtitle: _('Rate and comment the extension on GNOME Extensions site'),
         uri: 'https://extensions.gnome.org/extension/4788',
     }));
 
@@ -1421,7 +1420,7 @@ function getAboutPage(pageProperties, metadata) {
 
     linksGroup.add(_newAdwLinkRow({
         title: _('Buy Me a Coffee'),
-        subtitle: _('If you like this extension, you can help me with coffee expenses.'),
+        subtitle: _('If you like this extension, you can help me with coffee expenses'),
         uri: 'https://buymeacoffee.com/georgdh',
     }));
 
