@@ -3,7 +3,7 @@
  * verticalWorkspaces.js
  *
  * @author     GdH <G-dH@github.com>
- * @copyright  2022
+ * @copyright  2022 - 2024
  * @license    GPL-3.0
  */
 'use strict';

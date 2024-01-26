@@ -82,8 +82,8 @@ export default class WSM extends Extension {
     }
 
     _setCustomWsPopup() {
-        if (!this._origPopup)
-            this._origPopup = Util.overrideProto(WorkspaceSwitcherPopup.WorkspaceSwitcherPopup.prototype, WorkspaceSwitcherPopupCustom);
+        this._setDefaultWsPopup();
+        this._origPopup = Util.overrideProto(WorkspaceSwitcherPopup.WorkspaceSwitcherPopup.prototype, WorkspaceSwitcherPopupCustom);
     }
 
     _setDefaultWsPopup() {
@@ -122,6 +122,7 @@ export default class WSM extends Extension {
         const popupMode = gOptions.get('popupMode');
         if (popupMode === wsPopupMode.DEFAULT) {
             this._setDefaultWsPopup();
+            // set modified default so we can set its position and timing
             this._origPopup = Util.overrideProto(WorkspaceSwitcherPopup.WorkspaceSwitcherPopup.prototype, WorkspaceSwitcherPopupDefault);
         } else {
             this._setCustomWsPopup();
@@ -768,7 +769,7 @@ const WorkspaceSwitcherPopupList = GObject.registerClass(
 class WorkspaceSwitcherPopupList extends St.Widget {
     _init() {
         super._init({
-            style_class: 'workspace-switcher',
+            style_class: 'workspace-switcher-custom',
             // this parameter causes error: g_value_get_enum: assertion 'G_VALUE_HOLDS_ENUM (value)' failed
             // not in the original popup class, which has exactly the same super._init() call
             /* offscreen_redirect: Clutter.OffscreenRedirect.ALWAYS,*/
