@@ -13,7 +13,7 @@ import GLib from 'gi://GLib';
 
 let _;
 
-export const MscOptions = class MscOptions {
+export const Options = class Options {
     constructor(extension) {
         _ = extension.gettext.bind(extension);
         this._gsettings = extension.getSettings.bind(extension)();

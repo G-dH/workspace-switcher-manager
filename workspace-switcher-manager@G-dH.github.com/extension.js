@@ -45,11 +45,11 @@ export default class WSM extends Extension {
         this._defaultOrientationVertical = global.workspaceManager.layout_rows === -1;
 
         // if VW extension enabled, disable this option in WSM
-        this._wsOrientationEnabled = !(
-            Main.extensionManager._enabledExtensions.filter(e => e.includes('vertical-workspaces')).length ||
-            Main.extensionManager._enabledExtensions.filter(e => e.includes('vertical-overview')).length);
+        this._wsOrientationEnabled = !Util.getEnabledExtensions('vertical-workspaces').length;
 
-        opt = new Settings.MscOptions(this);
+        opt = new Settings.Options(this);
+
+        this._overrides = new Util.Overrides();
 
         this._updatePopupMode();
 
@@ -57,6 +57,8 @@ export default class WSM extends Extension {
         this._updateNeighbor();
 
         opt.connect('changed', this._updateSettings.bind(this));
+
+        console.debug(`${this.metadata.name}: enabled`);
     }
 
     disable() {
@@ -70,26 +72,29 @@ export default class WSM extends Extension {
             Main.wm._workspaceSwitcherPopup = null;
         }
 
+        this._setDefaultWsPopup();
+        Meta.Workspace.prototype.get_neighbor = this._original_getNeighbor;
+
+        this._reverseWsOrientation(false);
+
+        this._overrides.removeAll();
+        this._overrides = null;
+
         if (opt) {
             opt.destroy();
             opt = null;
         }
 
-        this._setDefaultWsPopup();
-        Meta.Workspace.prototype.get_neighbor = this._original_getNeighbor;
-
-        this._reverseWsOrientation(false);
+        console.debug(`${this.metadata.name}: disabled`);
     }
 
     _setCustomWsPopup() {
         this._setDefaultWsPopup();
-        this._origPopup = Util.overrideProto(WorkspaceSwitcherPopup.WorkspaceSwitcherPopup.prototype, WorkspaceSwitcherPopupCustom);
+        this._overrides.addOverride('WorkspaceSwitcherPopup', WorkspaceSwitcherPopup.WorkspaceSwitcherPopup.prototype, WorkspaceSwitcherPopupCustom);
     }
 
     _setDefaultWsPopup() {
-        if (this._origPopup)
-            Util.overrideProto(WorkspaceSwitcherPopup.WorkspaceSwitcherPopup.prototype, this._origPopup);
-        this._origPopup = null;
+        this._overrides.removeOverride('WorkspaceSwitcherPopup');
     }
 
     // ------------------------------------------------------------------------------
@@ -123,7 +128,7 @@ export default class WSM extends Extension {
         if (popupMode === wsPopupMode.DEFAULT) {
             this._setDefaultWsPopup();
             // set modified default so we can set its position and timing
-            this._origPopup = Util.overrideProto(WorkspaceSwitcherPopup.WorkspaceSwitcherPopup.prototype, WorkspaceSwitcherPopupDefault);
+            this._overrides.addOverride('WorkspaceSwitcherPopup', WorkspaceSwitcherPopup.WorkspaceSwitcherPopup.prototype, WorkspaceSwitcherPopupDefault);
         } else {
             this._setCustomWsPopup();
         }
@@ -147,11 +152,11 @@ export default class WSM extends Extension {
         if (orientationVertical) {
             global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, -1, 1);
             if (VerticalWorkspaces)
-                VerticalWorkspaces.patch();
+                VerticalWorkspaces.patch(this._overrides);
         } else { // horizontal
             global.workspace_manager.override_workspace_layout(Meta.DisplayCorner.TOPLEFT, false, 1, -1);
             if (VerticalWorkspaces)
-                VerticalWorkspaces.reset();
+                VerticalWorkspaces.reset(this._overrides);
         }
     }
 

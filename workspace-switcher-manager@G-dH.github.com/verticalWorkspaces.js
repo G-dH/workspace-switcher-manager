@@ -16,8 +16,6 @@ import Graphene from 'gi://Graphene';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import * as _Util from './util.js';
-
 import * as Workspace from 'resource:///org/gnome/shell/ui/workspace.js';
 import * as WorkspacesView from 'resource:///org/gnome/shell/ui/workspacesView.js';
 
@@ -26,30 +24,26 @@ import * as WorkspacesView from 'resource:///org/gnome/shell/ui/workspacesView.j
 const WORKSPACE_MAX_SPACING = 200;
 const WORKSPACE_MIN_SPACING = 24;
 
-let verticalOverrides = {};
-
 let _appButtonSigHandlerId;
 
-export function patch() {
-    if (Object.keys(verticalOverrides).length !== 0)
-        reset();
-    verticalOverrides['WorkspaceLayout'] = _Util.overrideProto(Workspace.WorkspaceLayout.prototype, WorkspaceLayoutOverride);
-    verticalOverrides['WorkspacesView'] = _Util.overrideProto(WorkspacesView.WorkspacesView.prototype, WorkspacesViewOverride);
+export function patch(overrides) {
+
+    overrides.addOverride('WorkspaceLayout', Workspace.WorkspaceLayout.prototype, WorkspaceLayoutOverride);
+    overrides.addOverride('WorkspacesView', WorkspacesView.WorkspacesView.prototype, WorkspacesViewOverride);
+
     _connectAppButton();
     _switchPageShortcuts();
 }
 
-export function reset() {
+export function reset(overrides) {
     if (_appButtonSigHandlerId) {
         Main.overview.dash.showAppsButton.disconnect(_appButtonSigHandlerId);
         _appButtonSigHandlerId = 0;
     }
 
-    _Util.overrideProto(WorkspacesView.WorkspacesView.prototype, verticalOverrides['WorkspacesView']);
-    _Util.overrideProto(Workspace.WorkspaceLayout.prototype, verticalOverrides['WorkspaceLayout']);
+    overrides.removeOverride('WorkspacesView');
+    overrides.removeOverride('WorkspaceLayout');
     _switchPageShortcuts();
-
-    verticalOverrides = {};
 }
 
 function _connectAppButton() {

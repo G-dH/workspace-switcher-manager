@@ -30,7 +30,7 @@ let _wsEntries;
 export default class WSM extends ExtensionPreferences {
     constructor(metadata) {
         super(metadata);
-        opt = new Settings.MscOptions(this);
+        opt = new Settings.Options(this);
         _ = this.gettext.bind(this);
         _wsEntries = [];
         this._prevPopupMode = -1;

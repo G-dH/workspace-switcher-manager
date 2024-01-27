@@ -12,37 +12,71 @@ import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-const Gi = imports._gi;
+import { InjectionManager } from  'resource:///org/gnome/shell/extensions/extension.js';
 
 let _installedExtensions;
 
-function _hookVfunc(proto, symbol, func) {
-    proto[Gi._Gi.hook_up_vfunc_symbol](symbol, func);
-}
+export class Overrides extends InjectionManager {
+    constructor() {
+        super();
+        this._overrides = {};
+    }
 
-export function overrideProto(proto, overrides) {
-    const backup = {};
-    for (let symbol in overrides) {
-        if (symbol.startsWith('after_')) {
-            const actualSymbol = symbol.slice('after_'.length);
-            let fn = proto[actualSymbol];
-            const afterFn = overrides[symbol];
-            proto[actualSymbol] = function (...args) {
-                args = Array.prototype.slice.call(args);
-                const res = fn.apply(this, args);
-                afterFn.apply(this, args);
-                return res;
-            };
-            backup[actualSymbol] = fn;
-        } else {
-            backup[symbol] = proto[symbol];
-            if (symbol.startsWith('vfunc'))
-                _hookVfunc(proto[Gi._Gi.gobject_prototype_symbol], symbol.slice(6), overrides[symbol]);
-            else if (overrides[symbol] !== null)
-                proto[symbol] = overrides[symbol];
+    addOverride(name, prototype, overrideList) {
+        const backup = this.overrideProto(prototype, overrideList, name);
+        // don't update originals when override's just refreshing, keep initial content
+        let originals = this._overrides[name]?.originals;
+        if (!originals)
+            originals = backup;
+        this._overrides[name] = {
+            originals,
+            prototype,
+        };
+    }
+
+    removeOverride(name) {
+        const override = this._overrides[name];
+        if (!override)
+            return false;
+
+        this.overrideProto(override.prototype, override.originals, name);
+        delete this._overrides[name];
+        return true;
+    }
+
+    removeAll() {
+        for (let name in this._overrides) {
+            this.removeOverride(name);
+            delete this._overrides[name];
         }
     }
-    return backup;
+
+    overrideProto(proto, overrides, name) {
+        const backup = {};
+        const originals = this._overrides[name]?.originals;
+        for (let symbol in overrides) {
+            if (symbol.startsWith('after_')) {
+                const actualSymbol = symbol.slice('after_'.length);
+                let fn;
+                if (originals && originals[actualSymbol])
+                    fn = originals[actualSymbol];
+                else
+                    fn = proto[actualSymbol];
+                const afterFn = overrides[symbol];
+                proto[actualSymbol] = function (...args) {
+                    args = Array.prototype.slice.call(args);
+                    const res = fn.apply(this, args);
+                    afterFn.apply(this, args);
+                    return res;
+                };
+                backup[actualSymbol] = fn;
+            } else if (overrides[symbol] !== null) {
+                backup[symbol] = proto[symbol];
+                this._installMethod(proto, symbol, overrides[symbol]);
+            }
+        }
+        return backup;
+    }
 }
 
 export function getEnabledExtensions(pattern = '') {
