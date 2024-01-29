@@ -18,6 +18,8 @@ The `Workspace Switcher Manager` offers all workspaces related options in one pl
 - Any adjustments applied to the ws switcher popup in the extension Preferences window automatically shows the popup to see the changes
 - Example profiles are included to show you the possibilities of the pop-up customization
 
+![](WSM0.jpg)
+
 ## Installation
 
 ### Installation from extensions.gnome.org
@@ -68,7 +70,6 @@ If you like my work and want to keep me motivated, give me some feedback. You ca
 
 ## Screenshots
 
-![](WSM0.jpg)
 ![](WSM1.png)
 ![](WSM2.png)
 ![](WSM3.png)
