@@ -8,20 +8,18 @@
   /*border: 50px;*/
 }
 
-/* stylesheet for GS42+ where the switcher popup was reduced */
-
-.workspace-switcher-group-42 {
-  padding: 10px;
+.workspace-switcher-group {
+  /*padding: 10px;*/
 }
 
-.workspace-switcher-container-42 {
+.workspace-switcher-container {
   border-radius: 10px;
   background-color: rgb(29, 29, 29);
   border: 1px solid;
   border-color:  rgb(53, 53, 53);
 }
 
-.workspace-switcher-42 {
+.workspace-switcher-custom {
   background: transparent;
   /*border: 1px solid rgba(0, 11, 170, 0.809);
   border-radius: 8px;*/
@@ -29,7 +27,7 @@
 }
 
 /* inactive switcher box */
-.ws-switcher-box-42 {
+.ws-switcher-box {
   background: transparent;
   height: 50px;
   background-size: 32px;
@@ -40,10 +38,7 @@
 }
 
 /* active workspace box */
-.ws-switcher-active-42-up,
-.ws-switcher-active-42-down,
-.ws-switcher-active-42-left,
-.ws-switcher-active-42-right {
+.ws-switcher-active {
   height: 52px;
   background-color: rgb(0, 110, 255);
   border: 1px solid;
