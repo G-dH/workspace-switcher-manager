@@ -20,12 +20,8 @@ import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/
 // gettext
 let _;
 
-// libadwaita is available starting with GNOME Shell 42.
-
 let opt;
 let _wsEntries;
-
-// conversion of Gtk3 / Gtk4 widgets add methods
 
 export default class WSM extends ExtensionPreferences {
     constructor(metadata) {
@@ -1420,7 +1416,7 @@ function getAboutPage(pageProperties, metadata) {
 
     linksGroup.add(_newAdwLinkRow({
         title: _('Buy Me a Coffee'),
-        subtitle: _('If you like this extension, you can help me with coffee expenses'),
+        subtitle: _('Enjoying WSM? Consider supporting it by buying me a coffee!'),
         uri: 'https://buymeacoffee.com/georgdh',
     }));
 

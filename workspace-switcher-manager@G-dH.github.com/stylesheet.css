@@ -39,10 +39,7 @@
 }
 
 /* active workspace box */
-.ws-switcher-active-up,
-.ws-switcher-active-down,
-.ws-switcher-active-left,
-.ws-switcher-active-right {
+.ws-switcher-active {
   height: 52px;
   background-color: rgb(0, 110, 255);
   border: 1px solid;

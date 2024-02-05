@@ -163,7 +163,6 @@ export default class WSM extends Extension {
     _showPopupForPrefs() {
         // if user is currently customizing the popup, show the popup on the screen
         const wsIndex = global.workspaceManager.get_active_workspace_index();
-        const direction = Meta.MotionDirection.RIGHT;
         if (Main.wm._workspaceSwitcherPopup !== null) {
             Main.wm._workspaceSwitcherPopup.destroy();
             Main.wm._workspaceSwitcherPopup = null;
@@ -174,10 +173,7 @@ export default class WSM extends Extension {
             Main.wm._workspaceSwitcherPopup = null;
         });
 
-        if (opt.get('popupMode') === wsPopupMode.DEFAULT)
-            Main.wm._workspaceSwitcherPopup.display(wsIndex);
-        else
-            Main.wm._workspaceSwitcherPopup.display(direction, wsIndex);
+        Main.wm._workspaceSwitcherPopup.display(wsIndex);
 
         this._prefsDemoTimeoutId = 0;
         return GLib.SOURCE_REMOVE;
@@ -392,19 +388,8 @@ const WorkspaceSwitcherPopupCustom = {
         for (let i = 0; i < workspaceManager.n_workspaces; i++) {
             let indicator = null;
 
-            let style;
-            style = 'ws-switcher-active-';
-
-            if (i === this._activeWorkspaceIndex && this._direction === Meta.MotionDirection.UP)
-                indicator = new St.Bin({ style_class: `${style}up` });
-            else if (i === this._activeWorkspaceIndex && this._direction === Meta.MotionDirection.DOWN)
-                indicator = new St.Bin({ style_class: `${style}down` });
-            else if (i === this._activeWorkspaceIndex && this._direction === Meta.MotionDirection.LEFT)
-                indicator = new St.Bin({ style_class: `${style}left` });
-            else if (i === this._activeWorkspaceIndex && this._direction === Meta.MotionDirection.RIGHT)
-                indicator = new St.Bin({ style_class: `${style}right` });
-            else if (i === this._activeWorkspaceIndex)
-                indicator = new St.Bin({ style_class: `${style}right` });
+            if (i === this._activeWorkspaceIndex)
+                indicator = new St.Bin({ style_class: 'ws-switcher-active' });
             // TODO single ws indicator needs to be handled in the container class, disabled for now
             else if (this._popupMode === wsPopupMode.ALL)
                 indicator = new St.Bin({ style_class: 'ws-switcher-box' });
@@ -979,16 +964,3 @@ const WorkspaceSwitcherPopupDefault = {
             this._timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, this._displayTimeout, this._onTimeout.bind(this));
     },
 };
-
-/* function debug(message) {
-    const stack = new Error().stack.split('\n');
-
-    // Remove debug() function call from stack.
-    stack.shift();
-
-    // Find the index of the extension directory (e.g. particles@schneegans.github.com) in
-    // the stack entry. We do not want to print the entire absolute file path.
-    const extensionRoot = stack[0].indexOf(Me.metadata.uuid);
-
-    log(`[${stack[0].slice(extensionRoot)}] ${message}`);
-}*/

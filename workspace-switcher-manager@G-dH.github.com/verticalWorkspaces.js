@@ -136,7 +136,7 @@ function _switchPageShortcuts() {
 }
 
 // ---- workspacesView ----------------------------------------
-// WorkspacesView
+
 var WorkspacesViewOverride = {
     _getFirstFitSingleWorkspaceBox(box, spacing, vertical) {
         let [width, height] = box.get_size();
@@ -192,7 +192,7 @@ var WorkspacesViewOverride = {
 
 // ------ Workspace -----------------------------------------------------------------
 var WorkspaceLayoutOverride = {
-    // this fixes wrong size and position calculation of window clones while moving overview to the next (+1) workspace if vertical ws orintation is enabled in GS
+    // this fixes wrong size and position calculation of window clones while moving overview to the next (+1) workspace if vertical ws orientation is enabled in GS
     _adjustSpacingAndPadding(rowSpacing, colSpacing, containerBox) {
         if (this._sortedWindows.length === 0)
             return [rowSpacing, colSpacing, containerBox];
