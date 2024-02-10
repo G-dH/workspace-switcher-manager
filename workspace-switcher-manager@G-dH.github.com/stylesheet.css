@@ -45,3 +45,8 @@
   border-radius: 8px;
   color: white;
 }
+
+/* reverse padding */
+.ws-switcher-vertical {
+  padding: 18px 12px
+}

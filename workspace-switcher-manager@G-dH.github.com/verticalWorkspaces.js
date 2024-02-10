@@ -3,12 +3,12 @@
  * verticalWorkspaces.js
  *
  * @author     GdH <G-dH@github.com>
- * @copyright  2022-2024
+ * @copyright  2022 - 2024
  * @license    GPL-3.0
  */
 'use strict';
 
-const { Clutter, Gio, GLib, GObject, Graphene, Meta, Shell, St } = imports.gi;
+const { Clutter, Gio, Graphene, Meta, Shell, St } = imports.gi;
 
 const Main = imports.ui.main;
 const Layout = imports.ui.layout;
@@ -142,7 +142,7 @@ function _switchPageShortcuts() {
 
 // ---- workspacesView ----------------------------------------
 
-var WorkspacesViewOverride = {
+const WorkspacesViewOverride = {
     _getFirstFitSingleWorkspaceBox(box, spacing, vertical) {
         let [width, height] = box.get_size();
         const [workspace] = this._workspaces;
@@ -196,7 +196,8 @@ var WorkspacesViewOverride = {
 };
 
 // ------ Workspace -----------------------------------------------------------------
-var WorkspaceLayoutOverride = {
+
+const WorkspaceLayoutOverride = {
     // this fixes wrong size and position calculation of window clones while moving overview to the next (+1) workspace if vertical ws orientation is enabled in GS
     _adjustSpacingAndPadding(rowSpacing, colSpacing, containerBox) {
         if (this._sortedWindows.length === 0)
