@@ -1,36 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="workspace-switcher-manager">
   <schema id="org.gnome.shell.extensions.workspace-switcher-manager" path="/org/gnome/shell/extensions/workspace-switcher-manager/">
-    <key type="i" name="active-prefs-page">
-      <default>0</default>
+    <key type="i" name="popup-visibility">
+      <default>1</default>
     </key>
-    <key type="i" name="horizontal">
-      <default>50</default>
-    </key>
-    <key type="i" name="vertical">
-      <default>50</default>
-    </key>
-    <key type="b" name="hide">
+
+    <key type="b" name="reverse-ws-orientation">
       <default>false</default>
     </key>
-    <key type="i" name="popup-mode">
-      <default>0</default>
-    </key>
-    <key type="i" name="monitor">
-      <default>0</default>
-    </key>
+
     <key type="b" name="ws-wraparound">
       <default>false</default>
     </key>
     <key type="b" name="ws-ignore-last">
       <default>false</default>
     </key>
+
+
+    <key type="i" name="popup-mode">
+      <default>0</default>
+    </key>
+    <key type="i" name="monitor">
+      <default>0</default>
+    </key>
+    <key type="i" name="on-screen-time">
+      <default>600</default>
+    </key>
+    <key type="i" name="fade-out-time">
+      <default>200</default>
+    </key>
+    <key type="b" name="modifiers-hide-popup">
+      <default>true</default>
+    </key>
+
+    <key type="i" name="horizontal">
+      <default>50</default>
+    </key>
+    <key type="i" name="vertical">
+      <default>50</default>
+    </key>
+
+    <key type="b" name="reverse-popup-orientation">
+      <default>false</default>
+    </key>
+
+
+    <key type="i" name="popup-scale">
+      <default>100</default>
+    </key>
+    <key type="i" name="popup-width-scale">
+      <default>100</default>
+    </key>
+    <key type="i" name="popup-padding-scale">
+      <default>100</default>
+    </key>
+    <key type="i" name="popup-spacing-scale">
+      <default>100</default>
+    </key>
+    <key type="i" name="popup-radius-scale">
+      <default>100</default>
+    </key>
+
     <key type="i" name="font-scale">
       <default>100</default>
     </key>
     <key type="i" name="index-scale">
       <default>100</default>
     </key>
+
     <key type="b" name="wrap-app-names">
       <default>true</default>
     </key>
@@ -40,33 +77,12 @@
     <key type="b" name="text-bold">
       <default>true</default>
     </key>
-    <key type="i" name="on-screen-time">
-      <default>600</default>
-    </key>
-    <key type="i" name="fade-out-time">
-      <default>200</default>
-    </key>
-    <key type="i" name="popup-scale">
-      <default>100</default>
-    </key>
-    <key type="i" name="popup-width-scale">
-      <default>100</default>
-    </key>
-    <key type="i" name="popup-spacing-scale">
-      <default>100</default>
-    </key>
-    <key type="i" name="popup-radius-scale">
-      <default>100</default>
-    </key>
-    <key type="i" name="popup-padding-scale">
-      <default>100</default>
-    </key>
-    <key type="b" name="allow-custom-colors">
-      <default>false</default>
-    </key>
+
+
     <key type="i" name="popup-opacity">
-      <default>90</default>
+      <default>100</default>
     </key>
+
     <key type="s" name="popup-bg-color">
       <default>'rgb(29,29,29)'</default>
     </key>
@@ -85,9 +101,8 @@
     <key type="s" name="popup-inactive-bg-color">
       <default>'rgb(29,29,29)'</default>
     </key>
-    <key type="as" name="default-colors">
-      <default>[]</default>
-    </key>
+
+
     <key type="b" name="active-show-ws-index">
       <default>true</default>
     </key>
@@ -100,6 +115,7 @@
     <key type="b" name="active-show-win-title">
       <default>false</default>
     </key>
+
     <key type="b" name="inactive-show-ws-index">
       <default>true</default>
     </key>
@@ -112,17 +128,175 @@
     <key type="b" name="inactive-show-win-title">
       <default>false</default>
     </key>
-    <key type="b" name="modifiers-hide-popup">
-      <default>true</default>
+
+    <key type="s" name="profile-name-1">
+      <default>"WSM Default - GNOME 3.xx style"</default>
     </key>
-    <key type="b" name="reverse-popup-orientation">
-      <default>false</default>
+    <key type="a{ss}" name="profile-data-1">
+      <default>{
+        'popupMode': '0',
+        'fontScale': '100',
+        'indexScale': '100',
+        'wrapAppNames': 'true',
+        'textShadow': 'false',
+        'textBold': 'true',
+        'popupScale': '100',
+        'popupWidthScale': '100',
+        'popupPaddingScale': '100',
+        'popupSpacingScale': '100',
+        'popupRadiusScale': '100',
+        'popupOpacity': '98',
+        'popupBgColor': 'rgb(29,29,29)',
+        'popupBorderColor': 'rgb(53,53,53)',
+        'popupActiveFgColor': 'rgb(255,255,255)',
+        'popupActiveBgColor': 'rgb(0,110,255)',
+        'popupInactiveFgColor': 'rgb(255,255,255)',
+        'popupInactiveBgColor': 'rgb(29,29,29)',
+        'activeShowWsIndex': 'true',
+        'activeShowWsName': 'false',
+        'activeShowAppName': 'true',
+        'activeShowWinTitle': 'false',
+        'inactiveShowWsIndex': 'true',
+        'inactiveShowWsName': 'false',
+        'inactiveShowAppName': 'true',
+        'inactiveShowWinTitle': 'false'
+      }</default>
     </key>
-    <key type="b" name="vertical-overview">
-      <default>false</default>
+
+    <key type="s" name="profile-name-2">
+      <default>"Dark red rounded semi-transparent"</default>
     </key>
-    <key type="b" name="reverse-ws-orientation">
-      <default>false</default>
+    <key type="a{ss}" name="profile-data-2">
+      <default>{
+        'popupMode': '0',
+        'fontScale': '120',
+        'indexScale': '140',
+        'wrapAppNames': 'true',
+        'textShadow': 'false',
+        'textBold': 'true',
+        'popupScale': '66',
+        'popupWidthScale': '133',
+        'popupPaddingScale': '130',
+        'popupSpacingScale': '180',
+        'popupRadiusScale': '180',
+        'popupOpacity': '98',
+        'popupBgColor': 'rgba(29,29,29,0.9)',
+        'popupBorderColor': 'rgb(77,77,77)',
+        'popupActiveFgColor': 'rgb(255,255,255)',
+        'popupActiveBgColor': 'rgba(105,0,0,0.9)',
+        'popupInactiveFgColor': 'rgb(255,255,255)',
+        'popupInactiveBgColor': 'rgba(29,29,29,0)',
+        'activeShowWsIndex': 'false',
+        'activeShowWsName': 'false',
+        'activeShowAppName': 'true',
+        'activeShowWinTitle': 'false',
+        'inactiveShowWsIndex': 'false',
+        'inactiveShowWsName': 'false',
+        'inactiveShowAppName': 'true',
+        'inactiveShowWinTitle': 'false'
+      }</default>
+    </key>
+
+    <key type="s" name="profile-name-3">
+      <default>"Blue/grey circles on dark background"</default>
+    </key>
+    <key type="a{ss}" name="profile-data-3">
+      <default>{
+        'popupMode': '0',
+        'fontScale': '100',
+        'indexScale': '100',
+        'wrapAppNames': 'false',
+        'textShadow': 'false',
+        'textBold': 'false',
+        'popupScale': '40',
+        'popupWidthScale': '55',
+        'popupPaddingScale': '250',
+        'popupSpacingScale': '250',
+        'popupRadiusScale': '700',
+        'popupOpacity': '100',
+        'popupBgColor': 'rgb(29,29,29)',
+        'popupBorderColor': 'rgb(53,53,53)',
+        'popupActiveFgColor': 'rgb(255,255,255)',
+        'popupActiveBgColor': 'rgb(0,110,255)',
+        'popupInactiveFgColor': 'rgb(255,255,255)',
+        'popupInactiveBgColor': 'rgb(53,53,53)',
+        'activeShowWsIndex': 'false',
+        'activeShowWsName': 'false',
+        'activeShowAppName': 'false',
+        'activeShowWinTitle': 'false',
+        'inactiveShowWsIndex': 'false',
+        'inactiveShowWsName': 'false',
+        'inactiveShowAppName': 'false',
+        'inactiveShowWinTitle': 'false'
+      }</default>
+    </key>
+
+    <key type="s" name="profile-name-4">
+      <default>"Big text only single box"</default>
+    </key>
+    <key type="a{ss}" name="profile-data-4">
+      <default>{
+        'popupMode': '1',
+        'fontScale': '120',
+        'indexScale': '230',
+        'wrapAppNames': 'false',
+        'textShadow': 'true',
+        'textBold': 'true',
+        'popupScale': '530',
+        'popupWidthScale': '150',
+        'popupPaddingScale': '100',
+        'popupSpacingScale': '100',
+        'popupRadiusScale': '100',
+        'popupOpacity': '98',
+        'popupBgColor': 'rgba(0,0,0,0)',
+        'popupBorderColor': 'rgba(0,0,0,0)',
+        'popupActiveFgColor': 'rgba(0,0,0,0.56)',
+        'popupActiveBgColor': 'rgba(0,0,0,0)',
+        'popupInactiveFgColor': 'rgb(255,255,255)',
+        'popupInactiveBgColor': 'rgba(0,0,0,0)',
+        'activeShowWsIndex': 'true',
+        'activeShowWsName': 'false',
+        'activeShowAppName': 'true',
+        'activeShowWinTitle': 'false',
+        'inactiveShowWsIndex': 'true',
+        'inactiveShowWsName': 'false',
+        'inactiveShowAppName': 'true',
+        'inactiveShowWinTitle': 'false'
+      }</default>
+    </key>
+
+    <key type="s" name="profile-name-5">
+      <default>"Orange circle with semitransparent background"</default>
+    </key>
+    <key type="a{ss}" name="profile-data-5">
+      <default>{
+        'popupMode': '1',
+        'fontScale': '150',
+        'indexScale': '500',
+        'wrapAppNames': 'false',
+        'textShadow': 'false',
+        'textBold': 'true',
+        'popupScale': '100',
+        'popupWidthScale': '57',
+        'popupPaddingScale': '200',
+        'popupSpacingScale': '100',
+        'popupRadiusScale': '700',
+        'popupOpacity': '98',
+        'popupBgColor': 'rgba(29,29,29,0.7)',
+        'popupBorderColor': 'rgb(53,53,53)',
+        'popupActiveFgColor': 'rgb(255,255,255)',
+        'popupActiveBgColor': 'rgb(233,84,32)',
+        'popupInactiveFgColor': 'rgb(255,255,255)',
+        'popupInactiveBgColor': 'rgb(53,53,53)',
+        'activeShowWsIndex': 'true',
+        'activeShowWsName': 'false',
+        'activeShowAppName': 'false',
+        'activeShowWinTitle': 'false',
+        'inactiveShowWsIndex': 'false',
+        'inactiveShowWsName': 'false',
+        'inactiveShowAppName': 'false',
+        'inactiveShowWinTitle': 'false'
+      }</default>
     </key>
   </schema>
 </schemalist>

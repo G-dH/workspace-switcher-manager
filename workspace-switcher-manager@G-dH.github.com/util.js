@@ -5,7 +5,6 @@
  * @author     GdH <G-dH@github.com>
  * @copyright  2022-2024
  * @license    GPL-3.0
- * this file is based on https://github.com/RensAlthuis/vertical-overview extension module
  */
 
 import GLib from 'gi://GLib';

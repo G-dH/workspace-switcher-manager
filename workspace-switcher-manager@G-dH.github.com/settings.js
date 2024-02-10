@@ -3,7 +3,7 @@
  * settings.js
  *
  * @author     GdH <G-dH@github.com>
- * @copyright  2022-2024
+ * @copyright  2022 - 2024
  * @license    GPL-3.0
  */
 'use strict';
@@ -11,12 +11,10 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-let _;
-
 export const Options = class Options {
     constructor(extension) {
-        _ = extension.gettext.bind(extension);
-        this._gsettings = extension.getSettings.bind(extension)();
+        this._metadata = extension.metadata;
+        this._gsettings = extension.getSettings();
         this._writeTimeoutId = 0;
         this._gsettings.delay();
         this._gsettings.connect('changed', () => {
@@ -38,7 +36,7 @@ export const Options = class Options {
 
         this.options = {
             monitor: ['int', 'monitor'],
-            activePrefsPage: ['int', 'active-prefs-page'],
+            popupVisibility: ['int', 'popup-visibility'],
             popupMode: ['int', 'popup-mode'],
             popupHorizontal: ['int', 'horizontal'],
             popupVertical: ['int', 'vertical'],
@@ -56,7 +54,6 @@ export const Options = class Options {
             popupPaddingScale: ['int', 'popup-padding-scale'],
             popupSpacingScale: ['int', 'popup-spacing-scale'],
             popupRadiusScale: ['int', 'popup-radius-scale'],
-            allowCustomColors: ['boolean', 'allow-custom-colors'],
             popupOpacity: ['int', 'popup-opacity'],
             popupBgColor: ['string', 'popup-bg-color'],
             popupBorderColor: ['string', 'popup-border-color'],
@@ -64,7 +61,6 @@ export const Options = class Options {
             popupActiveBgColor: ['string', 'popup-active-bg-color'],
             popupInactiveFgColor: ['string', 'popup-inactive-fg-color'],
             popupInactiveBgColor: ['string', 'popup-inactive-bg-color'],
-            defaultColors: ['strv', 'default-colors'],
             activeShowWsIndex: ['boolean', 'active-show-ws-index'],
             activeShowWsName: ['boolean', 'active-show-ws-name'],
             activeShowAppName: ['boolean', 'active-show-app-name'],
@@ -76,22 +72,36 @@ export const Options = class Options {
             reverseWsOrientation: ['boolean', 'reverse-ws-orientation'],
             modifiersHidePopup: ['boolean', 'modifiers-hide-popup'],
             reversePopupOrientation: ['boolean', 'reverse-popup-orientation'],
-            verticalOverview: ['boolean', 'vertical-overview'],
 
-            wsNames: ['strv', 'workspace-names', this._getDesktopWmSettings],
+            wsNames: ['strv', 'workspace-names', this._getWmPreferencesSettings],
+            numWorkspaces: ['int', 'num-workspaces', this._getWmPreferencesSettings],
             dynamicWorkspaces: ['boolean', 'dynamic-workspaces', this._getMutterSettings],
-            numWorkspaces: ['int', 'num-workspaces', this._getDesktopWmSettings],
             workspacesOnPrimaryOnly: ['boolean', 'workspaces-only-on-primary', this._getMutterSettings],
+
+            profileName1: ['string', 'profile-name-1'],
+            profileName2: ['string', 'profile-name-2'],
+            profileName3: ['string', 'profile-name-3'],
+            profileName4: ['string', 'profile-name-4'],
+            profileName5: ['string', 'profile-name-5'],
         };
     }
 
-    connect(name, callback) {
-        const id = this._gsettings.connect(name, callback);
-        this._connectionIds.push(id);
+    connect(name, callback, settings) {
+        settings = settings ?? this._gsettings;
+        const id = settings.connect(name, callback);
+        this._connectionIds.push({ id, settings });
         return id;
     }
 
-    _getWsNamesSettings() {
+    destroy() {
+        this._connectionIds.forEach(con => con.settings.disconnect(con.id));
+        if (this._writeTimeoutId) {
+            GLib.source_remove(this._writeTimeoutId);
+            this._writeTimeoutId = 0;
+        }
+    }
+
+    _getWmPreferencesSettings() {
         const settings = new Gio.Settings({
             schema_id: 'org.gnome.desktop.wm.preferences',
         });
@@ -103,21 +113,6 @@ export const Options = class Options {
             schema_id: 'org.gnome.mutter',
         });
         return settings;
-    }
-
-    _getDesktopWmSettings() {
-        const settings = new Gio.Settings({
-            schema_id: 'org.gnome.desktop.wm.preferences',
-        });
-        return settings;
-    }
-
-    destroy() {
-        this._connectionIds.forEach(id => this._gsettings.disconnect(id));
-        if (this._writeTimeoutId) {
-            GLib.source_remove(this._writeTimeoutId);
-            this._writeTimeoutId = 0;
-        }
     }
 
     get(option) {
@@ -167,5 +162,47 @@ export const Options = class Options {
 
 
         return gSettings.get_default_value(key).deep_unpack();
+    }
+
+    saveProfile(index) {
+        const profile = {};
+        Object.keys(this.options).forEach(v => {
+            if (!v.startsWith('profileName'))
+                profile[v] = this.get(v).toString();
+        });
+
+        this._gsettings.set_value(`profile-data-${index}`, new GLib.Variant('a{ss}', profile));
+    }
+
+    loadProfile(index) {
+        const options = this._gsettings.get_value(`profile-data-${index}`).deep_unpack();
+        for (let o of Object.keys(options)) {
+            if (!this.options[o]) {
+                console.error(`[${this._metadata.name}] Error: "${o}" is not a valid profile key -> Update your profile`);
+                continue;
+            }
+            const [type] = this.options[o];
+            let value = options[o];
+            switch (type) {
+            case 'string':
+                break;
+            case 'boolean':
+                value = value === 'true';
+                break;
+            case 'int':
+                value = parseInt(value);
+                break;
+            case 'strv':
+                value = value.split(',');
+                break;
+            }
+
+            this.set(o, value);
+        }
+    }
+
+    resetProfile(index) {
+        this._gsettings.reset(`profile-data-${index}`);
+        this._gsettings.reset(`profile-data-${index}`);
     }
 };
