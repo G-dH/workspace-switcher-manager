@@ -18,7 +18,7 @@ The `Workspace Switcher Manager` offers all workspaces related options in one pl
 - Any adjustments applied to the ws switcher popup in the extension Preferences window automatically shows the popup to see the changes
 - Example profiles are included to show you the possibilities of the pop-up customization
 
-![](creenshots/SM0.jpg)
+![WSM - example popups](screenshots/SM0.jpg)
 
 ## Installation
 
@@ -48,7 +48,14 @@ Run following commands in the terminal (`git` needs to be installed, navigate to
     cd workspace-switcher-manager/
     make install
 
-#### GNOME 3.36 - 44 
+#### GNOME 42 - 44 
+
+    git clone https://github.com/G-dH/workspace-switcher-manager.git
+    cd workspace-switcher-manager/
+    git checkout gnome-42-44
+    make install
+
+#### GNOME 3.36 - 41 
 
     git clone https://github.com/G-dH/workspace-switcher-manager.git
     cd workspace-switcher-manager/
@@ -62,18 +69,16 @@ After any installation you need to enable the extension and access its preferenc
 - First restart GNOME Shell (`ALt` + `F2`, `r`, `Enter`, or Log Out/Log In if you use Wayland)
 - Now you should see the new extension in *Extensions* (or *GNOME Tweak Tool* on older systems) application (reopen the app if needed to load new data), where you can enable it and access its Preferences/Settings.
 
-## Contribution
-
-Contributions are welcome and I will try my best to answer quickly to all suggestions. I'd really appreciate corrections of my bad english.
-
-If you like my work and want to keep me motivated, give me some feedback. You can also [buy me a coffee](https://buymeacoffee.com/georgdh).
+## Buy me a coffee
+If you like my extensions and want to keep me motivated give me some useful feedback, but you can also help me with my coffee expenses:
+[buymeacoffee.com/georgdh](https://buymeacoffee.com/georgdh)
 
 ## Screenshots
 
 ![](screenshots/WSM1.png)
-![](screenshots/WWSM2.png)
-![](screenshots/WWSM3.png)
-![](screenshots/WWSM4.png)
-![](screenshots/WWSM5.png)
-![](screenshots/WWSM6.png)
-![](screenshots/WWSM7.png)
+![](screenshots/WSM2.png)
+![](screenshots/WSM3.png)
+![](screenshots/WSM4.png)
+![](screenshots/WSM5.png)
+![](screenshots/WSM6.png)
+![](screenshots/WSM7.png)
