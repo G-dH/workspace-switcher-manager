@@ -1026,7 +1026,7 @@ function _getAboutOptionList(itemFactory) {
     // -----------------------------------------------------
     optionList.push(itemFactory.getRowWidget(
         _('Reset all options'),
-        _('Set all options to default values.'),
+        _('Reset all options to their default values'),
         itemFactory.newOptionsResetButton()
     ));
     // -----------------------------------------------------
@@ -1042,7 +1042,7 @@ function _getAboutOptionList(itemFactory) {
     // -----------------------------------------------------
     optionList.push(itemFactory.getRowWidget(
         _('GNOME Extensions'),
-        _('Rate and comment V-Shell on the GNOME Extensions site'),
+        _('Rate and comment WSM on the GNOME Extensions site'),
         itemFactory.newLinkButton('https://extensions.gnome.org/extension/4788')
     ));
     // -----------------------------------------------------
@@ -1054,7 +1054,7 @@ function _getAboutOptionList(itemFactory) {
     // -----------------------------------------------------
     optionList.push(itemFactory.getRowWidget(
         _('Buy Me a Coffee'),
-        _('Enjoying WSM? Consider supporting it by buying me a coffee!'),
+        _('Enjoying this extension? Consider supporting it by buying me a coffee!'),
         itemFactory.newLinkButton('https://buymeacoffee.com/georgdh')
     ));
 
