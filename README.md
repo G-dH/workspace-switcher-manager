@@ -18,7 +18,7 @@ The `Workspace Switcher Manager` offers all workspaces related options in one pl
 - Any adjustments applied to the ws switcher popup in the extension Preferences window automatically shows the popup to see the changes
 - Example profiles are included to show you the possibilities of the pop-up customization
 
-![](WSM0.jpg)
+![](creenshots/SM0.jpg)
 
 ## Installation
 
@@ -45,13 +45,13 @@ Run following commands in the terminal (`git` needs to be installed, navigate to
 #### GNOME 45, 46
 
     git clone https://github.com/G-dH/workspace-switcher-manager.git
-    cd workspace-switcher-manager/workspace-switcher-manager@G-dH.github.com/
+    cd workspace-switcher-manager/
     make install
 
 #### GNOME 3.36 - 44 
 
     git clone https://github.com/G-dH/workspace-switcher-manager.git
-    cd workspace-switcher-manager/workspace-switcher-manager@G-dH.github.com/
+    cd workspace-switcher-manager/
     git checkout legacy
     make install
 
@@ -70,10 +70,10 @@ If you like my work and want to keep me motivated, give me some feedback. You ca
 
 ## Screenshots
 
-![](WSM1.png)
-![](WSM2.png)
-![](WSM3.png)
-![](WSM4.png)
-![](WSM5.png)
-![](WSM6.png)
-![](WSM7.png)
+![](screenshots/WSM1.png)
+![](screenshots/WWSM2.png)
+![](screenshots/WWSM3.png)
+![](screenshots/WWSM4.png)
+![](screenshots/WWSM5.png)
+![](screenshots/WWSM6.png)
+![](screenshots/WWSM7.png)
