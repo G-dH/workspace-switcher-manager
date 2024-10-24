@@ -5,13 +5,13 @@
   "settings-schema": "org.gnome.shell.extensions.workspace-switcher-manager",
   "shell-version": [
     "45",
-    "46"
+    "46",
+    "47"
   ],
   "url": "https://github.com/G-dH/workspace-switcher-manager",
   "uuid": "workspace-switcher-manager@G-dH.github.com",
   "version-name": "46.2",
   "donations": {
     "buymeacoffee": "georgdh"
-  },
-  "version": 999
+  }
 }
