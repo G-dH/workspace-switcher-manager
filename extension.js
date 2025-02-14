@@ -3,7 +3,7 @@
  * extension.js
  *
  * @author     GdH <G-dH@github.com>
- * @copyright  2022 - 2024
+ * @copyright  2022 - 2025
  * @license    GPL-3.0
  */
 'use strict';
@@ -321,6 +321,11 @@ const WorkspaceSwitcherPopupCustom = {
 
         if (opt.get('reversePopupOrientation'))
             this._list.vertical = !this._list.vertical;
+
+        if (Meta.disable_unredirect_for_display)
+            Meta.disable_unredirect_for_display(global.display);
+        else // new in GS 48
+            global.compositor.disable_unredirect();
     },
 
     _show() {
@@ -421,6 +426,11 @@ const WorkspaceSwitcherPopupCustom = {
         this._wsNamesSettings = null;
         this._widget.destroy();
         this._widget = null;
+
+        if (Meta.enable_unredirect_for_display)
+            Meta.enable_unredirect_for_display(global.display);
+        else // new in GS 48
+            global.compositor.enable_unredirect();
     },
 
     _setCustomStyle() {
@@ -519,7 +529,6 @@ const WorkspaceSwitcherPopupCustom = {
     },
 
     _getCustomLabel(wsIndex) {
-
         let labelBox = null;
         let textLabel = null;
         let indexLabel = null;
