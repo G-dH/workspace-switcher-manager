@@ -5,7 +5,7 @@ The `Workspace Switcher Manager` offers all workspaces related options in one pl
 
 ## Features:
 
-- GNOME Shell 3.36 - 46 compatibility
+- GNOME Shell 3.36 - 48 compatibility
 - All workspace related options available in GNOME Shell
 - Adds options `Wraparound` and `Ignore last (empty) workspace` to the workspace switcher
 - Option to change workspaces orientation to vertical
